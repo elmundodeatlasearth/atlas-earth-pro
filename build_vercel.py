@@ -17,6 +17,11 @@ def build():
         "perfil_atlas.json": perfil_json
     }
 
+    # Serializamos a JSON
+    json_files = json.dumps(files)
+    # CRÍTICO: Escapar los tags </script> para que no rompan el script de stlite en el index.html
+    json_files = json_files.replace("</script>", "<\\/script>")
+
     html = f"""<!DOCTYPE html>
 <html>
   <head>
@@ -37,7 +42,7 @@ def build():
         {{
           requirements: [],
           entrypoint: "main.py",
-          files: {json.dumps(files)}
+          files: {json_files}
         }},
         document.getElementById("root")
       );
@@ -47,7 +52,11 @@ def build():
 
     with open('public/index.html', 'w', encoding='utf-8') as f:
         f.write(html)
-    print("Vercel build complete! public/index.html generated.")
+    
+    with open('index.html', 'w', encoding='utf-8') as f:
+        f.write(html)
+        
+    print("Vercel build complete! index.html generated.")
 
 if __name__ == '__main__':
     import os
