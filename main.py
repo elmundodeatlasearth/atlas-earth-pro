@@ -258,7 +258,7 @@ elif meta_periodo == "Al Año": meta_usd_dia = meta_dolar / 365.0
 # 1. META CALCULADA
 meta_parc, meta_renta = motor.calcular_meta_automatica(meta_usd_dia, pais, TIERS, horas_srb_mes)
 faltan_meta = max(0, meta_parc - total_parcelas)
-costo_meta_ab = faltan_meta * 100
+costo_meta_ab = max(0, (faltan_meta * 100) - ab_manuales)
 parc_com_meta = int(faltan_meta * 0.50)
 parc_rar_meta = int(faltan_meta * 0.30)
 parc_epi_meta = int(faltan_meta * 0.15)
@@ -487,8 +487,8 @@ try:
     
     # Inyecciones de Tier
     html = html.replace('SALTO_TIER_MULTx', f'{mult_tier}x')
-    html = html.replace('FALTAN_TIER', f'{faltan_escalera}')
-    html = html.replace('COSTO_TIER_AB', f'{(faltan_escalera * 100):,}')
+    html = html.replace('FALTAN_TIER', f'{parcelas_comprar}')
+    html = html.replace('COSTO_TIER_AB', f'{faltan_netos_ab:,}')
     
     tasa = l.obtener_tasa_cambio(moneda)
     renta_local_texto = f'≈ ${(meta_renta * tasa):.2f} {moneda}' if moneda != 'USD' else ''
@@ -502,7 +502,9 @@ try:
     html = html.replace('PARC_EPI_META', f'{int(faltan_meta * 0.15)}')
     html = html.replace('PARC_LEG_META', f'{int(faltan_meta * 0.05)}')
     
-    costo_tienda = (faltan_meta / 24) * 99.99
+    html = html.replace('AB_META_COSTO', f'{costo_meta_ab:,}')
+    
+    costo_tienda = (costo_meta_ab / 2400) * 99.99
     html = html.replace('COSTO_TIENDA_META', f'{costo_tienda:,.2f}')
     html = html.replace('COSTO_TIENDA_GLOBAL', f'${costo_tienda:,.2f} USD')
     costo_local_texto = f'≈ ${(costo_tienda * tasa):,.2f} {moneda}' if moneda != 'USD' else ''
@@ -566,11 +568,11 @@ try:
     html = html.replace('ROI_MARGINAL_SUBTEXT', subtext)
     html = html.replace('ROI_MARGINAL_DESC', desc)
     
-    dias_f2p = motor.dias_para_meta(faltan_meta * 100, ab_por_dia)
+    dias_f2p = costo_meta_ab / ab_por_dia if ab_por_dia > 0 else 0
     html = html.replace('DIAS_FREE_META', f'{dias_f2p:,.1f}')
     html = html.replace('AB_DIARIOS', f'{ab_por_dia:.1f}')
     
-    html = html.replace('TIEMPO_EC_META', f'{motor.formato_tiempo(faltan_meta * 100, desglose_ec["promedio_diario"])}')
+    html = html.replace('TIEMPO_EC_META', f'{motor.formato_tiempo(costo_meta_ab, desglose_ec["promedio_diario"])}')
     html = html.replace('DIAS_EC_META', f'{dias_ec:,.1f}')
     html = html.replace('AB_EC_DIARIOS', f'{desglose_ec["promedio_diario"]:.1f}')
     html = html.replace('AHORRO_EC_DIAS', f'{(dias_f2p - dias_ec):,.1f}')
