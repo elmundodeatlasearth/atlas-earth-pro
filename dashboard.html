@@ -638,16 +638,18 @@
             document.getElementById('estrategia-view').style.display = 'none';
             document.getElementById(viewId).style.display = 'block';
             
-            document.getElementById('btn-dashboard').className = "text-sm font-semibold text-gray-400 hover:text-cyan transition-colors";
-            document.getElementById('btn-proyecciones').className = "text-sm font-semibold text-gray-400 hover:text-cyan transition-colors";
-            document.getElementById('btn-estrategia').className = "text-sm font-semibold text-gray-400 hover:text-cyan transition-colors";
+            const baseClass = "text-sm font-semibold px-2 py-1 rounded-md bg-gray-800/50 transition-colors ";
+            
+            document.getElementById('btn-dashboard').className = baseClass + "text-gray-400 hover:text-cyan";
+            document.getElementById('btn-proyecciones').className = baseClass + "text-gray-400 hover:text-cyan";
+            document.getElementById('btn-estrategia').className = baseClass + "text-gray-400 hover:text-cyan";
             
             if(viewId === 'dashboard-view') {
-                document.getElementById('btn-dashboard').className = "text-sm font-semibold text-cyan";
+                document.getElementById('btn-dashboard').className = baseClass + "text-cyan";
             } else if(viewId === 'proyecciones-view') {
-                document.getElementById('btn-proyecciones').className = "text-sm font-semibold text-cyan";
+                document.getElementById('btn-proyecciones').className = baseClass + "text-cyan";
             } else {
-                document.getElementById('btn-estrategia').className = "text-sm font-semibold text-cyan";
+                document.getElementById('btn-estrategia').className = baseClass + "text-cyan";
             }
         }
     </script>
