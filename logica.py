@@ -253,7 +253,8 @@ def optimizador_explorer_club(dia_actual):
     for inicio in range(1, 91):
         resultados.append(calcular_ventana(inicio))
     
-    resultados.sort(key=lambda x: x["neto_ab"], reverse=True)
+    # En caso de empate en neto_ab, priorizar el dia_inicio más alto (Ej. Día 90 sobre Día 75)
+    resultados.sort(key=lambda x: (x["neto_ab"], x["dia_inicio"]), reverse=True)
     optimo = resultados[0]
             
     return {
