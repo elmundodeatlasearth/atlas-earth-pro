@@ -1,5 +1,4 @@
 import json
-import base64
 
 def build():
     with open('main.py', 'r', encoding='utf-8') as f:
@@ -10,22 +9,12 @@ def build():
         dashboard_html = f.read()
     with open('perfil_atlas.json', 'r', encoding='utf-8') as f:
         perfil_json = f.read()
-        
-    # Agregamos la configuración de tema oscuro nativo de Streamlit
-    config_toml = """[theme]
-base="dark"
-primaryColor="#4ade80"
-backgroundColor="#0a0a0a"
-secondaryBackgroundColor="#1f1f1f"
-textColor="#ffffff"
-"""
 
     files = {
         "main.py": main_py,
         "logica.py": logica_py,
         "dashboard.html": dashboard_html,
-        "perfil_atlas.json": perfil_json,
-        ".streamlit/config.toml": config_toml
+        "perfil_atlas.json": perfil_json
     }
 
     # Serializamos a JSON
@@ -52,7 +41,14 @@ textColor="#ffffff"
         {{
           requirements: [],
           entrypoint: "main.py",
-          files: {json_files}
+          files: {json_files},
+          streamlitConfig: {{
+            "theme.base": "dark",
+            "theme.primaryColor": "#4ade80",
+            "theme.backgroundColor": "#0a0a0a",
+            "theme.secondaryBackgroundColor": "#1f1f1f",
+            "theme.textColor": "#ffffff"
+          }}
         }},
         document.getElementById("root")
       );
@@ -63,7 +59,7 @@ textColor="#ffffff"
     with open('index.html', 'w', encoding='utf-8') as f:
         f.write(html)
         
-    print("Build complete! index.html generated with Dark Mode.")
+    print("Build complete! index.html generated with Dark Mode via streamlitConfig.")
 
 if __name__ == '__main__':
     build()
