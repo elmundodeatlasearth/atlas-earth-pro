@@ -93,15 +93,15 @@
 
 
     <header class="w-full top-0 sticky z-50 bg-neutral-900/40 backdrop-blur-md border-b border-white/10">
-        <div class="flex items-center justify-between px-6 py-2 w-full max-w-7xl mx-auto h-16">
-            <div class="flex items-center gap-4">
+        <div class="flex flex-col sm:flex-row items-center justify-between px-6 py-4 w-full max-w-7xl mx-auto min-h-[4rem] gap-4">
+            <div class="flex items-center gap-4 w-full sm:w-auto justify-center sm:justify-start">
                 <img src="Logo Oficial.jpeg" alt="Logo" style="height: 40px; width: auto; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 221, 221, 0.5);">
                 <h1 class="text-xl font-bold tracking-tighter text-cyan">Calculadora Atlas Earth</h1>
             </div>
-            <div class="hidden md:flex items-center gap-6">
-                <button id="btn-dashboard" onclick="showView('dashboard-view')" class="text-sm font-semibold text-cyan">DASHBOARD</button>
-                <button id="btn-proyecciones" onclick="showView('proyecciones-view')" class="text-sm font-semibold text-gray-400 hover:text-cyan transition-colors">PROYECCIONES</button>
-                <button id="btn-estrategia" onclick="showView('estrategia-view')" class="text-sm font-semibold text-gray-400 hover:text-cyan transition-colors">ESTRATEGIA</button>
+            <div class="flex items-center gap-4 flex-wrap mt-2 sm:mt-0 justify-center w-full sm:w-auto overflow-x-auto pb-1">
+                <button id="btn-dashboard" onclick="showView('dashboard-view')" class="text-sm font-semibold text-cyan px-2 py-1 rounded-md bg-gray-800/50">DASHBOARD</button>
+                <button id="btn-proyecciones" onclick="showView('proyecciones-view')" class="text-sm font-semibold text-gray-400 hover:text-cyan transition-colors px-2 py-1 rounded-md bg-gray-800/50">PROYECCIONES</button>
+                <button id="btn-estrategia" onclick="showView('estrategia-view')" class="text-sm font-semibold text-gray-400 hover:text-cyan transition-colors px-2 py-1 rounded-md bg-gray-800/50">ESTRATEGIA</button>
             </div>
         </div>
     </header>
@@ -245,7 +245,11 @@
                 <div class="w-full bg-black/50 rounded-full h-1.5 mb-1 mt-2 border border-white/5 overflow-hidden">
                     <div class="bg-gradient-to-r from-orange-600 to-orange-400 h-1.5 rounded-full" style="width: PROGRESO_META_PORCENTAJE%"></div>
                 </div>
-                <div class="text-right text-[10px] text-gray-500 mb-6">PROGRESO_META_PORCENTAJE% hacia la meta ($META_USD_DIARIA/día)</div>
+                <div class="text-right text-[10px] text-gray-500 mb-2">PROGRESO_META_PORCENTAJE% hacia la meta ($META_USD_DIARIA/día)</div>
+                
+                <div class="bg-cyan/10 border border-cyan/20 p-2 rounded text-xs text-cyan font-semibold text-center mb-6">
+                    META_PARCELAS_UI
+                </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                     <div class="border-r border-white/10 pr-6">

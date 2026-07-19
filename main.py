@@ -34,6 +34,9 @@ fondo_html = f"""
         #video-fondo-absoluto {{
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: -999; opacity: 0.40;
         }}
+        @media (max-width: 768px) {{
+            #video-fondo-absoluto {{ display: none !important; }}
+        }}
         .block-container {{ padding: 0rem !important; max-width: 100% !important; }}
         iframe {{ border: none !important; width: 100% !important; background: transparent !important; }}
         #MainMenu, footer {{ visibility: hidden; }}
@@ -175,9 +178,10 @@ hora_inicio = st.sidebar.time_input("Hora de inicio (Anuncios)", value=datetime.
 hora_fin = st.sidebar.time_input("Hora de fin (Anuncios)", value=datetime.time(22, 0))
 eficiencia_anuncios = st.sidebar.slider("Eficiencia Anuncios (%)", 10, 100, perfil_guardado.get("eficiencia_anuncios", 90), help="Qué tan constante eres viendo anuncios en tu periodo activo")
 
-st.sidebar.subheader("🎯 Definir Meta de Renta")
-meta_dolar = st.sidebar.number_input("Meta de Renta (USD)", value=perfil_guardado.get("meta_dolar", 1.00))
-meta_periodo = st.sidebar.selectbox("Periodo de Meta", ["Al Día", "Al Mes", "Al Año"], index=["Al Día", "Al Mes", "Al Año"].index(perfil_guardado.get("meta_periodo", "Al Día")))
+st.sidebar.subheader("🎯 Definir Metas (Progreso)")
+meta_dolar = st.sidebar.number_input("Meta de Renta (USD)", value=perfil_guardado.get("meta_dolar", 1.00), step=0.01)
+meta_periodo = st.sidebar.selectbox("Periodo de Meta de Renta", ["Al Día", "Al Mes", "Al Año"], index=["Al Día", "Al Mes", "Al Año"].index(perfil_guardado.get("meta_periodo", "Al Día")))
+meta_parcelas = st.sidebar.number_input("Meta de Parcelas (Opcional)", min_value=0, value=perfil_guardado.get("meta_parcelas", 150), step=1, help="Meta para cuentas nuevas: calcula tiempo/costo para llegar a X parcelas.")
 
 if st.sidebar.button("💾 Guardar Perfil", use_container_width=True):
     perfil_nuevo = {
@@ -185,7 +189,7 @@ if st.sidebar.button("💾 Guardar Perfil", use_container_width=True):
         "horas_boost": horas_boost, "eficiencia": eficiencia, "horas_srb_mes": horas_srb_mes,
         "c_comun": c_comun, "c_rara": c_rara, "c_epica": c_epica, "c_legendaria": c_legendaria,
         "insignias": insignias, "ab_manuales": ab_manuales, "eficiencia_anuncios": eficiencia_anuncios,
-        "meta_dolar": meta_dolar, "meta_periodo": meta_periodo, "dia_asistencia": dia_asistencia,
+        "meta_dolar": meta_dolar, "meta_periodo": meta_periodo, "meta_parcelas": meta_parcelas, "dia_asistencia": dia_asistencia,
         "modo_pro": modo_pro
     }
     pm.guardar_perfil(st.session_state.perfil_activo, perfil_nuevo)
@@ -423,6 +427,10 @@ try:
     html = html.replace('$12.45', f'${renta_diaria_usd * 30:.2f} USD')
     html = html.replace('150x', f'{mult_tier}x')
     
+    # Título dinámico
+    titulo_html = "Tablero de Estrategia PRO" if modo_pro else "Tablero de Estrategia BÁSICA (Free)"
+    html = html.replace('TITULO_TABLERO_ESTRATEGIA', titulo_html)
+    
     # Bono Pasaporte dinámico
     pasaporte_bonus = 1 + (nivel_pasaporte * 0.05)
     html = html.replace('BONO_PASAPORTE_PORCENTAJE', f'{(pasaporte_bonus - 1) * 100:.0f}%')
@@ -458,10 +466,19 @@ try:
     html = html.replace('TOTAL_PARCELAS_ACTUALES', f'{total_parcelas}')
     html = html.replace('TOTAL_AB_ACTUALES', f'{(total_parcelas * 100):,}')
     html = html.replace('TOTAL_AB_OBJETIVO', f'{(meta_parc * 100):,}')
-    
     html = html.replace('FALTAN_PARCELAS_META', f'{faltan_meta}')
     html = html.replace('PARCELAS_OBJETIVO', f'{meta_parc}')
     html = html.replace('TARGET_PARCELAS', f'{meta_parc}')
+    
+    # Meta de Parcelas Directa (Cuentas nuevas)
+    if meta_parcelas > total_parcelas:
+        faltan_meta_p = meta_parcelas - total_parcelas
+        ab_necesarios_p = (faltan_meta_p * 100) - ab_manuales
+        if ab_necesarios_p < 0: ab_necesarios_p = 0
+        dias_meta_p = int(ab_necesarios_p / max(1, desglose_f2p['promedio_diario'])) if not modo_pro else int(ab_necesarios_p / max(1, desglose_ec['promedio_diario']))
+        html = html.replace('META_PARCELAS_UI', f"Tu objetivo secundario: Llegar a {meta_parcelas} parcelas. Faltan {faltan_meta_p} parcelas ({ab_necesarios_p:,} AB). Tardarás aprox {dias_meta_p} días.")
+    else:
+        html = html.replace('META_PARCELAS_UI', f"¡Felicidades! Ya superaste tu meta de {meta_parcelas} parcelas.")
     
     # Inyecciones de Tier
     html = html.replace('SALTO_TIER_MULTx', f'{mult_tier}x')
@@ -688,7 +705,13 @@ try:
         html = html.replace('PAS_IMPACTO_DIARIO', f'+$0.00 USD')
         
     # Acción Táctica Inmediata
-    if ab_manuales >= faltan_netos_ab and faltan_netos_ab > 0:
+    if total_parcelas < 40:
+        accion = "<div class='text-green-400 font-bold text-lg mb-1'>¡CRECIMIENTO INICIAL! 🌱</div>"
+        if ab_manuales >= 100:
+            accion += f"<div class='text-white text-sm'>Tienes {ab_manuales:,} AB ahorrados. Te alcanza para comprar {ab_manuales//100} parcelas nuevas.<br><span class='text-gold font-bold'>Recomendación: Compra parcelas de inmediato. No ahorres para insignias hasta llegar a las 40 parcelas.</span></div>"
+        else:
+            accion += f"<div class='text-white text-sm'>Tu cuenta está en fase de crecimiento temprano. El objetivo matemático es llegar a 40 parcelas antes de comprar tu primer pasaporte. Te faltan {100 - ab_manuales} AB para tu próxima parcela.<br><span class='text-gold font-bold'>Recomendación: Farmea anuncios de 2 AB para comprar tu siguiente parcela.</span></div>"
+    elif ab_manuales >= faltan_netos_ab and faltan_netos_ab > 0:
         accion = "<div class='text-green-400 font-bold text-lg mb-1'>¡SALTO DE TIER DISPONIBLE! 🚀</div>"
         accion += f"<div class='text-white text-sm'>Tienes {ab_manuales:,} AB ahorrados. Te alcanza para saltar al Tier de {siguiente_tramo} parcelas. <br><span class='text-gold'>Recomendación: Compra las {faltan_escalera} parcelas HOY mismo.</span></div>"
     elif ab_manuales >= costo_ab_pasaporte and aumento_pasaporte > aumento_parcelas and nivel_actual_pasaporte < 5:
