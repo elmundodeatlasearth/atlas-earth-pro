@@ -423,8 +423,11 @@ try:
     html = html.replace('$12.45', f'${renta_diaria_usd * 30:.2f} USD')
     html = html.replace('150x', f'{mult_tier}x')
     
+    # Bono Pasaporte dinámico
     pasaporte_bonus = 1 + (nivel_pasaporte * 0.05)
-    html = html.replace('5%', f'{(pasaporte_bonus - 1) * 100:.0f}%')
+    html = html.replace('BONO_PASAPORTE_PORCENTAJE', f'{(pasaporte_bonus - 1) * 100:.0f}%')
+    html = html.replace('BADGES_COLECCIONADOS', f'{insignias}')
+    
     html = html.replace('AB PROYECTADOS: 500', f'AB PROYECTADOS: {ab_totales_proyectados}')
     
     html = html.replace('>150<', f'>{total_parcelas}<')
