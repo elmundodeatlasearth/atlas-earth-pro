@@ -1,4 +1,5 @@
 import json
+import base64
 
 def build():
     with open('main.py', 'r', encoding='utf-8') as f:
@@ -9,17 +10,26 @@ def build():
         dashboard_html = f.read()
     with open('perfil_atlas.json', 'r', encoding='utf-8') as f:
         perfil_json = f.read()
+        
+    # Agregamos la configuración de tema oscuro nativo de Streamlit
+    config_toml = """[theme]
+base="dark"
+primaryColor="#4ade80"
+backgroundColor="#0a0a0a"
+secondaryBackgroundColor="#1f1f1f"
+textColor="#ffffff"
+"""
 
     files = {
         "main.py": main_py,
         "logica.py": logica_py,
         "dashboard.html": dashboard_html,
-        "perfil_atlas.json": perfil_json
+        "perfil_atlas.json": perfil_json,
+        ".streamlit/config.toml": config_toml
     }
 
     # Serializamos a JSON
     json_files = json.dumps(files)
-    # CRÍTICO: Escapar los tags </script> para que no rompan el script de stlite en el index.html
     json_files = json_files.replace("</script>", "<\\/script>")
 
     html = f"""<!DOCTYPE html>
@@ -28,10 +38,10 @@ def build():
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
-    <title>Atlas Earth - Vercel Edition</title>
+    <title>Atlas Earth - PRO</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@stlite/mountable@0.49.1/build/stlite.css" />
     <style>
-      body {{ background-color: #0e1117; color: white; }}
+      body {{ background-color: #0a0a0a; color: white; }}
     </style>
   </head>
   <body>
@@ -50,16 +60,10 @@ def build():
   </body>
 </html>"""
 
-    with open('public/index.html', 'w', encoding='utf-8') as f:
-        f.write(html)
-    
     with open('index.html', 'w', encoding='utf-8') as f:
         f.write(html)
         
-    print("Vercel build complete! index.html generated.")
+    print("Build complete! index.html generated with Dark Mode.")
 
 if __name__ == '__main__':
-    import os
-    if not os.path.exists('public'):
-        os.makedirs('public')
     build()

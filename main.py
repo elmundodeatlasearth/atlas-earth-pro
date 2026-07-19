@@ -26,7 +26,6 @@ def obtener_base64(ruta_archivo):
     return ""
 
 # --- HACK: VIDEO DE FONDO ---
-video_b64 = obtener_base64("Fondo Bucle.mp4")
 fondo_html = f"""
     <style>
         .stApp, [data-testid="stAppViewContainer"], [data-testid="stSidebar"], [data-testid="stSidebarContent"], [data-testid="stHeader"] {{
@@ -43,7 +42,7 @@ fondo_html = f"""
         div[data-baseweb="select"] > div {{ background-color: rgba(31, 31, 31, 0.6) !important; color: white !important; }}
     </style>
     <video id="video-fondo-absoluto" autoplay loop muted playsinline>
-        <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
+        <source src="Fondo%20Bucle.mp4" type="video/mp4">
     </video>
 """
 st.markdown(fondo_html, unsafe_allow_html=True)
