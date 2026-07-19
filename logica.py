@@ -68,12 +68,12 @@ def obtener_tasa_cambio(moneda_destino="MXN"):
         return float(precio_actual)
     except:
         # Fallbacks (actualizados aprox)
-        fallbacks = {"MXN": 19.5, "CAD": 1.35, "GBP": 0.78, "AUD": 1.50, "NZD": 1.65, "ZAR": 18.5, "EUR": 0.92, "BRL": 5.4}
+        fallbacks = {"MXN": 17.54, "CAD": 1.35, "GBP": 0.78, "AUD": 1.50, "NZD": 1.65, "ZAR": 18.5, "EUR": 0.92, "BRL": 5.4}
         return fallbacks.get(moneda_destino, 1.0)
 
 def obtener_tasas_divisas():
     """Devuelve un diccionario con las tasas de cambio base para el Dashboard JS."""
-    fallbacks = {"USD": 1.0, "MXN": 19.5, "CAD": 1.35, "GBP": 0.78, "AUD": 1.50, "NZD": 1.65, "ZAR": 18.5, "EUR": 0.92, "BRL": 5.4}
+    fallbacks = {"USD": 1.0, "MXN": 17.54, "CAD": 1.35, "GBP": 0.78, "AUD": 1.50, "NZD": 1.65, "ZAR": 18.5, "EUR": 0.92, "BRL": 5.4}
     try:
         # Podríamos hacer fetch múltiple, pero para UI fluida JS enviamos la base y la tasa actual.
         import yfinance as yf
