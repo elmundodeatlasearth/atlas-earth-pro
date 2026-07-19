@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.agents/
+.claude/
+atlas-web/node_modules/
+.env

@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html class="dark" lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Calculadora Atlas Earth - Dashboard Holográfico</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "surface-container": "rgba(31, 31, 31, 0.4)",
+                "inverse-on-surface": "#303030",
+                "surface": "rgba(19, 19, 19, 0.3)",
+                "surface-bright": "rgba(57, 57, 57, 0.4)",
+                "tertiary": "#ffffff",
+                "inverse-primary": "#006a6a",
+                "surface-tint": "#00dddd",
+                "primary-fixed-dim": "#00dddd",
+                "surface-container-high": "rgba(42, 42, 42, 0.4)",
+                "on-surface": "#e2e2e2",
+                "inverse-surface": "#e2e2e2",
+                "on-primary": "#003737",
+                "background": "transparent",
+                "on-tertiary-fixed-variant": "#484646",
+                "surface-dim": "rgba(19, 19, 19, 0.3)",
+                "tertiary-container": "#e6e1e1",
+                "primary-container": "#00fbfb",
+                "on-error": "#690005",
+                "surface-container-lowest": "rgba(14, 14, 14, 0.3)",
+                "on-background": "#e2e2e2",
+                "on-tertiary": "#313030",
+                "error-container": "#93000a",
+                "tertiary-fixed-dim": "#c9c6c5",
+                "outline": "#839493",
+                "on-error-container": "#ffdad6",
+                "on-tertiary-fixed": "#1c1b1b",
+                "secondary-container": "#af8d11",
+                "primary": "#ffffff",
+                "secondary-fixed": "#ffe088",
+                "surface-container-low": "rgba(27, 27, 27, 0.4)",
+                "secondary-fixed-dim": "#e9c349",
+                "on-secondary-fixed": "#241a00",
+                "secondary": "#e9c349",
+                "on-secondary-container": "#342800",
+                "error": "#ffb4ab",
+                "on-secondary": "#3c2f00",
+                "surface-container-highest": "rgba(53, 53, 53, 0.4)",
+                "primary-fixed": "#00fbfb",
+                "on-primary-fixed": "#002020",
+                "on-primary-container": "#007070",
+                "on-tertiary-container": "#666464",
+                "on-surface-variant": "#b9cac9",
+                "on-secondary-fixed-variant": "#574500",
+                "on-primary-fixed-variant": "#004f4f",
+                "outline-variant": "#3a4a49",
+                "surface-variant": "rgba(53, 53, 53, 0.3)",
+                "tertiary-fixed": "#e6e1e1"
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+        body {
+            background-color: transparent !important;
+            color: #e2e2e2;
+            font-family: 'Inter', sans-serif;
+        }
+        .holographic-card {
+            background-color: rgba(28, 27, 27, 0.5) !important;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .holographic-card:hover {
+            box-shadow: 0 0 15px 0 rgba(0, 221, 221, 0.25);
+            border-color: rgba(0, 221, 221, 0.4);
+        }
+        .text-gold { color: #e9c349; }
+        .text-cyan { color: #00dddd; }
+        #currencySelector option {
+            background-color: #1a1a1a;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body class="min-h-screen overflow-x-hidden bg-transparent">
+
+
+    <header class="w-full top-0 sticky z-50 bg-neutral-900/40 backdrop-blur-md border-b border-white/10">
+        <div class="flex items-center justify-between px-6 py-2 w-full max-w-7xl mx-auto h-16">
+            <div class="flex items-center gap-4">
+                <img src="Logo Oficial.jpeg" alt="Logo" style="height: 40px; width: auto; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 221, 221, 0.5);">
+                <h1 class="text-xl font-bold tracking-tighter text-cyan">Calculadora Atlas Earth</h1>
+            </div>
+            <div class="hidden md:flex items-center gap-6">
+                <button id="btn-dashboard" onclick="showView('dashboard-view')" class="text-sm font-semibold text-cyan">DASHBOARD</button>
+                <button id="btn-proyecciones" onclick="showView('proyecciones-view')" class="text-sm font-semibold text-gray-400 hover:text-cyan transition-colors">PROYECCIONES</button>
+                <button id="btn-estrategia" onclick="showView('estrategia-view')" class="text-sm font-semibold text-gray-400 hover:text-cyan transition-colors">ESTRATEGIA</button>
+            </div>
+        </div>
+    </header>
+
+    <main id="dashboard-view" class="max-w-7xl mx-auto px-4 py-6 space-y-6 relative z-10 block">
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="holographic-card p-6 rounded-xl flex flex-col justify-between min-h-[140px]">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-gray-400">ESTIMADO 30 DÍAS</span>
+                    <span class="material-symbols-outlined text-gold">payments</span>
+                </div>
+                <div class="mt-2">
+                    <div class="text-2xl font-bold text-gold">$12.45</div>
+                    <div class="text-[10px] text-cyan mt-1 font-bold" id="loc-est-mes" style="display: none;"></div>
+                    <div class="text-[10px] text-gray-400 mt-1">ACUMULACIÓN ESTIMADA</div>
+                </div>
+            </div>
+            
+            <div class="holographic-card p-6 rounded-xl flex flex-col justify-between min-h-[140px]">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-gray-400">RENTA DIARIA</span>
+                    <span class="material-symbols-outlined text-gold">trending_up</span>
+                </div>
+                <div class="mt-2">
+                    <div class="text-2xl font-bold text-gold">$0.415</div>
+                    <div class="text-[10px] text-cyan mt-1 font-bold" id="loc-dia" style="display: none;"></div>
+                    <div class="text-[10px] text-gray-400 mt-1">CÁLCULO POR DÍA</div>
+                </div>
+            </div>
+
+            <div class="holographic-card p-6 rounded-xl flex flex-col justify-between min-h-[140px]">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-gray-400 cursor-help" title="El multiplicador actual que obtienes al ver un anuncio (Boost).">MULTIPLICADOR BOOST</span>
+                    <span class="material-symbols-outlined text-cyan cursor-help" title="El multiplicador de tus ganancias por ver publicidad">rocket_launch</span>
+                </div>
+                <div class="mt-2">
+                    <div class="text-2xl font-bold text-cyan">150x</div>
+                    <div class="text-[10px] text-gray-400 mt-1">SEGÚN TU TIER ACTUAL</div>
+                </div>
+            </div>
+
+            <div class="holographic-card p-6 rounded-xl flex flex-col justify-between min-h-[140px]">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-gray-400 cursor-help" title="El bono permanente a toda tu renta por coleccionar insignias.">BONO PASAPORTE</span>
+                    <span class="material-symbols-outlined text-cyan cursor-help" title="Bono base según tu Nivel de Pasaporte">verified</span>
+                </div>
+                <div class="mt-2">
+                    <div class="text-2xl font-bold text-cyan">5%</div>
+                    <div class="text-[10px] text-gray-400 mt-1 uppercase">11 BADGES COLLECTED</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="holographic-card p-6 rounded-xl lg:col-span-1 flex flex-col">
+                <h3 class="text-lg font-bold text-cyan mb-4 flex items-center gap-2">
+                    <span class="material-symbols-outlined">pie_chart</span> Distribución de Tierras
+                </h3>
+                <div class="flex-grow flex items-center justify-center relative py-4">
+                    <svg class="w-40 h-40 transform -rotate-90" viewbox="0 0 36 36">
+                        <path class="text-neutral-800/60" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="100, 100" stroke-width="3"></path>
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span class="text-3xl font-bold text-white">150</span>
+                        <span class="text-[10px] text-gray-400">PARCELAS TOTALES</span>
+                    </div>
+                </div>
+                <div class="mt-4 space-y-2">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-cyan"></span> Común</span>
+                        <span class="font-bold text-gray-200">75 (50%)</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-white"></span> Rara</span>
+                        <span class="font-bold text-gray-200">45 (30%)</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-gold"></span> Épica</span>
+                        <span class="font-bold text-gray-200">22 (15%)</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-teal-400"></span> Legendaria</span>
+                        <span class="font-bold text-gray-200">8 (5%)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="holographic-card p-6 rounded-xl lg:col-span-2 flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-cyan flex items-center gap-2">
+                        <span class="material-symbols-outlined">show_chart</span> Estimaciones Futuras (USD)
+                    </h3>
+                    <input type="hidden" id="currencySelector" value="MONEDA_INYECCION_JS">
+                </div>
+                
+                <div class="grid grid-cols-3 gap-4 my-auto">
+                    <div class="p-4 bg-black/40 rounded-lg border border-white/5">
+                        <div class="text-[10px] text-gray-400 mb-1">PROMEDIO SEMANAL</div>
+                        <div class="text-xl font-bold text-gold" id="usd-sem">$VAL_SEM_USD</div>
+                        <div class="text-xs text-cyan mt-1 font-bold tracking-wide" id="loc-sem" style="display: none;"></div>
+                    </div>
+                    <div class="p-4 bg-black/40 rounded-lg border border-white/5">
+                        <div class="text-[10px] text-gray-400 mb-1">PROMEDIO MENSUAL</div>
+                        <div class="text-xl font-bold text-gold" id="usd-men">$VAL_MEN_USD</div>
+                        <div class="text-xs text-cyan mt-1 font-bold tracking-wide" id="loc-men" style="display: none;"></div>
+                    </div>
+                    <div class="p-4 bg-black/40 rounded-lg border border-white/5">
+                        <div class="text-[10px] text-gray-400 mb-1">PROMEDIO ANUAL</div>
+                        <div class="text-xl font-bold text-gold" id="usd-anu">$VAL_ANU_USD</div>
+                        <div class="text-xs text-cyan mt-1 font-bold tracking-wide" id="loc-anu" style="display: none;"></div>
+                    </div>
+                </div>
+                <div class="mt-6 p-4 bg-cyan/5 rounded-lg border border-cyan/20">
+                    <p class="text-xs text-gray-300 leading-relaxed">
+                        💡 <strong>Nota del Desarrollador:</strong> Los cálculos consideran las tasas de renta oficiales por segundo. Usa el selector superior para ver el cambio inmediato a tu moneda local.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- VISTA 1.5: PROYECCIONES -->
+    <main id="proyecciones-view" class="max-w-7xl mx-auto px-4 py-6 space-y-6 relative z-10" style="display: none;">
+        <div class="animate-fade-in grid grid-cols-1 gap-6 max-w-6xl mx-auto pb-10">
+            <!-- SECCIÓN 1: META FINANCIERA (F2P VS EC) -->
+            <div class="holographic-card p-6 rounded-xl border-l-4 border-l-orange-500">
+                <h3 class="text-sm font-bold text-orange-400 mb-2 flex items-center gap-2">
+                    <span class="material-symbols-outlined">track_changes</span> META CALCULADA (AUTOMÁTICA)
+                </h3>
+                <div class="bg-orange-500 text-white font-black p-2 rounded text-center uppercase tracking-widest mb-4 shadow-lg shadow-orange-500/20">
+                    🎯 META FINANCIERA ($META_USD_DIARIA / DÍA): FALTAN FALTAN_PARCELAS_META PARCELAS
+                </div>
+                
+                <div class="mb-4">
+                    <p class="text-xs text-gray-400 mb-1">Ingreso Diario Estimado del Portafolio Objetivo (TARGET_PARCELAS parcelas):</p>
+                    <div class="text-2xl font-bold text-gold mb-1 flex items-center gap-2"><span class="material-symbols-outlined">trending_up</span> $RENTA_OBJETIVO USD/Día</div>
+                    <div class="text-xs text-cyan mb-4 font-bold">RENTA_OBJETIVO_LOCAL</div>
+                </div>
+                
+                <!-- Barra de Progreso de Meta -->
+                <div class="w-full bg-black/50 rounded-full h-1.5 mb-1 mt-2 border border-white/5 overflow-hidden">
+                    <div class="bg-gradient-to-r from-orange-600 to-orange-400 h-1.5 rounded-full" style="width: PROGRESO_META_PORCENTAJE%"></div>
+                </div>
+                <div class="text-right text-[10px] text-gray-500 mb-6">PROGRESO_META_PORCENTAJE% hacia la meta ($META_USD_DIARIA/día)</div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                    <div class="border-r border-white/10 pr-6">
+                        <div class="text-[10px] text-gray-400 mb-2 font-bold uppercase tracking-wider text-center">Tus Próximas Metas</div>
+                        
+                        <!-- META DE TIER -->
+                        <div class="mb-3">
+                            <div class="text-[9px] text-cyan uppercase mb-1 font-bold flex justify-between">1. Mantener Multiplicador (SALTO_TIER_MULTx) <span class="material-symbols-outlined text-[12px] cursor-help" title="Parcelas exactas que debes comprar de golpe para no perder dinero al caer de Tier.">info</span></div>
+                            <div class="bg-black/30 p-1.5 rounded flex justify-between items-center border border-white/10 mb-1">
+                                <span class="text-[10px] text-gray-300">Tienes:</span>
+                                <span class="text-xs font-bold text-white">TOTAL_PARCELAS_ACTUALES Parc.</span>
+                            </div>
+                            <div class="bg-cyan/10 p-1.5 rounded flex justify-between items-center border border-cyan/30">
+                                <span class="text-[10px] text-cyan font-bold">Ahorrar:</span>
+                                <span class="text-xs font-bold text-cyan">FALTAN_TIER Parc. <span class="text-gold text-[10px]">(COSTO_TIER_AB AB)</span></span>
+                            </div>
+                        </div>
+
+                        <!-- META FINANCIERA -->
+                        <div>
+                            <div class="text-[9px] text-orange-400 uppercase mb-1 font-bold flex justify-between">2. Meta Principal ($META_USD_DIARIA/día) <span class="material-symbols-outlined text-[12px] cursor-help" title="Parcelas totales necesarias para alcanzar tu meta de dólares diarios.">flag</span></div>
+                            <div class="bg-orange-500/10 p-1.5 rounded mb-1 flex justify-between items-center border border-orange-500/30">
+                                <span class="text-[10px] text-orange-400 font-bold">Faltan:</span>
+                                <span class="text-xs font-bold text-orange-400">FALTAN_PARCELAS_META Parc. <span class="text-gold text-[10px]">(COSTO_RESTANTE_META AB)</span></span>
+                            </div>
+                            <div class="bg-black/30 p-1.5 rounded flex justify-between items-center border border-white/10">
+                                <span class="text-[10px] text-gray-300">Objetivo:</span>
+                                <span class="text-xs font-bold text-gray-300">PARCELAS_OBJETIVO Parc.</span>
+                            </div>
+                        </div>
+                        
+                        <div class="text-[9px] flex justify-center gap-2 mt-3 bg-black/40 p-1 rounded border border-white/5 cursor-help" title="Proyección probabilística de rarezas requeridas">
+                            <span class="text-green-400">● PARC_COM_META Com</span>
+                            <span class="text-blue-400">● PARC_RAR_META Rar</span>
+                            <span class="text-purple-400">● PARC_EPI_META Épi</span>
+                            <span class="text-orange-400">● PARC_LEG_META Leg</span>
+                        </div>
+                    </div>
+                    
+                    <div class="pr-6 md:border-r border-white/10 text-center mb-6 md:mb-0">
+                        <div class="text-[10px] text-gray-400 mb-2 font-bold uppercase tracking-wider">Proyección de Adquisición</div>
+                        <div class="text-xs text-gray-500 mb-1">EQUIVALENTE EN TIENDA</div>
+                        <div class="text-2xl font-bold text-cyan mb-1">COSTO_TIENDA_GLOBAL</div>
+                        <div class="text-[10px] text-cyan font-bold mb-2">COSTO_TIENDA_LOCAL</div>
+                        
+                        <div class="space-y-2 text-left w-full mt-4">
+                            <div class="bg-black/40 p-3 rounded-lg border border-white/10 relative shadow-sm">
+                                <div class="text-[10px] text-gray-400 mb-1 font-bold uppercase flex items-center justify-between">ROI Global (Retorno) <span class="material-symbols-outlined text-[12px] text-blue-400" title="Retorno de inversión usando toda tu renta combinada">public</span></div>
+                                <div class="text-white text-sm font-bold">ROI_GLOBAL_ANIOS</div>
+                                <div class="text-[9px] text-gray-400 leading-tight mt-1">Si gastaras los COSTO_TIENDA_GLOBAL hoy, este es el tiempo que tardarías en recuperar el dinero usando <strong>toda</strong> la renta de tu cuenta (ganancia vieja + nueva).</div>
+                            </div>
+                            <div class="ROI_MARGINAL_BG p-3 rounded-lg border ROI_MARGINAL_BORDER relative shadow-sm">
+                                <div class="text-[10px] ROI_MARGINAL_TEXT mb-1 font-bold uppercase flex items-center justify-between">ROI Marginal (Específico) <span class="material-symbols-outlined text-[12px]" title="Retorno de inversión usando solo la ganancia nueva">ROI_MARGINAL_ICON</span></div>
+                                <div class="text-white text-sm font-bold">ROI_MARGINAL_ANIOS</div>
+                                <div class="text-[9px] ROI_MARGINAL_SUBTEXT leading-tight mt-1">ROI_MARGINAL_DESC</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pl-6 text-center flex flex-col justify-center">
+                        <div class="text-[10px] text-gray-400 mb-4 font-bold uppercase tracking-wider">Tiempo Estimado de Llegada</div>
+                        
+                        <div class="bg-black/30 p-3 rounded border border-green-500/30 mb-3 relative text-left">
+                            <div class="text-green-400 text-[11px] font-bold uppercase flex items-center gap-1 mb-2 border-b border-green-500/20 pb-1 cursor-help" title="Jugar gratis sin invertir dinero real (Free To Play)"><span class="material-symbols-outlined text-[14px]">forest</span> Jugando Gratis (F2P)</div>
+                            <div class="flex justify-between items-center text-xs mb-1"><span class="text-gray-400 cursor-help" title="Cantidad de Atlas Bucks que recolectas al día viendo anuncios y girando la ruleta.">Velocidad de farmeo:</span> <span class="text-white font-bold">AB_DIARIOS AB/día</span></div>
+                            <div class="flex justify-between items-center text-xs mb-3"><span class="text-gray-400">Distancia a la meta:</span> <span class="text-green-400 font-bold">¡Faltan DIAS_FREE_META días de juego!</span></div>
+                            <div class="bg-green-950/40 p-2 rounded text-center border border-green-500/20">
+                                <div class="text-[10px] text-green-400 mb-0.5">ALCANZARÁS TU META EL</div>
+                                <div class="text-sm font-bold text-white">FECHA_F2P_META</div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-black/30 p-3 rounded border border-pink-500/30 relative text-left mt-2">
+                            <div class="absolute -top-3 -right-2 bg-pink-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow border border-pink-400">¡Te ahorras AHORRO_EC_DIAS días!</div>
+                            <div class="text-pink-400 text-[11px] font-bold uppercase flex items-center gap-1 mb-2 border-b border-pink-500/20 pb-1 cursor-help" title="Con una suscripción mensual activa de Explorer Club"><span class="material-symbols-outlined text-[14px]">star</span> Con Explorer Club</div>
+                            <div class="flex justify-between items-center text-xs mb-1"><span class="text-gray-400 cursor-help" title="Atlas Bucks recolectados al día sumando tus anuncios, ruleta y la recompensa diaria del Explorer Club (90 AB/día promedio).">Velocidad de farmeo:</span> <span class="text-white font-bold">AB_EC_DIARIOS AB/día</span></div>
+                            <div class="flex justify-between items-center text-xs mb-3"><span class="text-gray-400">Distancia a la meta:</span> <span class="text-pink-400 font-bold">¡Solo faltan DIAS_EC_META días!</span></div>
+                            <div class="bg-pink-950/40 p-2 rounded text-center border border-pink-500/20">
+                                <div class="text-[10px] text-pink-400 mb-0.5">ALCANZARÁS TU META EL</div>
+                                <div class="text-sm font-bold text-white">FECHA_EC_META</div>
+                            </div>
+                        </div>
+
+                        <div class="bg-black/30 p-3 rounded border border-purple-500/30 relative text-left mt-2 shadow-sm">
+                            <div class="text-purple-400 text-[11px] font-bold uppercase flex items-center gap-1 mb-2 border-b border-purple-500/20 pb-1 cursor-help" title="Autofinanciando el Explorer Club ($50/mes) con tus propias ganancias diarias de Atlas Earth."><span class="material-symbols-outlined text-[14px]">autorenew</span> Reinvirtiendo Ganancias</div>
+                            <div class="flex justify-between items-center text-[10px] mb-1"><span class="text-gray-400">Generar $50 USD toma:</span> <span class="text-purple-300 font-bold">DIAS_GENERAR_50 Días</span></div>
+                            <div class="flex justify-between items-center text-[10px] mb-2"><span class="text-gray-400 cursor-help" title="Velocidad real promediando los meses que eres F2P y los meses que tienes Explorer Club autofinanciado.">Velocidad Promedio:</span> <span class="text-white font-bold">AB_REINV_DIARIOS AB/día</span></div>
+                            <div class="bg-purple-950/30 p-1.5 rounded text-center border border-purple-500/20">
+                                <div class="text-[9px] text-purple-400 mb-0.5">META SIN DINERO REAL EN</div>
+                                <div class="text-xs font-bold text-white">¡Faltan DIAS_REINV_META días!</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SECCIÓN 2: OPTIMIZACIÓN DE TRAMOS -->
+            <div class="holographic-card p-6 rounded-xl border border-white/10 mt-6">
+            <h3 class="text-sm font-bold text-gold mb-4 uppercase">PLANIFICADOR DE ESCALERA</h3>
+            <h4 class="text-sm font-bold text-white mb-4">TRAMO DE BOOST & SALTO RECOMENDADO</h4>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div class="bg-black/50 p-4 rounded-lg border border-white/5 text-center">
+                    <div class="text-xs text-pink-400 font-bold mb-1 flex justify-center items-center gap-1"><span class="material-symbols-outlined text-sm">push_pin</span> TRAMO ACTUAL TERMINA EN</div>
+                    <div class="text-2xl font-bold text-white">TRAMO_ACTUAL parcelas</div>
+                </div>
+                <div class="bg-black/50 p-4 rounded-lg border border-cyan/20 text-center">
+                    <div class="text-xs text-cyan font-bold mb-1 flex justify-center items-center gap-1"><span class="material-symbols-outlined text-sm">rocket_launch</span> SIGUIENTE TRAMO OPTIMIZADO</div>
+                    <div class="text-2xl font-bold text-cyan">TRAMO_SIGUIENTE parcelas</div>
+                </div>
+            </div>
+            
+            <div class="bg-black/40 border border-gold/20 rounded-lg p-6 relative overflow-hidden">
+                <div class="text-center mb-4">
+                    <div class="text-xs text-gold font-bold flex justify-center items-center gap-1 mb-1"><span class="w-1.5 h-1.5 bg-gold transform rotate-45 inline-block"></span> SALTO RECOMENDADO</div>
+                    <div class="text-2xl font-bold text-white">Faltan: FALTAN_PARCELAS_ESCALERA parcelas</div>
+                </div>
+                
+                <div class="w-full bg-neutral-800 rounded-full h-1.5 mb-1 mt-2 border border-white/5 overflow-hidden">
+                    <div class="bg-gradient-to-r from-gold to-yellow-400 h-1.5 rounded-full" style="width: PORCENTAJE_ESCALERA%"></div>
+                </div>
+                <div class="text-right text-[10px] text-gray-500 mb-4">Progreso AB: PORCENTAJE_ESCALERA% (AB_MANUALES / AB_ESCALERA_TOTAL)</div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                    <div class="bg-black/30 p-3 rounded-lg border border-white/10 text-left">
+                        <div class="text-[10px] text-gray-400 mb-2 font-bold uppercase tracking-wider text-center">Balance de Escalera</div>
+                        <div class="bg-black/40 p-2 rounded mb-1.5 flex justify-between items-center border border-white/5">
+                            <span class="text-xs text-gray-300">Tienes (Parcelas):</span>
+                            <span class="text-sm font-bold text-white">TOTAL_PARCELAS_ACTUALES <span class="text-gray-500 text-[10px]">(TOTAL_AB_ACTUALES AB)</span></span>
+                        </div>
+                        <div class="bg-black/40 p-2 rounded mb-1.5 flex justify-between items-center border border-white/5">
+                            <span class="text-xs text-green-400">Tienes (AB Ahorrados):</span>
+                            <span class="text-sm font-bold text-green-400">AB_MANUALES AB <span class="text-gray-500 text-[10px]">(ALCANZA_PARCELAS Parc.)</span></span>
+                        </div>
+                        <div class="bg-cyan/10 p-2 rounded flex justify-between items-center border border-cyan/30 mt-3">
+                            <span class="text-xs text-cyan font-bold">Objetivo del Tramo:</span>
+                            <span class="text-sm font-bold text-cyan">TRAMO_SIGUIENTE Parc.</span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-black/30 p-3 rounded-lg border border-white/10 text-left flex flex-col justify-center relative">
+                        <div class="text-[10px] text-gray-400 mb-2 font-bold uppercase tracking-wider text-center">Faltante Neto (AB a Farmear)</div>
+                        <div class="bg-orange-500/10 p-3 rounded mb-2 text-center border border-orange-500/30">
+                            <div class="text-xs text-orange-400 mb-1">Aún debes comprar:</div>
+                            <div class="text-xl font-bold text-orange-400">PARCELAS_A_COMPRAR parcelas</div>
+                            <div class="text-xs text-gold mt-1 font-bold">(= FALTAN_NETOS_AB AB)</div>
+                        </div>
+                        <div class="bg-black/40 p-2 rounded text-center border border-white/5">
+                            <div class="text-[10px] text-gray-400 mb-1">Tiempo Estimado Farm Free</div>
+                            <div class="text-sm font-bold text-pink-400 flex items-center justify-center gap-1"><span class="material-symbols-outlined text-[14px]">timer</span> TIEMPO_ESCALERA</div>
+                        </div>
+                    </div>
+                </div>
+                
+                ALERTA_COLAPSO_HTML
+            </div>
+        </div>
+
+        <!-- MÓDULO 3: EXPLORER CLUB -->
+        <div class="holographic-card p-6 rounded-xl border border-white/10 mt-6 mb-8">
+            <h3 class="text-sm font-bold text-gold mb-2 text-center flex items-center justify-center gap-2"><span class="material-symbols-outlined">calendar_month</span> PROYECCIÓN DEL PASE EXPLORER (CICLO 90 DÍAS)</h3>
+            <p class="text-xs text-gray-400 text-center mb-6">¿En qué mes conviene comprar el pase? Comparativa día 1-30 vs 31-60 vs 61-90.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- MES 1 -->
+                <div class="border border-white/10 bg-black/40 rounded-xl p-4 text-center hover:border-cyan/50 transition-colors">
+                    <div class="text-xs text-gray-400 font-bold mb-2 uppercase tracking-widest">Escenario: Mes 1</div>
+                    <div class="text-[10px] text-cyan mb-4">Día MES1_INICIO al Día MES1_FIN</div>
+                    
+                    <div class="bg-black/60 p-2 rounded mb-2 flex justify-between items-center text-xs">
+                        <span class="text-gray-400">Total con Pase:</span>
+                        <span class="text-gold font-bold">MES1_AB_PASE AB</span>
+                    </div>
+                    <div class="bg-black/60 p-2 rounded mb-3 flex justify-between items-center text-xs">
+                        <span class="text-gray-400">Total Gratis:</span>
+                        <span class="text-gray-300 font-bold">MES1_AB_GRATIS AB</span>
+                    </div>
+                    
+                    <div class="text-[10px] text-gray-400 mb-1">BENEFICIO NETO DE MEMBRESÍA</div>
+                    <div class="text-lg font-bold text-green-400 mb-1">+MES1_NETO AB <span class="text-xs text-gray-500 font-normal">(= MES1_PARCELAS Parc.)</span></div>
+                    
+                    <div class="mt-4 pt-4 border-t border-white/5 text-center">
+                        <div class="text-[10px] text-gray-400 mb-1"><span class="material-symbols-outlined text-[12px] align-middle">calendar_month</span> FECHA EXACTA DE COMPRA</div>
+                        <div class="text-sm font-bold text-white">MES1_FECHA</div>
+                        <div class="text-xs text-orange-400 mt-1">⏳ Faltan MES1_ESPERA días</div>
+                    </div>
+                </div>
+                
+                <!-- MES 2 -->
+                <div class="border border-white/10 bg-black/40 rounded-xl p-4 text-center hover:border-cyan/50 transition-colors">
+                    <div class="text-xs text-gray-400 font-bold mb-2 uppercase tracking-widest">Escenario: Mes 2</div>
+                    <div class="text-[10px] text-cyan mb-4">Día MES2_INICIO al Día MES2_FIN</div>
+                    
+                    <div class="bg-black/60 p-2 rounded mb-2 flex justify-between items-center text-xs">
+                        <span class="text-gray-400">Total con Pase:</span>
+                        <span class="text-gold font-bold">MES2_AB_PASE AB</span>
+                    </div>
+                    <div class="bg-black/60 p-2 rounded mb-3 flex justify-between items-center text-xs">
+                        <span class="text-gray-400">Total Gratis:</span>
+                        <span class="text-gray-300 font-bold">MES2_AB_GRATIS AB</span>
+                    </div>
+                    
+                    <div class="text-[10px] text-gray-400 mb-1">BENEFICIO NETO DE MEMBRESÍA</div>
+                    <div class="text-lg font-bold text-green-400 mb-1">+MES2_NETO AB <span class="text-xs text-gray-500 font-normal">(= MES2_PARCELAS Parc.)</span></div>
+                    
+                    <div class="mt-4 pt-4 border-t border-white/5 text-center">
+                        <div class="text-[10px] text-gray-400 mb-1"><span class="material-symbols-outlined text-[12px] align-middle">calendar_month</span> FECHA EXACTA DE COMPRA</div>
+                        <div class="text-sm font-bold text-white">MES2_FECHA</div>
+                        <div class="text-xs text-orange-400 mt-1">⏳ Faltan MES2_ESPERA días</div>
+                    </div>
+                </div>
+                
+                <!-- MES 3 -->
+                <div class="border border-white/10 bg-black/40 rounded-xl p-4 text-center hover:border-cyan/50 transition-colors">
+                    <div class="text-xs text-gray-400 font-bold mb-2 uppercase tracking-widest">Escenario: Mes 3</div>
+                    <div class="text-[10px] text-cyan mb-4">Día MES3_INICIO al Día MES3_FIN</div>
+                    
+                    <div class="bg-black/60 p-2 rounded mb-2 flex justify-between items-center text-xs">
+                        <span class="text-gray-400">Total con Pase:</span>
+                        <span class="text-gold font-bold">MES3_AB_PASE AB</span>
+                    </div>
+                    <div class="bg-black/60 p-2 rounded mb-3 flex justify-between items-center text-xs">
+                        <span class="text-gray-400">Total Gratis:</span>
+                        <span class="text-gray-300 font-bold">MES3_AB_GRATIS AB</span>
+                    </div>
+                    
+                    <div class="text-[10px] text-gray-400 mb-1">BENEFICIO NETO DE MEMBRESÍA</div>
+                    <div class="text-lg font-bold text-green-400 mb-1">+MES3_NETO AB <span class="text-xs text-gray-500 font-normal">(= MES3_PARCELAS Parc.)</span></div>
+                    
+                    <div class="mt-4 pt-4 border-t border-white/5 text-center">
+                        <div class="text-[10px] text-gray-400 mb-1"><span class="material-symbols-outlined text-[12px] align-middle">calendar_month</span> FECHA EXACTA DE COMPRA</div>
+                        <div class="text-sm font-bold text-white">MES3_FECHA</div>
+                        <div class="text-xs text-orange-400 mt-1">⏳ Faltan MES3_ESPERA días</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- OPTIMO -->
+            <div class="mt-6 border border-gold/40 bg-gold/5 rounded-xl p-6 text-center relative overflow-hidden">
+                <div class="bg-gold text-black text-[10px] font-bold px-4 py-1 rounded-bl-xl absolute top-0 right-0 tracking-widest">ESTRATEGIA ÓPTIMA</div>
+                <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div class="text-left">
+                        <div class="text-[10px] text-gold font-bold mb-1 uppercase tracking-widest">Ruta Combinada</div>
+                        <div class="text-sm text-white mb-2">Comprar el <span class="text-cyan font-bold">Día OPTIMO_INICIO</span> (Cubre hasta el Día OPTIMO_FIN)</div>
+                        <div class="flex items-center gap-4">
+                            <div class="bg-black/60 px-3 py-1.5 rounded border border-white/10 text-xs">
+                                <span class="text-gray-400">Total con Pase:</span> <span class="text-gold font-bold">OPTIMO_AB_PASE AB</span>
+                            </div>
+                            <div class="bg-black/60 px-3 py-1.5 rounded border border-white/10 text-xs">
+                                <span class="text-gray-400">Total Gratis:</span> <span class="text-gray-300 font-bold">OPTIMO_AB_GRATIS AB</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center md:border-l md:border-r border-white/10 px-6 py-4 md:py-0">
+                        <div class="text-[10px] text-gray-400 mb-1 font-bold tracking-widest">BENEFICIO NETO REAL</div>
+                        <div class="text-3xl font-bold text-green-400 mb-1">+OPTIMO_NETO AB</div>
+                        <div class="text-xs text-gray-400">Te generaría OPTIMO_PARCELAS parcelas extras</div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <div class="text-[10px] text-gray-400 mb-1 font-bold tracking-widest"><span class="material-symbols-outlined text-[12px] align-middle">event</span> AGENDA LA FECHA</div>
+                        <div class="text-xl font-bold text-white mb-2">OPTIMO_FECHA</div>
+                        <div class="text-xs text-orange-400 font-bold bg-orange-500/10 px-3 py-1.5 rounded-full inline-block border border-orange-500/20">⏳ Faltan OPTIMO_ESPERA días</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- VISTA 2: ESTRATEGIA -->
+    <main id="estrategia-view" class="max-w-7xl mx-auto px-4 py-6 space-y-6 relative z-10" style="display: none;">
+        <div class="holographic-card p-8 rounded-xl">
+            <h3 class="text-xl font-bold text-cyan mb-6 flex items-center gap-3 border-b border-white/10 pb-4">
+                <span class="material-symbols-outlined text-3xl">psychology</span> Inteligencia Estratégica
+            </h3>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- COLUMNA 1: ACCIÓN INMEDIATA -->
+                <div class="lg:col-span-1 bg-black/40 border border-white/10 rounded-lg p-5">
+                    <div class="text-[10px] text-gray-400 mb-4 font-bold uppercase tracking-wider flex items-center gap-2"><span class="material-symbols-outlined text-sm">notifications_active</span> Siguiente Movimiento</div>
+                    ACCION_TACTICA_HTML
+                </div>
+                
+                <!-- COLUMNA 2: VEREDICTO PARCELAS VS PASAPORTES -->
+                <div class="lg:col-span-2 bg-black/40 border border-gold/30 rounded-lg p-5 relative overflow-hidden">
+                    <div class="text-[10px] text-gold mb-4 font-bold uppercase tracking-wider flex items-center gap-2"><span class="material-symbols-outlined text-sm">balance</span> Veredicto de Inversión (¿En qué gasto?)</div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        ESTR_CAJAS_COMPARATIVAS
+                    </div>
+                    
+                    <div class="bg-black/60 p-3 rounded border-l-4 border-l-gold">
+                        <p class="text-sm text-white">ESTR_VEREDICTO</p>
+                    </div>
+                </div>
+                
+                <!-- COLUMNA 3: IMPACTO DE PASAPORTE (ANCHO COMPLETO) -->
+                <div class="lg:col-span-3 bg-black/40 border border-white/10 rounded-lg p-5 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="text-center md:text-left">
+                        <div class="text-[10px] text-gray-400 mb-1 font-bold uppercase tracking-wider">Tu Nivel de Pasaporte Actual</div>
+                        <div class="text-lg font-bold text-blue-400">PAS_NIVEL_ACTUAL</div>
+                    </div>
+                    <div class="text-center px-4 flex flex-col items-center">
+                        <span class="material-symbols-outlined text-3xl text-gray-600 hidden md:block">arrow_forward</span>
+                        <div class="text-[10px] text-gray-500 mt-1 font-bold">Cuesta PAS_FALTAN_INSIGNIAS Insignias</div>
+                    </div>
+                    <div class="text-center md:text-right">
+                        <div class="text-[10px] text-gray-400 mb-1 font-bold uppercase tracking-wider">Siguiente Nivel</div>
+                        <div class="text-lg font-bold text-cyan">PAS_NIVEL_SIGUIENTE</div>
+                        <div class="text-xs text-green-400 font-bold mt-1">Impacto: PAS_IMPACTO_DIARIO</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="fixed bottom-0 left-0 right-0 bg-neutral-950/60 backdrop-blur-md border-t border-white/10 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-2 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-cyan shadow-[0_0_5px_#00dddd]"></div>
+                <span class="text-[10px] text-gray-400 font-medium tracking-widest">CALCULADORA ACTIVA LOCALMENTE</span>
+            </div>
+            <span class="text-[10px] text-gray-400">DISEÑO INTEGRADO PREMIUM</span>
+        </div>
+    </footer>
+    <script>
+        const tasasCambio = TASAS_INYECCION_JS;
+        const valDiaUsd = VALOR_RAW_DIA;
+        const valSemUsd = VALOR_RAW_SEM;
+        const valMenUsd = VALOR_RAW_MEN;
+        const valAnuUsd = VALOR_RAW_ANU;
+        const divisaInicial = 'MONEDA_INYECCION_JS';
+
+        function updateEstimations() {
+            const selector = document.getElementById('currencySelector');
+            const moneda = selector.value;
+            const locDia = document.getElementById('loc-dia');
+            const locEstMes = document.getElementById('loc-est-mes');
+            const locSem = document.getElementById('loc-sem');
+            const locMen = document.getElementById('loc-men');
+            const locAnu = document.getElementById('loc-anu');
+            
+            if (moneda === 'USD') {
+                if(locDia) locDia.style.display = 'none';
+                if(locEstMes) locEstMes.style.display = 'none';
+                if(locSem) locSem.style.display = 'none';
+                if(locMen) locMen.style.display = 'none';
+                if(locAnu) locAnu.style.display = 'none';
+            } else {
+                const tasa = tasasCambio[moneda] || 1;
+                
+                if(locDia) {
+                    locDia.style.display = 'block';
+                    locDia.innerText = `≈ $${(valDiaUsd * tasa).toFixed(2)} ${moneda}`;
+                }
+                
+                if(locEstMes) {
+                    locEstMes.style.display = 'block';
+                    locEstMes.innerText = `≈ $${(valMenUsd * tasa).toFixed(2)} ${moneda}`;
+                }
+                
+                if(locSem) {
+                    locSem.style.display = 'block';
+                    locSem.innerText = `≈ $${(valSemUsd * tasa).toFixed(2)} ${moneda}`;
+                }
+                
+                if(locMen) {
+                    locMen.style.display = 'block';
+                    locMen.innerText = `≈ $${(valMenUsd * tasa).toFixed(2)} ${moneda}`;
+                }
+                
+                if(locAnu) {
+                    locAnu.style.display = 'block';
+                    locAnu.innerText = `≈ $${(valAnuUsd * tasa).toFixed(2)} ${moneda}`;
+                }
+            }
+        }
+
+        // Init
+        document.getElementById('currencySelector').value = divisaInicial;
+        updateEstimations();
+
+        function showView(viewId) {
+            document.getElementById('dashboard-view').style.display = 'none';
+            document.getElementById('proyecciones-view').style.display = 'none';
+            document.getElementById('estrategia-view').style.display = 'none';
+            document.getElementById(viewId).style.display = 'block';
+            
+            document.getElementById('btn-dashboard').className = "text-sm font-semibold text-gray-400 hover:text-cyan transition-colors";
+            document.getElementById('btn-proyecciones').className = "text-sm font-semibold text-gray-400 hover:text-cyan transition-colors";
+            document.getElementById('btn-estrategia').className = "text-sm font-semibold text-gray-400 hover:text-cyan transition-colors";
+            
+            if(viewId === 'dashboard-view') {
+                document.getElementById('btn-dashboard').className = "text-sm font-semibold text-cyan";
+            } else if(viewId === 'proyecciones-view') {
+                document.getElementById('btn-proyecciones').className = "text-sm font-semibold text-cyan";
+            } else {
+                document.getElementById('btn-estrategia').className = "text-sm font-semibold text-cyan";
+            }
+        }
+    </script>
+</body>
+</html>

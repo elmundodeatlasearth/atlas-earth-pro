@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html class="dark" lang="es">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Calculadora Atlas Earth - Pro</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "surface-container": "rgba(31, 31, 31, 0.4)",
+                "inverse-on-surface": "#303030",
+                "surface": "rgba(19, 19, 19, 0.3)",
+                "surface-bright": "rgba(57, 57, 57, 0.4)",
+                "tertiary": "#ffffff",
+                "primary": "#4ade80",
+                "on-primary": "#000000",
+                "gold": "#facc15",
+                "cyan": "#00dddd"
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-[#0a0a0a] text-white font-['Inter'] antialiased min-h-screen relative overflow-x-hidden selection:bg-cyan selection:text-black">
+    <div id="app">
+        <div class="fixed inset-0 z-0">
+            <video autoplay loop muted playsinline class="w-full h-full object-cover opacity-20 filter saturate-150 blur-sm">
+                <source src="Fondo Bucle.mp4" type="video/mp4">
+            </video>
+            <div class="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-transparent"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,221,221,0.05)_0%,transparent_60%)]"></div>
+        </div>
+
+        <div class="relative z-10 p-4 lg:p-8 max-w-[1600px] mx-auto min-h-screen flex flex-col justify-center">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl lg:text-5xl font-bold text-white tracking-tight mb-2 flex items-center justify-center gap-3">
+                    <span class="material-symbols-outlined text-cyan text-4xl lg:text-5xl" style="filter: drop-shadow(0 0 10px rgba(0,221,221,0.5))">public</span>
+                    Atlas Earth
+                    <span class="text-cyan">Pro</span>
+                </h1>
+                <p class="text-gray-400">Migración en proceso a Vercel. Por favor espere...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed } = Vue
+
+        createApp({
+            setup() {
+                const parcelas = ref(290)
+                const meta = ref(1.0)
+                
+                return {
+                    parcelas,
+                    meta
+                }
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>
