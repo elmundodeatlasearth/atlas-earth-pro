@@ -195,10 +195,10 @@ def generar_calendario_ae():
     calendario_f2p = [1] * 90
     calendario_ec = [90] * 90
     
-    # Hitos oficiales aproximados
+    # Hitos oficiales según datos del usuario
     hitos_dias = [7, 14, 30, 60, 90]
-    bonos_f2p = [5, 10, 25, 50, 100]
-    bonos_ec = [150, 300, 500, 800, 1400]
+    bonos_f2p = [8, 25, 50, 80, 200]
+    bonos_ec = [180, 325, 500, 650, 1200]
     
     for i, dia in enumerate(hitos_dias):
         idx = dia - 1

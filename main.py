@@ -34,9 +34,6 @@ fondo_html = f"""
         #video-fondo-absoluto {{
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; object-fit: cover; z-index: -999; opacity: 0.40;
         }}
-        @media (max-width: 768px) {{
-            #video-fondo-absoluto {{ display: none !important; }}
-        }}
         .block-container {{ padding: 0rem !important; max-width: 100% !important; }}
         iframe {{ border: none !important; width: 100% !important; background: transparent !important; }}
         #MainMenu, footer {{ visibility: hidden; }}
@@ -177,6 +174,7 @@ ab_manuales = st.sidebar.number_input("Atlas Bucks (Actuales)", value=perfil_gua
 hora_inicio = st.sidebar.time_input("Hora de inicio (Anuncios)", value=datetime.time(8, 0))
 hora_fin = st.sidebar.time_input("Hora de fin (Anuncios)", value=datetime.time(22, 0))
 eficiencia_anuncios = st.sidebar.slider("Eficiencia Anuncios (%)", 10, 100, perfil_guardado.get("eficiencia_anuncios", 90), help="Qué tan constante eres viendo anuncios en tu periodo activo")
+escalera_recompensas = st.sidebar.checkbox("🏆 Completo la Escalera de Recompensas (Arcade)", value=perfil_guardado.get("escalera_recompensas", False), help="Suma +294 AB al mes (Gratis) o +1324 AB (Con Pase).")
 
 st.sidebar.subheader("🎯 Definir Metas (Progreso)")
 meta_dolar = st.sidebar.number_input("Meta de Renta (USD)", value=perfil_guardado.get("meta_dolar", 1.00), step=0.01)
@@ -189,6 +187,7 @@ if st.sidebar.button("💾 Guardar Perfil", use_container_width=True):
         "horas_boost": horas_boost, "eficiencia": eficiencia, "horas_srb_mes": horas_srb_mes,
         "c_comun": c_comun, "c_rara": c_rara, "c_epica": c_epica, "c_legendaria": c_legendaria,
         "insignias": insignias, "ab_manuales": ab_manuales, "eficiencia_anuncios": eficiencia_anuncios,
+        "escalera_recompensas": escalera_recompensas,
         "meta_dolar": meta_dolar, "meta_periodo": meta_periodo, "meta_parcelas": meta_parcelas, "dia_asistencia": dia_asistencia,
         "modo_pro": modo_pro
     }
@@ -331,16 +330,22 @@ if portafolio_test > 0:
 
 # --- NUEVO: SIMULADOR AVANZADO ---
 st.subheader("🤖 Simulador Avanzado a 30 Días (F2P vs Explorer Club)")
+ab_escalera_f2p = 294 if escalera_recompensas else 0
+ab_escalera_ec = 1324 if escalera_recompensas else 0 # 294 + 1030
+
 sim = l.SimuladorDiario(dia_asistencia, max_anuncios)
-desglose_f2p = sim.simular_mes_desglosado(modo_ec=False, ab_minijuegos_mes=0)
-desglose_ec = sim.simular_mes_desglosado(modo_ec=True, ab_minijuegos_mes=0)
+desglose_f2p = sim.simular_mes_desglosado(modo_ec=False, ab_minijuegos_mes=ab_escalera_f2p)
+desglose_ec = sim.simular_mes_desglosado(modo_ec=True, ab_minijuegos_mes=ab_escalera_ec)
 
 colA, colB = st.columns(2)
-colA.metric("AB Proyectados (Modo Gratis)", f"+{desglose_f2p['total_mes']:.0f} AB / mes", help=f"Ruleta: {desglose_f2p['ruleta_diaria']}/día | Anuncios: {desglose_f2p['anuncios_diarios']}/día")
+colA.metric("AB Proyectados (Modo Gratis)", f"+{desglose_f2p['total_mes']:.0f} AB / mes", help=f"Ruleta: {desglose_f2p['ruleta_diaria']}/día | Anuncios: {desglose_f2p['anuncios_diarios']}/día | Escalera: {ab_escalera_f2p}")
 colA.caption(f"🌱 **Generas un promedio de {desglose_f2p['promedio_diario']:.1f} AB al día.**")
 
-colB.metric("AB Proyectados (Explorer Club)", f"+{desglose_ec['total_mes']:.0f} AB / mes", help=f"Ruleta: {desglose_ec['ruleta_diaria']}/día | Anuncios: {desglose_ec['anuncios_diarios']}/día")
+colB.metric("AB Proyectados (Explorer Club)", f"+{desglose_ec['total_mes']:.0f} AB / mes", help=f"Ruleta: {desglose_ec['ruleta_diaria']}/día | Anuncios: {desglose_ec['anuncios_diarios']}/día | Escalera: {ab_escalera_ec}")
 colB.caption(f"🔥 **Generas un promedio de {desglose_ec['promedio_diario']:.1f} AB al día.**")
+
+if escalera_recompensas:
+    st.info("🏆 **Modo Arcade Activo:** Estás sumando tu Escalera de Recompensas al flujo mensual de AB, lo que acelerará drásticamente tu tiempo meta.")
 
 opt_data = l.optimizador_explorer_club(dia_asistencia)
 st.info(f"""🎯 **Optimizador Transparente de Compra EC:** 
