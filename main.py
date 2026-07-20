@@ -90,25 +90,25 @@ TIERS = {
 
 paises_disponibles = list(TIERS.keys())
 
-# --- NUEVO: GESTOR MULTI-CUENTA ---
-st.sidebar.subheader("👥 Gestor de Cuentas")
-perfiles_disp = pm.listar_perfiles()
-idx_perfil = perfiles_disp.index(st.session_state.perfil_activo) if st.session_state.perfil_activo in perfiles_disp else 0
-
-nuevo_perfil_seleccionado = st.sidebar.selectbox("Cuenta Activa", perfiles_disp, index=idx_perfil)
-if nuevo_perfil_seleccionado != st.session_state.perfil_activo:
-    st.session_state.perfil_activo = nuevo_perfil_seleccionado
-    st.rerun()
-
-with st.sidebar.expander("➕ Crear Nueva Cuenta"):
-    nuevo_nombre = st.text_input("Nombre", placeholder="Ej: Secundaria")
-    if st.button("Crear"):
-        if nuevo_nombre:
-            pm.guardar_perfil(nuevo_nombre, {})
-            st.session_state.perfil_activo = nuevo_nombre
-            st.rerun()
-
-st.sidebar.markdown("---")
+# --- NUEVO: GESTOR MULTI-CUENTA (OCULTO HASTA FASE B) ---
+# st.sidebar.subheader("👥 Gestor de Cuentas")
+# perfiles_disp = pm.listar_perfiles()
+# idx_perfil = perfiles_disp.index(st.session_state.perfil_activo) if st.session_state.perfil_activo in perfiles_disp else 0
+# 
+# nuevo_perfil_seleccionado = st.sidebar.selectbox("Cuenta Activa", perfiles_disp, index=idx_perfil)
+# if nuevo_perfil_seleccionado != st.session_state.perfil_activo:
+#     st.session_state.perfil_activo = nuevo_perfil_seleccionado
+#     st.rerun()
+# 
+# with st.sidebar.expander("➕ Crear Nueva Cuenta"):
+#     nuevo_nombre = st.text_input("Nombre", placeholder="Ej: Secundaria")
+#     if st.button("Crear"):
+#         if nuevo_nombre:
+#             pm.guardar_perfil(nuevo_nombre, {})
+#             st.session_state.perfil_activo = nuevo_nombre
+#             st.rerun()
+# 
+# st.sidebar.markdown("---")
 
 # --- NUEVO: SISTEMA DE PAGOS (STRIPE PAYWALL) ---
 if "is_pro" not in st.session_state:
@@ -442,12 +442,27 @@ try:
     html = html.replace('$12.45', f'${renta_diaria_usd * 30:.2f} USD')
     html = html.replace('150x', f'{mult_tier}x')
     
-    # Inyección de Paywall en el HTML
+    # Inyección de Paywall y Arcade en el HTML
     html = html.replace('IS_PRO_LOCKED', 'false' if st.session_state.is_pro else 'true')
+    html = html.replace('IS_ARCADE_ACTIVE', 'true' if escalera_recompensas else 'false')
     
     # Título dinámico
     titulo_html = "Tablero de Estrategia PRO" if st.session_state.is_pro else "Tablero de Estrategia BÁSICA (Free)"
     html = html.replace('TITULO_TABLERO_ESTRATEGIA', titulo_html)
+    
+    # Alerta Arcade
+    alerta_arcade = ""
+    if escalera_recompensas:
+        alerta_arcade = """
+        <div class="bg-gradient-to-r from-purple-900/50 to-pink-900/50 border border-pink-500/50 p-4 rounded-xl shadow-[0_0_15px_rgba(236,72,153,0.3)] flex items-center gap-4 mb-2 animate-pulse">
+            <span class="material-symbols-outlined text-pink-400 text-3xl">sports_esports</span>
+            <div>
+                <h4 class="text-pink-400 font-bold uppercase tracking-widest text-xs">Modo Arcade Activo</h4>
+                <p class="text-white text-sm">Estás sumando la Escalera de Recompensas a tu flujo mensual. <strong>¡Tus tiempos estimados han sido drásticamente reducidos!</strong></p>
+            </div>
+        </div>
+        """
+    html = html.replace('ALERTA_ARCADE_HTML', alerta_arcade)
     
     # Bono Pasaporte dinámico
     pasaporte_bonus = 1 + (nivel_pasaporte * 0.05)
