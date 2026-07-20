@@ -10,11 +10,15 @@ def build():
     with open('perfil_atlas.json', 'r', encoding='utf-8') as f:
         perfil_json = f.read()
 
+    with open('db_supabase.py', 'r', encoding='utf-8') as f:
+        db_py = f.read()
+
     files = {
         "main.py": main_py,
         "logica.py": logica_py,
         "dashboard.html": dashboard_html,
-        "perfil_atlas.json": perfil_json
+        "perfil_atlas.json": perfil_json,
+        "db_supabase.py": db_py
     }
 
     # Serializamos a JSON
@@ -39,7 +43,7 @@ def build():
     <script>
       stlite.mount(
         {{
-          requirements: [],
+          requirements: ["requests"],
           entrypoint: "main.py",
           files: {json_files},
           streamlitConfig: {{

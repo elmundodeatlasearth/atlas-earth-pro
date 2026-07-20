@@ -9,6 +9,8 @@ import pandas as pd
 import io
 importlib.reload(l)
 
+import db_supabase as db
+
 # 1. Gestión de Perfiles (Carga Inicial)
 pm = l.PerfilManager()
 
@@ -90,25 +92,61 @@ TIERS = {
 
 paises_disponibles = list(TIERS.keys())
 
-# --- NUEVO: GESTOR MULTI-CUENTA (OCULTO HASTA FASE B) ---
-# st.sidebar.subheader("👥 Gestor de Cuentas")
-# perfiles_disp = pm.listar_perfiles()
-# idx_perfil = perfiles_disp.index(st.session_state.perfil_activo) if st.session_state.perfil_activo in perfiles_disp else 0
-# 
-# nuevo_perfil_seleccionado = st.sidebar.selectbox("Cuenta Activa", perfiles_disp, index=idx_perfil)
-# if nuevo_perfil_seleccionado != st.session_state.perfil_activo:
-#     st.session_state.perfil_activo = nuevo_perfil_seleccionado
-#     st.rerun()
-# 
-# with st.sidebar.expander("➕ Crear Nueva Cuenta"):
-#     nuevo_nombre = st.text_input("Nombre", placeholder="Ej: Secundaria")
-#     if st.button("Crear"):
-#         if nuevo_nombre:
-#             pm.guardar_perfil(nuevo_nombre, {})
-#             st.session_state.perfil_activo = nuevo_nombre
-#             st.rerun()
-# 
-# st.sidebar.markdown("---")
+# --- NUEVO: SISTEMA DE LOGIN (SUPABASE) ---
+st.sidebar.subheader("👤 Tu Cuenta en la Nube")
+
+if "user_token" not in st.session_state:
+    st.session_state.user_token = None
+if "user_id" not in st.session_state:
+    st.session_state.user_id = None
+if "user_email" not in st.session_state:
+    st.session_state.user_email = None
+
+if not st.session_state.user_token:
+    st.sidebar.info("Inicia sesión para guardar tus datos en la Nube.")
+    with st.sidebar.expander("🔑 Iniciar Sesión / Registro", expanded=True):
+        email_input = st.text_input("Correo electrónico")
+        pass_input = st.text_input("Contraseña", type="password")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Iniciar Sesión"):
+                if email_input and pass_input:
+                    res, status = db.sign_in(email_input, pass_input)
+                    if status == 200:
+                        st.session_state.user_token = res.get("access_token")
+                        st.session_state.user_id = res["user"]["id"]
+                        st.session_state.user_email = email_input
+                        
+                        # Cargar el perfil de la base de datos
+                        datos_nube, is_vip = db.cargar_perfil(st.session_state.user_id, st.session_state.user_token)
+                        if is_vip:
+                            st.session_state.is_pro = True
+                        
+                        # Si hay datos en la nube, sobreescribir el perfil actual
+                        if datos_nube:
+                            pm.guardar_perfil(st.session_state.perfil_activo, datos_nube)
+                        st.rerun()
+                    else:
+                        st.error(res.get("error_description", "Error de credenciales"))
+        with col2:
+            if st.button("Registrarse"):
+                if email_input and pass_input:
+                    res, status = db.sign_up(email_input, pass_input)
+                    if status == 200:
+                        st.success("¡Cuenta creada! Revisa tu correo o inicia sesión.")
+                    else:
+                        st.error(res.get("msg", "Error al crear cuenta"))
+else:
+    st.sidebar.success(f"✅ Conectado como:\n**{st.session_state.user_email}**")
+    if st.sidebar.button("Cerrar Sesión"):
+        st.session_state.user_token = None
+        st.session_state.user_id = None
+        st.session_state.user_email = None
+        st.session_state.is_pro = False
+        st.rerun()
+
+st.sidebar.markdown("---")
 
 # --- NUEVO: SISTEMA DE PAGOS (STRIPE PAYWALL) ---
 if "is_pro" not in st.session_state:
@@ -202,7 +240,12 @@ if st.sidebar.button("💾 Guardar Perfil", use_container_width=True):
         "modo_pro": st.session_state.is_pro
     }
     pm.guardar_perfil(st.session_state.perfil_activo, perfil_nuevo)
-    st.sidebar.success(f"¡Perfil '{st.session_state.perfil_activo}' Guardado Exitosamente!")
+    if st.session_state.user_token:
+        # Guardar en Supabase en tiempo real
+        db.guardar_perfil(st.session_state.user_id, st.session_state.user_email, perfil_nuevo, st.session_state.user_token)
+        st.sidebar.success("¡Perfil guardado en la Nube (Supabase)!")
+    else:
+        st.sidebar.warning("Datos guardados de forma local (Se borrarán si refrescas. Inicia sesión para guardarlos en la nube).")
     
 if perfil_guardado:
     reporte_df = pd.DataFrame([perfil_guardado])
