@@ -348,10 +348,10 @@ if escalera_recompensas:
     st.info("🏆 **Modo Arcade Activo:** Estás sumando tu Escalera de Recompensas al flujo mensual de AB, lo que acelerará drásticamente tu tiempo meta.")
 
 opt_data = l.optimizador_explorer_club(dia_asistencia)
-st.info(f"""🎯 **Optimizador Transparente de Compra EC:** 
-El momento matemático perfecto para comprar tu pase de 30 días es en el **Día {opt_data['optimo']['dia_inicio']}** de tu calendario de asistencia.
-- 📆 Si compras **Hoy (Día {dia_asistencia})**: Extraerás el equivalente en recompensas de hoy en adelante.
-- 🏆 Si compras el **Día {opt_data['optimo']['dia_inicio']}**: Extraerás **{opt_data['optimo']['ab_pase']} AB**. ¡Es la mejor inversión para tus $50 USD!""")
+st.info(f"""🧠 **Inteligencia de Inversión (Masterclass):** 
+Matemáticamente, el **Día {opt_data['optimo']['dia_inicio']}** es el momento absoluto más rentable para comprar tu Pase Explorer de 30 días.
+- 📆 **Si compras Hoy (Día {dia_asistencia})**: Tu ventana atrapará recompensas estándar, generando una rentabilidad subóptima.
+- 🏆 **Si compras el Día {opt_data['optimo']['dia_inicio']}**: Tu ventana de 30 días atrapará estratégicamente los bonos del Día 90, Día 7 y Día 14. ¡Exprimirás **{opt_data['optimo']['ab_pase']:,} AB** totales por tus mismos $50 USD! Es la recomendación definitiva.""")
 
 st.subheader("📋 Análisis de Salto (Tier Jump Analyzer) y Tablas de Comparación")
 def generar_tabla_tiers(pais_key, parcelas_actuales):
