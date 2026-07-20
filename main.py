@@ -163,7 +163,15 @@ if st.session_state.is_pro:
 else:
     st.sidebar.warning("🔒 Cuenta Básica (Free)")
     # Link de pago de Stripe (Reemplazar por el tuyo real de $4.99)
-    stripe_link = "https://buy.stripe.com/bJe3cv1o8aLI98xh1jcMM00" 
+    stripe_link_base = "https://buy.stripe.com/bJe3cv1o8aLI98xh1jcMM00"
+    
+    # Construir URL con parámetros (si hay usuario logueado)
+    stripe_link = stripe_link_base
+    if st.session_state.user_id:
+        import urllib.parse
+        encoded_email = urllib.parse.quote(st.session_state.user_email) if st.session_state.user_email else ""
+        stripe_link = f"{stripe_link_base}?client_reference_id={st.session_state.user_id}&prefilled_email={encoded_email}"
+        
     st.sidebar.markdown(f"<a href='{stripe_link}' target='_blank' style='display:block; text-align:center; background:#ffc107; color:black; padding:10px; border-radius:5px; font-weight:bold; text-decoration:none;'>⭐ Desbloquear PRO ($4.99)</a>", unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
