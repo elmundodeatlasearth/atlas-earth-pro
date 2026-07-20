@@ -176,7 +176,7 @@ insignias = st.sidebar.number_input("🛂 Insignias (Badges)", min_value=0, valu
 nivel_pasaporte_crudo = l.calcular_nivel_pasaporte(insignias)
 nivel_pasaporte = min(nivel_pasaporte_crudo, max_pasaporte)
 
-if not modo_pro:
+if not st.session_state.is_pro:
     st.sidebar.info("🔒 Sube a PRO para desbloquear todas las regiones y hasta el Nivel 5 de Pasaporte.")
 st.sidebar.subheader("⏰ Contabilidad Viva")
 dia_asistencia = st.sidebar.slider("Día de Asistencia (1-90)", 1, 90, perfil_guardado.get("dia_asistencia", 1))
@@ -199,7 +199,7 @@ if st.sidebar.button("💾 Guardar Perfil", use_container_width=True):
         "insignias": insignias, "ab_manuales": ab_manuales, "eficiencia_anuncios": eficiencia_anuncios,
         "escalera_recompensas": escalera_recompensas,
         "meta_dolar": meta_dolar, "meta_periodo": meta_periodo, "meta_parcelas": meta_parcelas, "dia_asistencia": dia_asistencia,
-        "modo_pro": modo_pro
+        "modo_pro": st.session_state.is_pro
     }
     pm.guardar_perfil(st.session_state.perfil_activo, perfil_nuevo)
     st.sidebar.success(f"¡Perfil '{st.session_state.perfil_activo}' Guardado Exitosamente!")
