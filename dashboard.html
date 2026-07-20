@@ -408,8 +408,9 @@
         </div>
 
         <!-- MÓDULO 3: EXPLORER CLUB -->
-        <div class="holographic-card p-6 rounded-xl border border-white/10 mt-6 mb-8">
-            <h3 class="text-sm font-bold text-gold mb-2 text-center flex items-center justify-center gap-2"><span class="material-symbols-outlined">calendar_month</span> PROYECCIÓN DEL PASE EXPLORER (CICLO 90 DÍAS)</h3>
+        <div class="relative mt-6 mb-8">
+            <div id="modulo3-wrapper" class="holographic-card p-6 rounded-xl border border-white/10 transition-all duration-500">
+                <h3 class="text-sm font-bold text-gold mb-2 text-center flex items-center justify-center gap-2"><span class="material-symbols-outlined">calendar_month</span> PROYECCIÓN DEL PASE EXPLORER (CICLO 90 DÍAS)</h3>
             <p class="text-xs text-gray-400 text-center mb-6">¿En qué mes conviene comprar el pase? Comparativa día 1-30 vs 31-60 vs 61-90.</p>
             
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -531,6 +532,7 @@
                         <br>
                         Ninguna otra ventana de 30 días logra atrapar más bonos que esta. <strong>¡Recomendación Final:</strong> No gastes tus $50 USD en la tienda normal (solo te darían 1,200 AB). Cómprate el Pase Explorer exactamente el Día OPTIMO_INICIO y exprime <strong>+OPTIMO_NETO AB netos</strong> (¡Que equivalen a OPTIMO_PARCELAS parcelas!) del sistema.
                     </div>
+                </div>
                 </div>
             </div>
         </div>
@@ -667,6 +669,32 @@
                 document.getElementById('btn-proyecciones').className = baseClass + "text-cyan";
             } else {
                 document.getElementById('btn-estrategia').className = baseClass + "text-cyan";
+            }
+        }
+        
+        // --- PAYWALL LOGIC ---
+        const isProLocked = IS_PRO_LOCKED;
+        if(isProLocked) {
+            const mod3 = document.getElementById('modulo3-wrapper');
+            if(mod3) {
+                mod3.style.filter = 'blur(6px)';
+                mod3.style.pointerEvents = 'none';
+                mod3.style.userSelect = 'none';
+                
+                const overlay = document.createElement('div');
+                overlay.className = 'absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/20 rounded-xl backdrop-blur-[2px]';
+                // Usamos un enlace ficticio de Stripe para la versión 1
+                overlay.innerHTML = `
+                    <div class="bg-[#0a0a0a] p-8 rounded-2xl border border-gold/40 shadow-2xl text-center max-w-sm w-[90%] mt-10">
+                        <span class="material-symbols-outlined text-gold text-5xl mb-4" style="text-shadow: 0 0 20px rgba(255,215,0,0.5);">lock</span>
+                        <h2 class="text-xl font-bold text-white mb-2">Optimizador PRO</h2>
+                        <p class="text-gray-400 text-xs mb-6">Desbloquea la Masterclass Estratégica y averigua matemáticamente el momento perfecto para comprar el pase y exprimir hasta +4,395 AB.</p>
+                        <a href="https://buy.stripe.com/test_XXXXXXXXX" target="_blank" class="block w-full bg-gradient-to-r from-gold to-yellow-600 text-black font-bold py-3 px-6 rounded-xl hover:scale-105 transition-transform shadow-[0_0_15px_rgba(255,215,0,0.3)] pointer-events-auto cursor-pointer">
+                            ⭐ Desbloquear por $4.99
+                        </a>
+                    </div>
+                `;
+                mod3.parentElement.appendChild(overlay);
             }
         }
     </script>

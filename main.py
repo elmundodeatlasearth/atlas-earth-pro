@@ -110,18 +110,28 @@ with st.sidebar.expander("➕ Crear Nueva Cuenta"):
 
 st.sidebar.markdown("---")
 
-st.sidebar.subheader("☁️ Nube y Premium (Vercel)")
-if st.sidebar.button("☁️ Sincronizar con Supabase"):
-    st.sidebar.success("✅ Perfil guardado en Supabase (Nube).")
-    
-st.sidebar.markdown("[⭐ Suscripción PRO (Stripe)](https://checkout.stripe.com/pay/cs_test_a1b2c3d4)", unsafe_allow_html=True)
+# --- NUEVO: SISTEMA DE PAGOS (STRIPE PAYWALL) ---
+if "is_pro" not in st.session_state:
+    st.session_state.is_pro = False
+
+# Leer la URL para ver si Stripe nos mandó el código de éxito
+params = st.query_params
+if params.get("pro_unlocked") == "true":
+    st.session_state.is_pro = True
+
+st.sidebar.subheader("💎 Estado de Cuenta")
+if st.session_state.is_pro:
+    st.sidebar.success("✅ Cuenta PRO Activada")
+else:
+    st.sidebar.warning("🔒 Cuenta Básica (Free)")
+    # Link de pago de Stripe (Reemplazar por el tuyo real de $4.99)
+    stripe_link = "https://buy.stripe.com/test_XXXXXXXXX" 
+    st.sidebar.markdown(f"<a href='{stripe_link}' target='_blank' style='display:block; text-align:center; background:#ffc107; color:black; padding:10px; border-radius:5px; font-weight:bold; text-decoration:none;'>⭐ Desbloquear PRO ($4.99)</a>", unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
 
 # --- 2. PANEL DE CONTROL PRO ---
-modo_pro = st.sidebar.toggle("👑 Activar Modo PRO", value=True)
-
-if modo_pro:
+if st.session_state.is_pro:
     st.sidebar.title("🛠️ Centro de Mando Maestro")
     opciones_pais = paises_disponibles
     max_pasaporte = 5
@@ -432,8 +442,11 @@ try:
     html = html.replace('$12.45', f'${renta_diaria_usd * 30:.2f} USD')
     html = html.replace('150x', f'{mult_tier}x')
     
+    # Inyección de Paywall en el HTML
+    html = html.replace('IS_PRO_LOCKED', 'false' if st.session_state.is_pro else 'true')
+    
     # Título dinámico
-    titulo_html = "Tablero de Estrategia PRO" if modo_pro else "Tablero de Estrategia BÁSICA (Free)"
+    titulo_html = "Tablero de Estrategia PRO" if st.session_state.is_pro else "Tablero de Estrategia BÁSICA (Free)"
     html = html.replace('TITULO_TABLERO_ESTRATEGIA', titulo_html)
     
     # Bono Pasaporte dinámico
@@ -480,7 +493,7 @@ try:
         faltan_meta_p = meta_parcelas - total_parcelas
         ab_necesarios_p = (faltan_meta_p * 100) - ab_manuales
         if ab_necesarios_p < 0: ab_necesarios_p = 0
-        dias_meta_p = int(ab_necesarios_p / max(1, desglose_f2p['promedio_diario'])) if not modo_pro else int(ab_necesarios_p / max(1, desglose_ec['promedio_diario']))
+        dias_meta_p = int(ab_necesarios_p / max(1, desglose_f2p['promedio_diario'])) if not st.session_state.is_pro else int(ab_necesarios_p / max(1, desglose_ec['promedio_diario']))
         html = html.replace('META_PARCELAS_UI', f"Tu objetivo secundario: Llegar a {meta_parcelas} parcelas. Faltan {faltan_meta_p} parcelas ({ab_necesarios_p:,} AB). Tardarás aprox {dias_meta_p} días.")
     else:
         html = html.replace('META_PARCELAS_UI', f"¡Felicidades! Ya superaste tu meta de {meta_parcelas} parcelas.")
