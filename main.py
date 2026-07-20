@@ -163,7 +163,7 @@ if st.session_state.is_pro:
 else:
     st.sidebar.warning("🔒 Cuenta Básica (Free)")
     # Link de pago de Stripe (Reemplazar por el tuyo real de $4.99)
-    stripe_link = "https://buy.stripe.com/test_XXXXXXXXX" 
+    stripe_link = "https://buy.stripe.com/bJe3cv1o8aLI98xh1jcMM00" 
     st.sidebar.markdown(f"<a href='{stripe_link}' target='_blank' style='display:block; text-align:center; background:#ffc107; color:black; padding:10px; border-radius:5px; font-weight:bold; text-decoration:none;'>⭐ Desbloquear PRO ($4.99)</a>", unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
