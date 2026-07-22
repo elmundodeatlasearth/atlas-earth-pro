@@ -268,7 +268,14 @@ ab_manuales = st.sidebar.number_input("Atlas Bucks (Actuales)", value=perfil_gua
 hora_inicio = st.sidebar.time_input("Hora de inicio (Anuncios)", value=datetime.time(8, 0))
 hora_fin = st.sidebar.time_input("Hora de fin (Anuncios)", value=datetime.time(22, 0))
 eficiencia_anuncios = st.sidebar.slider("Eficiencia Anuncios (%)", 10, 100, perfil_guardado.get("eficiencia_anuncios", 90), help="Qué tan constante eres viendo anuncios en tu periodo activo")
-escalera_recompensas = st.sidebar.checkbox("🏆 Completo la Escalera de Recompensas (Arcade)", value=perfil_guardado.get("escalera_recompensas", False), help="Suma +294 AB al mes (Gratis) o +1324 AB (Con Pase).")
+
+st.sidebar.subheader("💎 Pases Mensuales (Boost de AB)")
+tipo_pase = st.sidebar.selectbox(
+    "Selecciona tu Pase Activo",
+    ["Ninguno (F2P)", "Escalera Anticipada ($9.99)", "Escalera Tardía ($14.99)", "Explorer Club ($50.00)"],
+    index=["Ninguno (F2P)", "Escalera Anticipada ($9.99)", "Escalera Tardía ($14.99)", "Explorer Club ($50.00)"].index(perfil_guardado.get("tipo_pase", "Ninguno (F2P)")),
+    help="El Explorer Club ya incluye la recompensa de la Escalera."
+)
 
 st.sidebar.subheader("🎯 Definir Metas (Progreso)")
 meta_dolar = st.sidebar.number_input("Meta de Renta (USD)", value=perfil_guardado.get("meta_dolar", 1.00), step=0.01)
@@ -281,7 +288,7 @@ if st.sidebar.button("💾 Guardar Perfil", use_container_width=True):
         "horas_boost": horas_boost, "eficiencia": eficiencia, "horas_srb_mes": horas_srb_mes,
         "c_comun": c_comun, "c_rara": c_rara, "c_epica": c_epica, "c_legendaria": c_legendaria,
         "insignias": insignias, "ab_manuales": ab_manuales, "eficiencia_anuncios": eficiencia_anuncios,
-        "escalera_recompensas": escalera_recompensas,
+        "tipo_pase": tipo_pase,
         "meta_dolar": meta_dolar, "meta_periodo": meta_periodo, "meta_parcelas": meta_parcelas, "dia_asistencia": dia_asistencia,
         "modo_pro": st.session_state.is_pro
     }
@@ -338,14 +345,29 @@ renta_local_dia = renta_diaria_usd * tasa
 if moneda != 'USD':
     st.sidebar.info(f"💱 **Conversión en Vivo:** 1 USD = {tasa:.4f} {moneda}")
 
-# Cálculo automático de AB por anuncios
+# Cálculo automático de AB por anuncios y pases
 inicio_min = hora_inicio.hour * 60 + hora_inicio.minute
 fin_min = hora_fin.hour * 60 + hora_fin.minute
 if fin_min < inicio_min:
     fin_min += 24 * 60 # cross midnight
 minutos_totales = fin_min - inicio_min
 max_anuncios = minutos_totales / 20
-ab_por_dia = max_anuncios * 2 * (eficiencia_anuncios / 100)
+ab_por_dia_anuncios = max_anuncios * 2 * (eficiencia_anuncios / 100)
+
+# Sumar AB de Pases Mensuales (prorrateado por día)
+ab_extra_mes = 0
+costo_pases_mes = 0.0
+if tipo_pase == "Escalera Anticipada ($9.99)":
+    ab_extra_mes = 1034
+    costo_pases_mes = 9.99
+elif tipo_pase == "Escalera Tardía ($14.99)":
+    ab_extra_mes = 1034
+    costo_pases_mes = 14.99
+elif tipo_pase == "Explorer Club ($50.00)":
+    ab_extra_mes = 3450 + 1034 # Asistencia diaria + Escalera
+    costo_pases_mes = 50.00
+
+ab_por_dia = ab_por_dia_anuncios + (ab_extra_mes / 30.0)
 ab_totales_proyectados = ab_manuales + int(ab_por_dia)
 
 # Convertir meta a base diaria para el cálculo del motor
@@ -402,8 +424,14 @@ else:
 
 st.info("Sistema configurado al 100% - Los cálculos de Boost y Pasaporte son automáticos.")
 
-st.subheader("🧮 Calculadora Inversa (Simular Portafolio)")
-portafolio_test = st.number_input("Si yo tuviera esta cantidad de parcelas:", value=total_parcelas, step=50, help="Calcula ingresos basados en la rareza promedio oficial del juego (50% Comunes, 30% Raras, etc).")
+st.subheader("🧮 Simulador de Inversión Inmediata")
+parcelas_posibles = ab_manuales // 100
+nuevo_total = total_parcelas + parcelas_posibles
+if parcelas_posibles > 0:
+    st.info(f"💡 Tienes **{ab_manuales} AB**. Si los gastas ahora mismo, podrías comprar **{parcelas_posibles} parcelas** extra. Llegarías a un total de **{nuevo_total} parcelas**.")
+
+portafolio_test = st.number_input("Simular Renta con esta cantidad de parcelas:", value=nuevo_total, step=50, help="Calcula ingresos basados en la rareza promedio oficial del juego.")
+
 if portafolio_test > 0:
     c_t = int(portafolio_test * 0.50)
     r_t = int(portafolio_test * 0.30)
@@ -415,7 +443,7 @@ if portafolio_test > 0:
     
     colS1, colS2, colS3 = st.columns(3)
     
-    colS1.metric("Ingreso Diario (USD)", f"${renta_test_usd:.4f} USD")
+    colS1.metric("Ingreso 24 Horas (USD)", f"${renta_test_usd:.4f} USD")
     if moneda != 'USD':
         colS1.markdown(f"<div style='color: #00dddd; font-size: 13px; font-weight: 700; margin-top: -15px;'>≈ ${renta_test_usd * tasa:.2f} {moneda}</div>", unsafe_allow_html=True)
         
@@ -453,22 +481,41 @@ Matemáticamente, el **Día {opt_data['optimo']['dia_inicio']}** es el momento a
 - 🏆 **Si compras el Día {opt_data['optimo']['dia_inicio']}**: Tu ventana de 30 días atrapará estratégicamente los bonos del Día 90, Día 7 y Día 14. ¡Exprimirás **{opt_data['optimo']['ab_pase']:,} AB** totales por tus mismos $50 USD! Es la recomendación definitiva.""")
 
 st.subheader("📋 Análisis de Salto (Tier Jump Analyzer) y Tablas de Comparación")
-def generar_tabla_tiers(pais_key, parcelas_actuales):
+def generar_tabla_tiers(pais_key, parcelas_actuales, parcelas_futuras=None):
     limites = TIERS[pais_key]["limites"].copy()
     mults = TIERS[pais_key]["multiplicadores"].copy()
     if len(mults) > len(limites): limites.append(f"{limites[-1]+1}+")
     df = pd.DataFrame({"Parcelas Límite": limites, "Multiplicador": [f"{m}x" for m in mults]})
     
-    idx_resaltar = 0
+    idx_actual = 0
     for i, lim in enumerate(TIERS[pais_key]["limites"]):
         if parcelas_actuales <= lim:
-            idx_resaltar = i
+            idx_actual = i
             break
     else:
-        idx_resaltar = len(TIERS[pais_key]["limites"])
+        idx_actual = len(TIERS[pais_key]["limites"])
+        
+    idx_futuro = -1
+    if parcelas_futuras and parcelas_futuras != parcelas_actuales:
+        for i, lim in enumerate(TIERS[pais_key]["limites"]):
+            if parcelas_futuras <= lim:
+                idx_futuro = i
+                break
+        else:
+            idx_futuro = len(TIERS[pais_key]["limites"])
         
     def highlight_row(row):
-        return ['background-color: rgba(0, 221, 221, 0.25); color: #00fbfb;' if row.name == idx_resaltar else '' for _ in row]
+        colors = []
+        for _ in row:
+            if row.name == idx_actual and row.name == idx_futuro:
+                colors.append('background-color: rgba(200, 200, 0, 0.4); color: white; border-left: 4px solid yellow;') # Actual y Futuro igual
+            elif row.name == idx_actual:
+                colors.append('background-color: rgba(0, 221, 221, 0.25); color: #00fbfb; border-left: 4px solid cyan;') # Actual
+            elif row.name == idx_futuro:
+                colors.append('background-color: rgba(0, 255, 0, 0.25); color: #00ff00; border-left: 4px solid green;') # Futuro
+            else:
+                colors.append('')
+        return colors
 
     return df.style.apply(highlight_row, axis=1)
 if siguiente_tramo > total_parcelas and siguiente_tramo <= TIERS[pais]["limites"][-1]:
@@ -495,13 +542,14 @@ if siguiente_tramo > total_parcelas and siguiente_tramo <= TIERS[pais]["limites"
 else:
     st.info("Estás en el Tier máximo. Cada parcela que compres sumará a tu renta directamente al multiplicador base.")
 
+st.markdown("<p style='font-size: 13px;'><i>Color cyan = Tu posición actual. Color verde = Tu posición si gastas tus AB de golpe hoy mismo.</i></p>", unsafe_allow_html=True)
 colT1, colT2 = st.columns(2)
 with colT1:
-    st.markdown("**🇺🇸 Escalera de Estados Unidos**")
-    st.dataframe(generar_tabla_tiers("Estados Unidos", total_parcelas), use_container_width=True)
+    st.markdown("#### Tus Escalera de " + pais)
+    st.dataframe(generar_tabla_tiers(pais, total_parcelas, nuevo_total), use_container_width=True, hide_index=True)
 with colT2:
-    pais_b = st.selectbox("País a Comparar", paises_disponibles, index=paises_disponibles.index(pais))
-    st.dataframe(generar_tabla_tiers(pais_b, total_parcelas), use_container_width=True)
+    pais_comparar = st.selectbox("País a Comparar", list(TIERS.keys()), index=list(TIERS.keys()).index("México") if "México" in TIERS else 0)
+    st.dataframe(generar_tabla_tiers(pais_comparar, total_parcelas, nuevo_total), use_container_width=True, hide_index=True)
 
 st.subheader("📥 Exportar Reporte")
 if st.button("Generar Reporte Excel"):
