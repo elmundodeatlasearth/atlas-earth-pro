@@ -189,21 +189,26 @@ class MotorAtlasEarth:
     def dias_para_meta(self, meta, renta_diaria):
         return meta / renta_diaria if renta_diaria > 0 else 999
 
-# --- NUEVO: SIMULADOR EXACTO F2P VS EXPLORER CLUB ---
+# --- NUEVO: SIMULADOR EXACTO F2P VS EXPLORER CLUB Y OPTIMIZADOR ---
 def generar_calendario_ae():
     """Genera el arreglo de 90 días de recompensas exactas F2P y EC de Atlas Earth."""
     calendario_f2p = [1] * 90
     calendario_ec = [90] * 90
     
     # Hitos oficiales según datos del usuario
-    hitos_dias = [7, 14, 30, 60, 90]
-    bonos_f2p = [8, 25, 50, 80, 200]
-    bonos_ec = [180, 325, 500, 650, 1200]
+    hitos = {
+        7: {'f2p': 8, 'ec': 100},
+        14: {'f2p': 25, 'ec': 300},
+        30: {'f2p': 50, 'ec': 500},
+        60: {'f2p': 80, 'ec': 800},
+        90: {'f2p': 200, 'ec': 1200}
+    }
     
-    for i, dia in enumerate(hitos_dias):
+    for dia, recompensa in hitos.items():
+        # Los índices son 0-based
         idx = dia - 1
-        calendario_f2p[idx] = bonos_f2p[i]
-        calendario_ec[idx] = bonos_ec[i]
+        calendario_f2p[idx] = recompensa['f2p']
+        calendario_ec[idx] = recompensa['ec']
         
     return calendario_f2p, calendario_ec
 
@@ -224,8 +229,6 @@ def optimizador_explorer_club(dia_actual):
         dia_fin = (inicio + 29) % 90
         if dia_fin == 0: dia_fin = 90
         
-        # Calcular fecha real y cuenta regresiva
-        # ¿Cuántos días faltan para llegar al 'inicio' desde 'dia_actual'?
         if inicio >= dia_actual:
             dias_espera = inicio - dia_actual
         else:
@@ -243,26 +246,23 @@ def optimizador_explorer_club(dia_actual):
             "fecha_compra": fecha_compra.strftime("%d de %b, %Y")
         }
 
-    # Escenarios
     mes1 = calcular_ventana(1)
     mes2 = calcular_ventana(31)
     mes3 = calcular_ventana(61)
     
-    # Encontrar el Óptimo
     resultados = []
     for inicio in range(1, 91):
         resultados.append(calcular_ventana(inicio))
+        
+    optimo = max(resultados, key=lambda x: x['neto_ab'])
     
-    # En caso de empate en neto_ab, priorizar el dia_inicio más alto (Ej. Día 90 sobre Día 75)
-    resultados.sort(key=lambda x: (x["neto_ab"], x["dia_inicio"]), reverse=True)
-    optimo = resultados[0]
-            
     return {
         "mes1": mes1,
         "mes2": mes2,
         "mes3": mes3,
         "optimo": optimo
     }
+
 
 class SimuladorDiario:
     def __init__(self, dia_actual, max_anuncios):
