@@ -120,6 +120,23 @@ if not st.session_state.user_token:
                         
                         # Cargar el perfil de la base de datos
                         datos_nube, is_vip, ai_credits, is_ultra = db.cargar_perfil(st.session_state.user_id, st.session_state.user_token)
+                        # Dar acceso ilimitado al Administrador
+                        if st.session_state.user_email == "elmundodeatlasearth@gmail.com":
+                            is_vip = True
+                            is_ultra = True
+                            ai_credits = 9999
+                            # Actualizar la BD para que las Edge Functions también lo sepan
+                            import requests
+                            requests.patch(
+                                f"https://yzykfkuoievdwqccyjtc.supabase.co/rest/v1/usuarios_atlas?user_id=eq.{st.session_state.user_id}",
+                                headers={
+                                    "apikey": db.SUPABASE_KEY,
+                                    "Authorization": f"Bearer {st.session_state.user_token}",
+                                    "Content-Type": "application/json"
+                                },
+                                json={"is_vip": True, "is_ultra": True, "ai_credits": 9999}
+                            )
+                            
                         if is_vip:
                             st.session_state.is_pro = True
                         if is_ultra:
@@ -163,7 +180,9 @@ if params.get("pro_unlocked") == "true":
     st.session_state.is_pro = True
 
 st.sidebar.subheader("💎 Estado de Cuenta")
-if st.session_state.is_pro:
+if st.session_state.get('is_ultra'):
+    st.sidebar.success("👑 Cuenta ULTRA (IA Ilimitada)")
+elif st.session_state.is_pro:
     st.sidebar.success("✅ Cuenta PRO Activada")
 else:
     st.sidebar.warning("🔒 Cuenta Básica (Free)")
