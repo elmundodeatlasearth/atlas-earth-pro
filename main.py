@@ -581,7 +581,7 @@ try:
     
     # Inyección de Paywall y Arcade en el HTML
     html = html.replace('IS_PRO_LOCKED', 'false' if st.session_state.is_pro else 'true')
-    html = html.replace('IS_ARCADE_ACTIVE', 'true' if escalera_recompensas else 'false')
+    html = html.replace('IS_ARCADE_ACTIVE', 'true' if tipo_pase != "Ninguno (F2P)" else 'false')
     
     # Título dinámico
     titulo_html = "Tablero de Estrategia PRO" if st.session_state.is_pro else "Tablero de Estrategia BÁSICA (Free)"
@@ -589,7 +589,7 @@ try:
     
     # Alerta Arcade
     alerta_arcade = ""
-    if escalera_recompensas:
+    if tipo_pase != "Ninguno (F2P)":
         alerta_arcade = """
         <div class="bg-gradient-to-r from-purple-900/50 to-pink-900/50 border border-pink-500/50 p-4 rounded-xl shadow-[0_0_15px_rgba(236,72,153,0.3)] flex items-center gap-4 mb-2 animate-pulse">
             <span class="material-symbols-outlined text-pink-400 text-3xl">sports_esports</span>
