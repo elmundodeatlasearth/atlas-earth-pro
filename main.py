@@ -457,8 +457,8 @@ if portafolio_test > 0:
 
 # --- NUEVO: SIMULADOR AVANZADO ---
 st.subheader("🤖 Simulador Avanzado a 30 Días (F2P vs Explorer Club)")
-ab_escalera_f2p = 294 if escalera_recompensas else 0
-ab_escalera_ec = 1324 if escalera_recompensas else 0 # 294 + 1030
+ab_escalera_f2p = 294 if tipo_pase != "Ninguno (F2P)" else 0
+ab_escalera_ec = 1324 if tipo_pase != "Ninguno (F2P)" else 0 # 294 + 1030
 
 sim = l.SimuladorDiario(dia_asistencia, max_anuncios)
 desglose_f2p = sim.simular_mes_desglosado(modo_ec=False, ab_minijuegos_mes=ab_escalera_f2p)
@@ -471,8 +471,8 @@ colA.caption(f"🌱 **Generas un promedio de {desglose_f2p['promedio_diario']:.1
 colB.metric("AB Proyectados (Explorer Club)", f"+{desglose_ec['total_mes']:.0f} AB / mes", help=f"Ruleta: {desglose_ec['ruleta_diaria']}/día | Anuncios: {desglose_ec['anuncios_diarios']}/día | Escalera: {ab_escalera_ec}")
 colB.caption(f"🔥 **Generas un promedio de {desglose_ec['promedio_diario']:.1f} AB al día.**")
 
-if escalera_recompensas:
-    st.info("🏆 **Modo Arcade Activo:** Estás sumando tu Escalera de Recompensas al flujo mensual de AB, lo que acelerará drásticamente tu tiempo meta.")
+if tipo_pase != "Ninguno (F2P)":
+    st.info("🏆 **Modo Arcade Activo:** Estás sumando tu Pase/Escalera al flujo mensual de AB, lo que acelerará drásticamente tu tiempo meta.")
 
 opt_data = l.optimizador_explorer_club(dia_asistencia)
 st.info(f"""🧠 **Inteligencia de Inversión (Masterclass):** 
