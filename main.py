@@ -767,7 +767,7 @@ try:
                     const res = await req.json();
                     
                     if (!req.ok) {{
-                        respBox.innerHTML = `<span class='text-red-400 font-bold'>Error:</span> ${{res.error}}`;
+                        respBox.innerHTML = `<span class='text-red-400 font-bold'>Error:</span> ${{res.error || res.message || JSON.stringify(res)}}`;
                     }} else {{
                         respBox.innerHTML = `<div class='text-white whitespace-pre-wrap leading-relaxed'>${{res.advice}}</div>`;
                         creditosSpan.innerText = res.remaining_credits;
