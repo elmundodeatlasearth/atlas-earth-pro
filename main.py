@@ -441,19 +441,23 @@ if portafolio_test > 0:
     mult_test = motor_test._get_tier_mult(portafolio_test, pais, TIERS)
     renta_test_usd = motor_test.calcular_renta(mult_test, horas_srb_mes)
     
-    colS1, colS2, colS3 = st.columns(3)
+    colS1, colS2, colS3, colS4 = st.columns(4)
     
     colS1.metric("Ingreso 24 Horas (USD)", f"${renta_test_usd:.4f} USD")
     if moneda != 'USD':
         colS1.markdown(f"<div style='color: #00dddd; font-size: 13px; font-weight: 700; margin-top: -15px;'>≈ ${renta_test_usd * tasa:.2f} {moneda}</div>", unsafe_allow_html=True)
         
-    colS2.metric("Mensual Estimado (USD)", f"${renta_test_usd * 30:.2f} USD")
+    colS2.metric("Semanal Estimado (USD)", f"${renta_test_usd * 7:.2f} USD")
     if moneda != 'USD':
-        colS2.markdown(f"<div style='color: #00dddd; font-size: 13px; font-weight: 700; margin-top: -15px;'>≈ ${renta_test_usd * 30 * tasa:.2f} {moneda}</div>", unsafe_allow_html=True)
+        colS2.markdown(f"<div style='color: #00dddd; font-size: 13px; font-weight: 700; margin-top: -15px;'>≈ ${renta_test_usd * 7 * tasa:.2f} {moneda}</div>", unsafe_allow_html=True)
         
-    colS3.metric("Anual Estimado (USD)", f"${renta_test_usd * 365:.2f} USD")
+    colS3.metric("Mensual Estimado (USD)", f"${renta_test_usd * 30:.2f} USD")
     if moneda != 'USD':
-        colS3.markdown(f"<div style='color: #00dddd; font-size: 13px; font-weight: 700; margin-top: -15px;'>≈ ${renta_test_usd * 365 * tasa:.2f} {moneda}</div>", unsafe_allow_html=True)
+        colS3.markdown(f"<div style='color: #00dddd; font-size: 13px; font-weight: 700; margin-top: -15px;'>≈ ${renta_test_usd * 30 * tasa:.2f} {moneda}</div>", unsafe_allow_html=True)
+        
+    colS4.metric("Anual Estimado (USD)", f"${renta_test_usd * 365:.2f} USD")
+    if moneda != 'USD':
+        colS4.markdown(f"<div style='color: #00dddd; font-size: 13px; font-weight: 700; margin-top: -15px;'>≈ ${renta_test_usd * 365 * tasa:.2f} {moneda}</div>", unsafe_allow_html=True)
 
 # --- NUEVO: SIMULADOR AVANZADO ---
 st.subheader("🤖 Simulador Avanzado a 30 Días (F2P vs Explorer Club)")
