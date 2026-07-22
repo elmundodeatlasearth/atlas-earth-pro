@@ -1,0 +1,32 @@
+name: Morph Glance Visual UI Testing
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  glance-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Build static index.html
+        run: python build_vercel.py
+
+      - name: Start Local Web Server
+        run: |
+          python -m http.server 8080 &
+          sleep 2
+
+      - name: Run Morph Glance PR Visual Test
+        uses: morph-labs/glance-action@v1
+        with:
+          preview-url: 'http://localhost:8080'
+          wait-for-selector: '#root'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
