@@ -750,7 +750,9 @@ try:
                     const req = await fetch("https://yzykfkuoievdwqccyjtc.supabase.co/functions/v1/ai-advisor", {{
                         method: "POST",
                         headers: {{
-                            "Content-Type": "application/json"
+                            "Content-Type": "application/json",
+                            "apikey": "{db.SUPABASE_KEY}",
+                            "Authorization": "Bearer {st.session_state.get('user_token', '')}"
                         }},
                         body: JSON.stringify({{
                             user_id: userId,
