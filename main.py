@@ -179,6 +179,12 @@ params = st.query_params
 if params.get("pro_unlocked") == "true":
     st.session_state.is_pro = True
 
+# --- BYPASS GLOBAL DE ADMINISTRADOR ---
+if st.session_state.get("user_email") == "elmundodeatlasearth@gmail.com":
+    st.session_state.is_pro = True
+    st.session_state.is_ultra = True
+    st.session_state.ai_credits = 9999
+
 st.sidebar.subheader("💎 Estado de Cuenta")
 if st.session_state.get('is_ultra'):
     st.sidebar.success("👑 Cuenta ULTRA (IA Ilimitada)")
