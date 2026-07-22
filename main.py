@@ -757,7 +757,8 @@ try:
                             parcelas: {total_parcelas},
                             ab_diarios: {ab_por_dia:.1f},
                             ab_ahorrados: {ab_manuales},
-                            meta_diaria: {meta_usd_dia:.2f}
+                            meta_diaria: {meta_usd_dia:.2f},
+                            dia_optimo_pase: {opt_data['optimo']['dia_inicio']}
                         }})
                     }});
                     
