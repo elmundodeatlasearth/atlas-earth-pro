@@ -37,7 +37,9 @@ def guardar_perfil(user_id, email, perfil_data, token):
             "user_id": user_id, 
             "email": email,
             "perfil_data": json.dumps(perfil_data), 
-            "is_vip": False
+            "is_vip": False,
+            "is_ultra": False,
+            "ai_credits": 3
         }
         requests.post(f"{SUPABASE_URL}/rest/v1/usuarios_atlas", headers=headers, json=payload)
 
@@ -51,7 +53,36 @@ def cargar_perfil(user_id, token):
         row = response.json()[0]
         try:
             data = json.loads(row.get("perfil_data", "{}"))
-            return data, row.get("is_vip", False)
+            return data, row.get("is_vip", False), row.get("ai_credits", 0), row.get("is_ultra", False)
         except:
             pass
-    return {}, False
+    return {}, False, 0, False
+
+def guardar_historial_diario(user_id, token, fecha, ab_generado, usd_generado, diamantes_obtenidos):
+    url = f"{SUPABASE_URL}/rest/v1/historial_atlas"
+    headers = HEADERS_ANON.copy()
+    headers["Authorization"] = f"Bearer {token}"
+    
+    payload = {
+        "user_id": user_id,
+        "fecha": fecha,
+        "ab_generado": ab_generado,
+        "usd_generado": usd_generado,
+        "diamantes_obtenidos": diamantes_obtenidos
+    }
+    
+    # Usar upsert o post. Supabase REST API: para upsert se manda un POST con header Prefer: resolution=merge-duplicates
+    headers["Prefer"] = "resolution=merge-duplicates"
+    
+    response = requests.post(url, headers=headers, json=payload)
+    return response.status_code in [200, 201]
+
+def obtener_historial_usuario(user_id, token):
+    url = f"{SUPABASE_URL}/rest/v1/historial_atlas?user_id=eq.{user_id}&order=fecha.asc"
+    headers = HEADERS_ANON.copy()
+    headers["Authorization"] = f"Bearer {token}"
+    
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        return response.json()
+    return []

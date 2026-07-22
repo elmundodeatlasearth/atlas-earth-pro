@@ -619,6 +619,97 @@ try:
     
     html = html.replace('#suscripcion', stripe_ultra_link)
     
+    # --- LÓGICA DEL HISTORIAL (FASE 5) ---
+    is_pro_or_ultra = st.session_state.is_pro or st.session_state.get('is_ultra', False)
+    historial_display = "none" if is_pro_or_ultra else "flex"
+    html = html.replace('HISTORIAL_PAYWALL_DISPLAY', historial_display)
+    
+    script_historial = ""
+    if is_pro_or_ultra and st.session_state.get('user_id'):
+        historial_data = db.obtener_historial_usuario(st.session_state.user_id, st.session_state.user_token)
+        # Parse data for Chart.js
+        fechas = [d['fecha'] for d in historial_data]
+        ab_data = [float(d['ab_generado']) for d in historial_data]
+        usd_data = [float(d['usd_generado']) for d in historial_data]
+        diamantes_data = [int(d['diamantes_obtenidos']) for d in historial_data]
+        
+        script_historial = f"""
+        document.addEventListener("DOMContentLoaded", function() {{
+            const ctx = document.getElementById('chart-historial');
+            if(ctx) {{
+                new Chart(ctx, {{
+                    type: 'line',
+                    data: {{
+                        labels: {fechas},
+                        datasets: [
+                            {{ label: 'USD Generados', data: {usd_data}, borderColor: '#10b981', backgroundColor: '#10b98133', yAxisID: 'y' }},
+                            {{ label: 'AB Generados', data: {ab_data}, borderColor: '#06b6d4', backgroundColor: '#06b6d433', yAxisID: 'y1' }},
+                            {{ label: 'Diamantes', data: {diamantes_data}, borderColor: '#f59e0b', backgroundColor: '#f59e0b33', yAxisID: 'y1', hidden: true }}
+                        ]
+                    }},
+                    options: {{
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {{ mode: 'index', intersect: false }},
+                        scales: {{
+                            y: {{ type: 'linear', display: true, position: 'left', title: {{ display: true, text: 'USD ($)', color: '#fff' }} }},
+                            y1: {{ type: 'linear', display: true, position: 'right', title: {{ display: true, text: 'AB / Diamantes', color: '#fff' }}, grid: {{ drawOnChartArea: false }} }}
+                        }}
+                    }}
+                }});
+            }}
+            
+            // Set today's date as default
+            document.getElementById('hist-fecha').valueAsDate = new Date();
+            
+            const formHist = document.getElementById('form-historial');
+            if(formHist) {{
+                formHist.addEventListener('submit', async function(e) {{
+                    e.preventDefault();
+                    const btn = document.getElementById('btn-save-hist');
+                    const msg = document.getElementById('hist-msg');
+                    btn.disabled = true;
+                    btn.innerText = 'Guardando...';
+                    
+                    const payload = {{
+                        user_id: "{st.session_state.user_id}",
+                        fecha: document.getElementById('hist-fecha').value,
+                        ab_generado: parseFloat(document.getElementById('hist-ab').value),
+                        usd_generado: parseFloat(document.getElementById('hist-usd').value),
+                        diamantes_obtenidos: parseInt(document.getElementById('hist-diam').value)
+                    }};
+                    
+                    try {{
+                        const req = await fetch("https://yzykfkuoievdwqccyjtc.supabase.co/rest/v1/historial_atlas", {{
+                            method: "POST",
+                            headers: {{
+                                "apikey": "{db.SUPABASE_KEY}",
+                                "Authorization": "Bearer {st.session_state.user_token}",
+                                "Content-Type": "application/json",
+                                "Prefer": "resolution=merge-duplicates"
+                            }},
+                            body: JSON.stringify(payload)
+                        }});
+                        
+                        if(req.ok) {{
+                            msg.innerText = "¡Progreso Guardado! Recarga la página.";
+                            msg.className = "text-sm text-center font-bold mt-2 text-green-400 block";
+                            setTimeout(() => location.reload(), 1500);
+                        }} else {{
+                            throw new Error("Error en DB");
+                        }}
+                    }} catch(err) {{
+                        msg.innerText = "Error al guardar el progreso.";
+                        msg.className = "text-sm text-center font-bold mt-2 text-red-400 block";
+                        btn.disabled = false;
+                        btn.innerText = 'Intentar de nuevo';
+                    }}
+                }});
+            }}
+        }});
+        """
+    html = html.replace('// HISTORIAL_SCRIPT_INJECTION', script_historial)
+    
     # Inyectar script del Asistente de IA
     script_ai = f"""
     <script>
