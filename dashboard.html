@@ -541,6 +541,83 @@
 
     <!-- VISTA 2: ESTRATEGIA -->
     <main id="estrategia-view" class="max-w-7xl mx-auto px-4 py-6 space-y-6 relative z-10" style="display: none;">
+        
+        <!-- AUDITORÍA NARRATIVA (NUEVA FASE) -->
+        <div class="holographic-card p-6 rounded-xl border border-cyan/30 mb-6 bg-gradient-to-br from-black/80 to-cyan-900/20 shadow-[0_0_20px_rgba(0,221,221,0.15)] relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 opacity-10">
+                <span class="material-symbols-outlined text-[150px] text-cyan">radar</span>
+            </div>
+            
+            <h3 class="text-xl font-bold text-cyan mb-4 flex items-center gap-3 border-b border-cyan/20 pb-3">
+                <span class="material-symbols-outlined text-2xl">analytics</span> Resumen Ejecutivo (Auditoría a Detalle)
+            </h3>
+            
+            <div class="space-y-4 text-gray-300 text-sm md:text-base leading-relaxed relative z-10">
+                <p>
+                    <span class="text-white font-bold">1. Estado Actual:</span> 
+                    Actualmente tienes un portafolio de <strong class="text-cyan">TOTAL_PARCELAS_ACTUALES parcelas</strong>. 
+                    Generas un promedio de <strong class="text-green-400">AB_DIARIOS AB diarios</strong> (jugando gratis) y cuentas con un ahorro actual de <strong class="text-gold">AB_MANUALES AB</strong>.
+                </p>
+                
+                <p>
+                    <span class="text-white font-bold">2. Camino hacia tu Meta Financiera:</span> 
+                    Para alcanzar tu meta de ganar exactamente <strong class="text-orange-400">$META_USD_DIARIA USD cada 24 horas</strong>, 
+                    necesitas poseer un total de <strong class="text-white">PARCELAS_OBJETIVO parcelas</strong>. 
+                    Por lo tanto, te faltan exactamente <strong class="text-orange-400">FALTAN_PARCELAS_META parcelas</strong> para lograr tu objetivo de independencia.
+                </p>
+                
+                <p>
+                    <span class="text-white font-bold">3. Cuidado con los Límites (Tiers):</span> 
+                    Sin embargo, antes de llegar a esa meta, te toparás con un límite del sistema (Tier) en las <strong class="text-pink-400">TRAMO_SIGUIENTE parcelas</strong>. 
+                    Te faltan <strong class="text-white">FALTAN_PARCELAS_ESCALERA parcelas</strong> para llegar a este muro. Una vez que llegues ahí, <strong class="text-red-400">debes dejar de comprar parcelas individuales</strong> y ahorrar AB hasta poder saltar de golpe al siguiente Tier.
+                </p>
+                
+                <p class="bg-black/40 p-4 rounded-lg border border-white/5 mt-2">
+                    <span class="text-gold font-bold flex items-center gap-2 mb-2"><span class="material-symbols-outlined text-lg">star</span> 4. El Acelerador: Explorer Club (Pase de Suscripción)</span> 
+                    Si mantienes tu ritmo actual jugando 100% gratis, tardarás aprox. <strong class="text-white">DIAS_FREE_META días</strong> en llegar a tu meta de ingresos. 
+                    Pero, si adquieres el Pase <em>Explorer Club</em> (comprándolo estratégicamente el Día OPTIMO_INICIO), tu generación de AB explotará y reducirás tu tiempo de espera a solo <strong class="text-gold">DIAS_EC_META días</strong>, ahorrándote <strong class="text-green-400">AHORRO_EC_DIAS días de farmeo</strong> en el proceso.
+                </p>
+            </div>
+        </div>
+
+        <!-- PANEL DE INTELIGENCIA ARTIFICIAL (MORPH LLM) -->
+        <div class="holographic-card p-6 rounded-xl border border-purple-500/30 mb-6 relative overflow-hidden" id="ai-advisor-panel">
+            <div class="absolute -top-5 -right-5 opacity-20">
+                <span class="material-symbols-outlined text-[120px] text-purple-500">smart_toy</span>
+            </div>
+            
+            <h3 class="text-xl font-bold text-purple-400 mb-2 flex items-center gap-3 border-b border-purple-500/20 pb-3 relative z-10">
+                <span class="material-symbols-outlined text-2xl animate-pulse">psychology</span> Tu Asistente de IA (Powered by Morph LLM)
+            </h3>
+            
+            <div class="relative z-10 mt-4 flex flex-col md:flex-row gap-6 items-start">
+                <div class="flex-1">
+                    <p class="text-sm text-gray-300 mb-4">
+                        Deja que nuestra Inteligencia Artificial analice tu portafolio de <strong class="text-white">TOTAL_PARCELAS_ACTUALES parcelas</strong>, 
+                        tu ritmo actual y tus metas, para darte la estrategia óptima garantizada.
+                    </p>
+                    
+                    <div class="flex flex-col gap-3">
+                        <button id="btn-generar-ia" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(147,51,234,0.4)] hover:shadow-[0_0_25px_rgba(147,51,234,0.6)] disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span class="material-symbols-outlined">auto_awesome</span> 
+                            Generar Estrategia Optimizada
+                        </button>
+                        
+                        <div class="flex justify-between items-center text-xs px-2">
+                            <span class="text-gray-400 flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">confirmation_number</span> Créditos Restantes: <strong class="text-white" id="creditos-ia">Cargando...</strong></span>
+                            <a href="#suscripcion" class="text-purple-400 hover:text-purple-300 font-bold underline">Obtener ULTRA (50/mes)</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex-1 w-full">
+                    <div id="ai-response-box" class="bg-black/60 border border-purple-500/20 rounded-lg p-5 min-h-[150px] text-sm text-gray-300 hidden">
+                        <!-- El texto de la IA aparecerá aquí -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="holographic-card p-8 rounded-xl">
             <h3 class="text-xl font-bold text-cyan mb-6 flex items-center gap-3 border-b border-white/10 pb-4">
                 <span class="material-symbols-outlined text-3xl">psychology</span> Inteligencia Estratégica

@@ -119,9 +119,12 @@ if not st.session_state.user_token:
                         st.session_state.user_email = email_input
                         
                         # Cargar el perfil de la base de datos
-                        datos_nube, is_vip = db.cargar_perfil(st.session_state.user_id, st.session_state.user_token)
+                        datos_nube, is_vip, ai_credits, is_ultra = db.cargar_perfil(st.session_state.user_id, st.session_state.user_token)
                         if is_vip:
                             st.session_state.is_pro = True
+                        if is_ultra:
+                            st.session_state.is_ultra = True
+                        st.session_state.ai_credits = ai_credits
                         
                         # Si hay datos en la nube, sobreescribir el perfil actual
                         if datos_nube:
@@ -144,6 +147,8 @@ else:
         st.session_state.user_id = None
         st.session_state.user_email = None
         st.session_state.is_pro = False
+        st.session_state.is_ultra = False
+        st.session_state.ai_credits = 0
         st.rerun()
 
 st.sidebar.markdown("---")
@@ -580,6 +585,78 @@ try:
     html = html.replace('PARC_RAR_META', f'{parc_rar_meta}')
     html = html.replace('PARC_EPI_META', f'{int(faltan_meta * 0.15)}')
     html = html.replace('PARC_LEG_META', f'{int(faltan_meta * 0.05)}')
+    
+    # Inyecciones para el Asistente IA y Créditos
+    creditos_txt = "Ilimitados (ULTRA)" if st.session_state.get('is_ultra') else f"{st.session_state.get('ai_credits', 0)}"
+    html = html.replace('Cargando...', f'{creditos_txt}')
+    
+    # Enlace ULTRA Dinámico
+    stripe_ultra_base = "https://buy.stripe.com/28E7sLc2M2fc3Od5iBcMM01"
+    stripe_ultra_link = stripe_ultra_base
+    if st.session_state.get('user_id'):
+        import urllib.parse
+        encoded_email = urllib.parse.quote(st.session_state.get('user_email', ''))
+        stripe_ultra_link = f"{stripe_ultra_base}?client_reference_id={st.session_state.get('user_id')}&prefilled_email={encoded_email}"
+    
+    html = html.replace('#suscripcion', stripe_ultra_link)
+    
+    # Inyectar script del Asistente de IA
+    script_ai = f"""
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {{
+        const btnAI = document.getElementById("btn-generar-ia");
+        const respBox = document.getElementById("ai-response-box");
+        const creditosSpan = document.getElementById("creditos-ia");
+        
+        if(btnAI) {{
+            btnAI.addEventListener("click", async function() {{
+                const userId = "{st.session_state.get('user_id', '')}";
+                if (!userId) {{
+                    respBox.classList.remove("hidden");
+                    respBox.innerHTML = "<span class='text-red-400'>Debes iniciar sesión en la Nube (menú lateral) para usar el Asistente de IA.</span>";
+                    return;
+                }}
+                
+                btnAI.disabled = true;
+                btnAI.innerHTML = "<span class='material-symbols-outlined animate-spin'>sync</span> Pensando estrategia...";
+                respBox.classList.remove("hidden");
+                respBox.innerHTML = "<div class='flex flex-col items-center justify-center h-full'><span class='material-symbols-outlined text-4xl text-purple-500 animate-pulse mb-2'>psychology</span><span class='text-purple-400 font-bold'>Morph LLM está analizando tu portafolio...</span></div>";
+                
+                try {{
+                    const req = await fetch("https://yzykfkuoievdwqccyjtc.supabase.co/functions/v1/ai-advisor", {{
+                        method: "POST",
+                        headers: {{
+                            "Content-Type": "application/json"
+                        }},
+                        body: JSON.stringify({{
+                            user_id: userId,
+                            parcelas: {total_parcelas},
+                            ab_diarios: {ab_por_dia:.1f},
+                            ab_ahorrados: {ab_manuales},
+                            meta_diaria: {meta_usd_dia:.2f}
+                        }})
+                    }});
+                    
+                    const res = await req.json();
+                    
+                    if (!req.ok) {{
+                        respBox.innerHTML = `<span class='text-red-400 font-bold'>Error:</span> ${{res.error}}`;
+                    }} else {{
+                        respBox.innerHTML = `<div class='text-white whitespace-pre-wrap leading-relaxed'>${{res.advice}}</div>`;
+                        creditosSpan.innerText = res.remaining_credits;
+                    }}
+                }} catch(e) {{
+                    respBox.innerHTML = `<span class='text-red-400 font-bold'>Error de conexión:</span> No se pudo contactar al servidor de IA.`;
+                }} finally {{
+                    btnAI.disabled = false;
+                    btnAI.innerHTML = "<span class='material-symbols-outlined'>auto_awesome</span> Generar Estrategia Optimizada";
+                }}
+            }});
+        }}
+    }});
+    </script>
+    """
+    html = html.replace('</body>', script_ai + '\n</body>')
     
     html = html.replace('AB_META_COSTO', f'{costo_meta_ab:,}')
     
