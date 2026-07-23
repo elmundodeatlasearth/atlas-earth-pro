@@ -50,6 +50,26 @@ fondo_html = f"""
         .stSlider, .stSelectbox, .stNumberInput, label, p, h1, h2, h3, .stCheckbox {{ color: #e2e2e2 !important; text-shadow: 1px 1px 3px rgba(0,0,0,0.8); }}
         input {{ background-color: rgba(31, 31, 31, 0.6) !important; color: #ffffff !important; border: 1px solid rgba(0, 221, 221, 0.3) !important; }}
         div[data-baseweb="select"] > div {{ background-color: rgba(31, 31, 31, 0.6) !important; color: white !important; }}
+        /* EFECTOS PREMIUM CYBERPUNK Y GLASSMORPHISM */
+        .stMetric {{
+            background: linear-gradient(135deg, rgba(20,20,30,0.8), rgba(10,10,15,0.9));
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid rgba(0, 221, 221, 0.3);
+            box-shadow: 0 0 20px rgba(0, 221, 221, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }}
+        .stMetric:hover {{
+            transform: translateY(-5px);
+            box-shadow: 0 0 30px rgba(0, 221, 221, 0.3);
+            border: 1px solid rgba(0, 221, 221, 0.6);
+        }}
+        [data-testid="stMetricValue"] {{
+            background: -webkit-linear-gradient(0deg, #00ffff, #00ffaa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 800;
+        }}
     </style>
     <video id="video-fondo-absoluto" autoplay loop muted playsinline>
         <source src="Fondo%20Bucle.mp4" type="video/mp4">
@@ -483,6 +503,33 @@ st.info(f"""🧠 **Inteligencia de Inversión (Masterclass):**
 Matemáticamente, el **Día {opt_data['optimo']['dia_inicio']}** es el momento absoluto más rentable para comprar tu Pase Explorer de 30 días.
 - 📆 **Si compras Hoy (Día {dia_asistencia})**: Tu ventana atrapará recompensas estándar, generando una rentabilidad subóptima.
 - 🏆 **Si compras el Día {opt_data['optimo']['dia_inicio']}**: Tu ventana de 30 días atrapará estratégicamente los bonos del Día 90, Día 7 y Día 14. ¡Exprimirás **{opt_data['optimo']['ab_pase']:,} AB** totales por tus mismos $50 USD! Es la recomendación definitiva.""")
+
+# --- NUEVO: CALCULADORA PARCELA VS INSIGNIA ---
+st.subheader("⚖️ Calculadora Definitiva: ¿Parcelas o Insignias (Badges)?")
+st.markdown("Calcula matemáticamente qué te generará más dinero en este momento.")
+
+costo_badge = st.number_input("¿Cuántos Badges necesitas para el siguiente nivel (+5%)?", min_value=1, max_value=40, value=1, help="Nivel 1 requiere 1. Nivel 2 requiere 10. Nivel 3 requiere 20...")
+ab_necesarios = costo_badge * 200
+parcelas_alternativas = ab_necesarios // 100
+
+renta_actual = motor.calcular_renta_generica(total_parcelas, pais, TIERS, horas_srb_mes) * (1 + (nivel_pasaporte * 0.05))
+renta_con_parcelas = motor.calcular_renta_generica(total_parcelas + parcelas_alternativas, pais, TIERS, horas_srb_mes) * (1 + (nivel_pasaporte * 0.05))
+renta_con_badge = motor.calcular_renta_generica(total_parcelas, pais, TIERS, horas_srb_mes) * (1 + ((nivel_pasaporte + 1) * 0.05))
+
+ganancia_parcelas = renta_con_parcelas - renta_actual
+ganancia_badge = renta_con_badge - renta_actual
+
+col_pv1, col_pv2 = st.columns(2)
+with col_pv1:
+    st.metric(f"Comprar {parcelas_alternativas} Parcelas", f"+${ganancia_parcelas:.4f}/mes", help=f"Costo: {ab_necesarios} AB")
+with col_pv2:
+    st.metric(f"Subir Nivel de Pasaporte", f"+${ganancia_badge:.4f}/mes", help=f"Costo: {ab_necesarios} AB")
+
+if ganancia_parcelas > ganancia_badge:
+    st.success(f"✅ **DECISIÓN MATEMÁTICA:** Compra Parcelas. Te generarán **${ganancia_parcelas - ganancia_badge:.4f} USD** más al mes que el pasaporte.")
+else:
+    st.success(f"✅ **DECISIÓN MATEMÁTICA:** Compra Insignias. El salto de 5% de pasaporte te dará **${ganancia_badge - ganancia_parcelas:.4f} USD** más al mes que {parcelas_alternativas} parcelas.")
+st.markdown("<br>", unsafe_allow_html=True)
 
 st.subheader("📋 Análisis de Salto (Tier Jump Analyzer) y Tablas de Comparación")
 def generar_tabla_tiers(pais_key, parcelas_actuales, parcelas_futuras=None):
