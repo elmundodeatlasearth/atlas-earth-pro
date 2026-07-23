@@ -508,27 +508,34 @@ Matemáticamente, el **Día {opt_data['optimo']['dia_inicio']}** es el momento a
 st.subheader("⚖️ Calculadora Definitiva: ¿Parcelas o Insignias (Badges)?")
 st.markdown("Calcula matemáticamente qué te generará más dinero en este momento.")
 
-costo_badge = st.number_input("¿Cuántos Badges necesitas para el siguiente nivel (+5%)?", min_value=1, max_value=40, value=1, help="Nivel 1 requiere 1. Nivel 2 requiere 10. Nivel 3 requiere 20...")
-ab_necesarios = costo_badge * 200
-parcelas_alternativas = ab_necesarios // 100
-
-renta_actual = motor.calcular_renta_generica(total_parcelas, pais, TIERS, horas_srb_mes) * (1 + (nivel_pasaporte * 0.05))
-renta_con_parcelas = motor.calcular_renta_generica(total_parcelas + parcelas_alternativas, pais, TIERS, horas_srb_mes) * (1 + (nivel_pasaporte * 0.05))
-renta_con_badge = motor.calcular_renta_generica(total_parcelas, pais, TIERS, horas_srb_mes) * (1 + ((nivel_pasaporte + 1) * 0.05))
-
-ganancia_parcelas = renta_con_parcelas - renta_actual
-ganancia_badge = renta_con_badge - renta_actual
-
-col_pv1, col_pv2 = st.columns(2)
-with col_pv1:
-    st.metric(f"Comprar {parcelas_alternativas} Parcelas", f"+${ganancia_parcelas:.4f}/mes", help=f"Costo: {ab_necesarios} AB")
-with col_pv2:
-    st.metric(f"Subir Nivel de Pasaporte", f"+${ganancia_badge:.4f}/mes", help=f"Costo: {ab_necesarios} AB")
-
-if ganancia_parcelas > ganancia_badge:
-    st.success(f"✅ **DECISIÓN MATEMÁTICA:** Compra Parcelas. Te generarán **${ganancia_parcelas - ganancia_badge:.4f} USD** más al mes que el pasaporte.")
+if nivel_pasaporte == 5:
+    st.success("🏆 **¡Ya tienes el Nivel Máximo de Pasaporte (Nivel 5)!**\nYa no puedes comprar más insignias para subir tu multiplicador. Tu única opción matemática y lógica ahora es **comprar parcelas** o ahorrar.")
 else:
-    st.success(f"✅ **DECISIÓN MATEMÁTICA:** Compra Insignias. El salto de 5% de pasaporte te dará **${ganancia_badge - ganancia_parcelas:.4f} USD** más al mes que {parcelas_alternativas} parcelas.")
+    # Determinar cuántas insignias faltan para el siguiente nivel
+    limites_insignias = [1, 11, 31, 61, 101]
+    siguiente_limite = limites_insignias[nivel_pasaporte]
+    insignias_faltantes = siguiente_limite - insignias
+    
+    ab_necesarios = insignias_faltantes * 200
+    parcelas_alternativas = ab_necesarios // 100
+
+    renta_actual = motor.calcular_renta_generica(total_parcelas, pais, TIERS, horas_srb_mes) * (1 + (nivel_pasaporte * 0.05))
+    renta_con_parcelas = motor.calcular_renta_generica(total_parcelas + parcelas_alternativas, pais, TIERS, horas_srb_mes) * (1 + (nivel_pasaporte * 0.05))
+    renta_con_badge = motor.calcular_renta_generica(total_parcelas, pais, TIERS, horas_srb_mes) * (1 + ((nivel_pasaporte + 1) * 0.05))
+
+    ganancia_parcelas = renta_con_parcelas - renta_actual
+    ganancia_badge = renta_con_badge - renta_actual
+
+    col_pv1, col_pv2 = st.columns(2)
+    with col_pv1:
+        st.metric(f"Comprar {parcelas_alternativas} Parcelas", f"{'+' if ganancia_parcelas >= 0 else ''}${ganancia_parcelas:.4f}/mes", help=f"Costo: {ab_necesarios} AB")
+    with col_pv2:
+        st.metric(f"Subir a Nivel {nivel_pasaporte + 1} de Pasaporte", f"{'+' if ganancia_badge >= 0 else ''}${ganancia_badge:.4f}/mes", help=f"Faltan {insignias_faltantes} insignias (Costo: {ab_necesarios} AB)")
+
+    if ganancia_parcelas > ganancia_badge:
+        st.success(f"✅ **DECISIÓN MATEMÁTICA:** Compra Parcelas. Te generarán **${ganancia_parcelas - ganancia_badge:.4f} USD** más al mes que el pasaporte.")
+    else:
+        st.success(f"✅ **DECISIÓN MATEMÁTICA:** Compra Insignias. El salto de 5% de pasaporte te dará **${ganancia_badge - ganancia_parcelas:.4f} USD** más al mes que {parcelas_alternativas} parcelas.")
 st.markdown("<br>", unsafe_allow_html=True)
 
 st.subheader("📋 Análisis de Salto (Tier Jump Analyzer) y Tablas de Comparación")
