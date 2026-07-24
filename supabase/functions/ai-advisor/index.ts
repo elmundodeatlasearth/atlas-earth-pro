@@ -130,23 +130,20 @@ serve(async (req) => {
           body: JSON.stringify({
             model: modelo_optimizado,
             messages: [
-              { role: "user", content: `Actúa como Analista Financiero Jefe de Atlas Earth. Eres un experto en dar consejos estratégicos y motivacionales sobre el juego.
-
-Tengo los siguientes recursos:
-- Parcelas actuales: ${parcelas}
-- Generación diaria: ${ab_diarios} Atlas Bucks
+              { role: "system", content: "Eres el 'Analista Financiero Jefe' experto en la economía matemática de Atlas Earth. Tu trabajo es dar consejos ultra precisos sobre Tiers (saltos de multiplicador), compra de insignias (Pasaportes) y reinversión de Atlas Bucks (AB). Sé conciso, directo, y no uses saludos corporativos." },
+              { role: "user", content: `Analiza mi cuenta de Atlas Earth:
+- Parcelas actuales: ${parcelas} (Cuidado con los límites de Tier: 150, 220, 290, etc.)
+- Generación diaria: ${ab_diarios} AB
 - Ahorros actuales: ${ab_ahorrados} AB
+- Meta: Ganar $${meta_diaria} USD al día.
+- Dato Maestro: El MEJOR día para que yo compre el Pase Explorer Club ($50) es mi Día ${dia_optimo_pase} de racha.
 
-Mi meta es: Ganar $${meta_diaria} USD al día.
-Dato clave: El MEJOR día para comprar el Pase Explorer Club ($50) es mi Día ${dia_optimo_pase} de racha.
-
-Instrucciones:
-1. Dame un consejo directo de 3 viñetas cortas.
-2. Dime claramente si debo ahorrar, comprar parcelas ahora mismo, o comprar el Pase (mencionando el día óptimo).
-3. Termina con una frase muy motivacional.
-4. NO repitas mis datos. No digas "basado en tus datos".
-
-Respuesta:` }
+Instrucciones estrictas:
+1. Dame exactamente 3 viñetas cortas con estrategia.
+2. Dime si matemáticamente me conviene A) Comprar parcelas ahora mismo, B) Ahorrar para saltar el próximo Tier de golpe, o C) Comprar Insignias para el pasaporte.
+3. Menciona que si voy a gastar dinero real, lo haga el Día ${dia_optimo_pase} comprando el Pase Explorer.
+4. Termina con una frase agresivamente motivacional sobre dominar el juego.
+5. NO repitas mis números iniciales. Ve directo a la estrategia.` }
             ],
             temperature: 0.6,
             max_tokens: 350,

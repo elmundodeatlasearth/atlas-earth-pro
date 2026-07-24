@@ -447,11 +447,21 @@ with col_dash_left:
     
     col3, col4 = st.columns(2)
     col3.metric("Ingreso 24 Horas", f"${renta_diaria_usd:.4f} USD")
+    if moneda != 'USD':
+        col3.markdown(f"<div style='color: #00dddd; font-size: 13px; font-weight: 700; margin-top: -15px;'>≈ ${renta_diaria_usd * tasa:.2f} {moneda}</div>", unsafe_allow_html=True)
+    
     col4.metric("Mensual Estimado", f"${renta_diaria_usd * 30:.2f} USD")
+    if moneda != 'USD':
+        col4.markdown(f"<div style='color: #00dddd; font-size: 13px; font-weight: 700; margin-top: -15px;'>≈ ${renta_diaria_usd * 30 * tasa:.2f} {moneda}</div>", unsafe_allow_html=True)
     
     col5, col6 = st.columns(2)
     col5.metric("Semanal Estimado", f"${renta_diaria_usd * 7:.2f} USD")
+    if moneda != 'USD':
+        col5.markdown(f"<div style='color: #00dddd; font-size: 13px; font-weight: 700; margin-top: -15px;'>≈ ${renta_diaria_usd * 7 * tasa:.2f} {moneda}</div>", unsafe_allow_html=True)
+        
     col6.metric("Anual Estimado", f"${renta_diaria_usd * 365:.2f} USD")
+    if moneda != 'USD':
+        col6.markdown(f"<div style='color: #00dddd; font-size: 13px; font-weight: 700; margin-top: -15px;'>≈ ${renta_diaria_usd * 365 * tasa:.2f} {moneda}</div>", unsafe_allow_html=True)
     
     st.markdown("<hr style='border:1px solid rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
     st.markdown("💡 **Asistente de Estrategia Inteligente**")
