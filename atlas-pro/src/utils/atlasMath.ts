@@ -93,6 +93,20 @@ export class MotorAtlasEarth {
     const faltantes = siguiente_tramo > this.total_parcelas ? siguiente_tramo - this.total_parcelas : 0;
     return { tramo_actual, siguiente_tramo, faltantes };
   }
+
+  calcular_meta_automatica(meta_usd_dia: number, pais: string, tiers_dict: TiersDict, horas_srb_mes: number) {
+    if (meta_usd_dia <= 0) return { p_test: this.total_parcelas, renta_test: 0 };
+    let p_test = this.total_parcelas;
+    while (p_test < 500000) {
+      const renta_test = this.calcular_renta_generica(p_test, pais, tiers_dict, horas_srb_mes);
+      if (renta_test >= meta_usd_dia) {
+        break;
+      }
+      p_test += 1;
+    }
+    const renta_test = this.calcular_renta_generica(p_test, pais, tiers_dict, horas_srb_mes);
+    return { p_test, renta_test };
+  }
 }
 
 export function generarCalendarioAE(): { f2p: number[], ec: number[] } {

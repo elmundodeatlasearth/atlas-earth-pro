@@ -43,6 +43,16 @@ export default function Home() {
   const simRentaMensualUsd = motor.calcular_renta_generica(simTotalParcelas, pais, tiersDict, 64);
   const simRentaDiariaUsd = simRentaMensualUsd / 30;
 
+  // Cálculos para la Auditoría
+  const { tramo_actual, siguiente_tramo, faltantes: faltantesTier } = motor.calcular_escalera(pais, tiersDict);
+  const { p_test: parcelasMeta } = motor.calcular_meta_automatica(meta, pais, tiersDict, 64);
+  const faltantesMeta = parcelasMeta > motor.total_parcelas ? parcelasMeta - motor.total_parcelas : 0;
+  
+  const abDiarios = ((motor.renta_base * 3600 * 24) * 20).toFixed(1); // aproximación simple F2P
+  const diasMetaF2p = (faltantesMeta * 100) / parseFloat(abDiarios);
+  const diasMetaEc = diasMetaF2p > 15 ? diasMetaF2p / 2.6 : diasMetaF2p; // rough EC estimate
+  const ahorroEc = diasMetaF2p - diasMetaEc;
+
   const handleGenerateAI = async () => {
     setAiLoading(true);
     setAiError("");
@@ -112,6 +122,17 @@ export default function Home() {
               <input type="number" value={parcelasL} onChange={e => setParcelasL(Number(e.target.value))} className="w-full bg-[#1e1e1e] p-2 rounded-lg" />
             </div>
           </div>
+          
+          <div className="mt-4 p-4 bg-[#1a1a1a] rounded-lg border border-gray-700">
+             <div className="flex justify-between text-sm mb-1">
+               <span className="text-gray-400">Total Parcelas:</span>
+               <span className="font-bold text-[#00dddd]">{motor.total_parcelas}</span>
+             </div>
+             <div className="flex justify-between text-sm">
+               <span className="text-gray-400">Límite Salto ({siguiente_tramo}):</span>
+               <span className="font-bold text-yellow-500">Faltan {faltantesTier}</span>
+             </div>
+          </div>
         </div>
       </aside>
 
@@ -131,19 +152,19 @@ export default function Home() {
                 <div className="text-3xl font-bold text-[#00dddd]">{motor.total_parcelas} Parcelas</div>
               </div>
               <div>
-                <div className="text-sm text-gray-400">Meta ($1 USD)</div>
-                <div className="text-3xl font-bold text-[#00dddd]">{(1 / rentaDiariaUsd).toFixed(1)} días</div>
+                <div className="text-sm text-gray-400">Meta (${meta.toFixed(2)} USD)</div>
+                <div className="text-xl font-bold text-[#00dddd]">Faltan {faltantesMeta} Parcelas</div>
               </div>
               
               <div>
                 <div className="text-sm text-gray-400">Ingreso 24 Horas</div>
                 <div className="text-2xl font-bold text-green-400">${rentaDiariaUsd.toFixed(4)} USD</div>
-                {moneda !== 'USD' && <div className="text-sm text-[#00dddd] font-bold">≈ ${(rentaDiariaUsd * tasa).toFixed(2)} {moneda}</div>}
+                {moneda !== 'USD' && <div className="text-sm text-lime-400 font-bold">≈ ${(rentaDiariaUsd * tasa).toFixed(2)} {moneda}</div>}
               </div>
               <div>
                 <div className="text-sm text-gray-400">Mensual Estimado</div>
                 <div className="text-2xl font-bold text-green-400">${rentaMensualUsd.toFixed(2)} USD</div>
-                {moneda !== 'USD' && <div className="text-sm text-[#00dddd] font-bold">≈ ${(rentaMensualUsd * tasa).toFixed(2)} {moneda}</div>}
+                {moneda !== 'USD' && <div className="text-sm text-lime-400 font-bold">≈ ${(rentaMensualUsd * tasa).toFixed(2)} {moneda}</div>}
               </div>
             </div>
           </div>
@@ -167,13 +188,39 @@ export default function Home() {
               <div>
                 <div className="text-sm text-gray-400">Ingreso 24 Horas</div>
                 <div className="text-2xl font-bold text-[#00dddd]">${simRentaDiariaUsd.toFixed(4)} USD</div>
-                {moneda !== 'USD' && <div className="text-sm text-blue-400 font-bold">≈ ${(simRentaDiariaUsd * tasa).toFixed(2)} {moneda}</div>}
+                {moneda !== 'USD' && <div className="text-sm text-lime-400 font-bold">≈ ${(simRentaDiariaUsd * tasa).toFixed(2)} {moneda}</div>}
               </div>
               <div>
                 <div className="text-sm text-gray-400">Mensual Estimado</div>
                 <div className="text-2xl font-bold text-[#00dddd]">${simRentaMensualUsd.toFixed(2)} USD</div>
-                {moneda !== 'USD' && <div className="text-sm text-blue-400 font-bold">≈ ${(simRentaMensualUsd * tasa).toFixed(2)} {moneda}</div>}
+                {moneda !== 'USD' && <div className="text-sm text-lime-400 font-bold">≈ ${(simRentaMensualUsd * tasa).toFixed(2)} {moneda}</div>}
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Resumen Ejecutivo (Auditoría a Detalle) */}
+        <div className="mt-8 bg-[#111] rounded-xl border border-gray-700 p-6 shadow-2xl">
+          <h2 className="text-xl font-bold mb-6 flex items-center gap-2 text-[#00dddd] border-b border-gray-700 pb-2">
+            📊 Resumen Ejecutivo (Auditoría a Detalle)
+          </h2>
+          
+          <div className="space-y-4 text-gray-300">
+            <p>
+              <strong className="text-white">1. Estado Actual:</strong> Actualmente tienes un portafolio de <strong className="text-[#00dddd]">{motor.total_parcelas} parcelas</strong>. Generas un promedio de <strong className="text-green-400">{abDiarios} AB diarios</strong> (jugando gratis).
+            </p>
+            <p>
+              <strong className="text-white">2. Camino hacia tu Meta Financiera:</strong> Para alcanzar tu meta de ganar exactamente <strong className="text-orange-400">${meta.toFixed(2)} USD cada 24 horas</strong>, necesitas poseer un total de <strong className="text-white">{parcelasMeta} parcelas</strong>. Por lo tanto, te faltan exactamente <strong className="text-orange-400">{faltantesMeta} parcelas</strong> para lograr tu objetivo.
+            </p>
+            <p>
+              <strong className="text-white">3. Cuidado con los Límites (Tiers):</strong> Sin embargo, antes de llegar a esa meta, te toparás con un límite del sistema (Tier) en las <strong className="text-pink-400">{siguiente_tramo} parcelas</strong>. Te faltan <strong className="text-white">{faltantesTier} parcelas</strong> para llegar a este muro. Una vez que llegues ahí, <strong className="text-red-400">debes dejar de comprar parcelas individuales</strong> y ahorrar AB hasta poder saltar de golpe al siguiente Tier.
+            </p>
+
+            <div className="mt-4 p-4 bg-[#1a1a1a] rounded-lg border border-yellow-600/30">
+              <h3 className="text-yellow-500 font-bold mb-2 flex items-center gap-2">⭐ 4. El Acelerador: Explorer Club (Pase de Suscripción)</h3>
+              <p className="text-sm leading-relaxed">
+                Si mantienes tu ritmo actual jugando 100% gratis, tardarás aprox. <strong className="text-white">{diasMetaF2p.toFixed(1)} días</strong> en llegar a tu meta de ingresos. Pero, si adquieres el Pase <em>Explorer Club</em>, tu generación de AB explotará y reducirás tu tiempo de espera a solo <strong className="text-yellow-400">{diasMetaEc.toFixed(1)} días</strong>, ahorrándote <strong className="text-green-400">{ahorroEc.toFixed(1)} días de farmeo</strong> en el proceso.
+              </p>
             </div>
           </div>
         </div>
