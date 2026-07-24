@@ -423,68 +423,75 @@ porcentaje_esc = min(100, (ab_manuales / (faltan_escalera * 100)) * 100) if falt
 tiempo_esc = motor.formato_tiempo(faltan_netos_ab, ab_por_dia)
 
 # 3. EXPLORER CLUB (Movido más abajo)
+
+# --- DONACIONES PARA USUARIOS FREE ---
+if tipo_pase == "Ninguno (F2P)":
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("☕ Apoya el Proyecto")
+    st.sidebar.info("¿Esta calculadora te está ayudando a ganar más dinero? ¡Considera invitarme un café para ayudar a mantener los servidores de la IA activos para todos!")
+    st.sidebar.markdown('<div style="text-align: center;"><a href="https://buymeacoffee.com/atlasearthpro" target="_blank" style="display: inline-block; background: linear-gradient(90deg, #ff8a00, #e52e71); color: white; padding: 12px 24px; border-radius: 25px; font-weight: bold; text-decoration: none; box-shadow: 0 4px 15px rgba(229, 46, 113, 0.4); transition: transform 0.2s;">❤️ Donar y Apoyar</a></div>', unsafe_allow_html=True)
+
 # Visualización rápida en Streamlit (Al estilo de tu Consolidado Final)
 st.title("📊 Tablero de Estrategia PRO")
 
-col1, col2, col3 = st.columns(3)
-col1.metric("Activos", f"{total_parcelas} Parcela(s)")
-col2.metric("Renta Diaria (USD)", f"${renta_diaria_usd:.6f} USD")
-if moneda != "USD":
-    col2.caption(f"≈ **${renta_local_dia:.2f} {moneda}**")
-col3.metric("Meta ($1 USD)", f"{(1.0/renta_diaria_usd):.1f} días" if renta_diaria_usd > 0 else "Infinito")
+# --- DISPOSICIÓN EN COLUMNAS (PANEL PRINCIPAL Y SIMULADOR) ---
+col_dash_left, col_dash_right = st.columns(2, gap="large")
 
-st.subheader("💡 Asistente de Estrategia Inteligente")
-tier_limit_1 = TIERS[pais]["limites"][0] if pais in TIERS else 150
-if total_parcelas < tier_limit_1 - 5:
-    st.success(f"ESTRATEGIA: Estás en zona de crecimiento rápido. Compra parcelas hasta acercarte a {tier_limit_1} (Límite máximo del primer Tier en {pais}).")
-elif total_parcelas >= tier_limit_1 - 5 and total_parcelas <= tier_limit_1:
-    st.warning(f"⚠️ ATENCIÓN: Estás a punto de cruzar el límite de {tier_limit_1} parcelas en {pais}. ¡Frena tus compras! Ahorra suficientes AB para saltar de golpe al siguiente Tier sin perder ingresos.")
-else:
-    st.info(f"ESTRATEGIA: Has superado el Tier base de {pais}. Calcula tus saltos de parcelas cuidadosamente y empieza a comprar insignias para tu pasaporte.")
-
-st.info("Sistema configurado al 100% - Los cálculos de Boost y Pasaporte son automáticos.")
-
-st.subheader("🧮 Simulador de Inversión Inmediata")
-parcelas_posibles = ab_manuales // 100
-nuevo_total = total_parcelas + parcelas_posibles
-if parcelas_posibles > 0:
-    st.info(f"💡 Tienes **{ab_manuales} AB**. Si los gastas ahora mismo, podrías comprar **{parcelas_posibles} parcelas** extra. Llegarías a un total de **{nuevo_total} parcelas**.")
-
-parcelas_futuras = st.number_input("Parcelas adicionales a comprar:", value=parcelas_posibles, step=10, help="Calcula ingresos sumando estas nuevas parcelas (rareza promedio) a tu portafolio actual.")
-
-if parcelas_futuras >= 0:
-    c_extra = int(parcelas_futuras * 0.50)
-    r_extra = int(parcelas_futuras * 0.30)
-    e_extra = int(parcelas_futuras * 0.15)
-    l_extra = parcelas_futuras - c_extra - r_extra - e_extra
+with col_dash_left:
+    st.subheader("📊 Tu Tablero Actual")
+    col1, col2 = st.columns(2)
+    col1.metric("Activos", f"{total_parcelas} Parcela(s)")
+    col2.metric("Renta Diaria", f"${renta_diaria_usd:.6f} USD")
     
-    c_t = c_comun + c_extra
-    r_t = c_rara + r_extra
-    e_t = c_epica + e_extra
-    l_t = c_legendaria + l_extra
+    col3, col4 = st.columns(2)
+    col3.metric("Meta ($1 USD)", f"{(1.0/renta_diaria_usd):.1f} días" if renta_diaria_usd > 0 else "Infinito")
+    if moneda != "USD":
+        col4.metric("Renta Diaria Local", f"${renta_local_dia:.2f} {moneda}")
     
-    portafolio_test = total_parcelas + parcelas_futuras
-    motor_test = l.MotorAtlasEarth(c_t, r_t, e_t, l_t, nivel_pasaporte, horas_boost, eficiencia)
-    mult_test = motor_test._get_tier_mult(portafolio_test, pais, TIERS)
-    renta_test_usd = motor_test.calcular_renta(mult_test, horas_srb_mes)
+    st.markdown("<hr style='border:1px solid rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
+    st.markdown("💡 **Asistente de Estrategia Inteligente**")
+    tier_limit_1 = TIERS[pais]["limites"][0] if pais in TIERS else 150
+    if total_parcelas < tier_limit_1 - 5:
+        st.success(f"Estás en zona de crecimiento rápido. Compra parcelas hasta acercarte a {tier_limit_1}.")
+    elif total_parcelas >= tier_limit_1 - 5 and total_parcelas <= tier_limit_1:
+        st.warning(f"⚠️ A punto de cruzar el límite de {tier_limit_1} parcelas. Ahorra AB para saltar de golpe al siguiente Tier.")
+    else:
+        st.info(f"Has superado el Tier base. Calcula tus saltos y compra insignias.")
+
+with col_dash_right:
+    st.subheader("🧮 Simulador de Inversión Inmediata")
+    parcelas_posibles = ab_manuales // 100
+    nuevo_total = total_parcelas + parcelas_posibles
+    if parcelas_posibles > 0:
+        st.info(f"💡 Tienes **{ab_manuales} AB**. Podrías comprar **{parcelas_posibles} parcelas** extra (Total: {nuevo_total}).")
     
-    colS1, colS2, colS3, colS4 = st.columns(4)
+    parcelas_futuras = st.number_input("Parcelas adicionales a comprar:", value=parcelas_posibles, step=10, help="Suma estas nuevas parcelas (rareza promedio) a tu portafolio actual.")
     
-    colS1.metric("Ingreso 24 Horas (USD)", f"${renta_test_usd:.4f} USD")
-    if moneda != 'USD':
-        colS1.markdown(f"<div style='color: #00dddd; font-size: 13px; font-weight: 700; margin-top: -15px;'>≈ ${renta_test_usd * tasa:.2f} {moneda}</div>", unsafe_allow_html=True)
+    if parcelas_futuras >= 0:
+        c_extra = int(parcelas_futuras * 0.50)
+        r_extra = int(parcelas_futuras * 0.30)
+        e_extra = int(parcelas_futuras * 0.15)
+        l_extra = parcelas_futuras - c_extra - r_extra - e_extra
         
-    colS2.metric("Semanal Estimado (USD)", f"${renta_test_usd * 7:.2f} USD")
-    if moneda != 'USD':
-        colS2.markdown(f"<div style='color: #00dddd; font-size: 13px; font-weight: 700; margin-top: -15px;'>≈ ${renta_test_usd * 7 * tasa:.2f} {moneda}</div>", unsafe_allow_html=True)
+        c_t = c_comun + c_extra
+        r_t = c_rara + r_extra
+        e_t = c_epica + e_extra
+        l_t = c_legendaria + l_extra
         
-    colS3.metric("Mensual Estimado (USD)", f"${renta_test_usd * 30:.2f} USD")
-    if moneda != 'USD':
-        colS3.markdown(f"<div style='color: #00dddd; font-size: 13px; font-weight: 700; margin-top: -15px;'>≈ ${renta_test_usd * 30 * tasa:.2f} {moneda}</div>", unsafe_allow_html=True)
+        portafolio_test = total_parcelas + parcelas_futuras
+        motor_test = l.MotorAtlasEarth(c_t, r_t, e_t, l_t, nivel_pasaporte, horas_boost, eficiencia)
+        mult_test = motor_test._get_tier_mult(portafolio_test, pais, TIERS)
+        renta_test_usd = motor_test.calcular_renta(mult_test, horas_srb_mes)
         
-    colS4.metric("Anual Estimado (USD)", f"${renta_test_usd * 365:.2f} USD")
-    if moneda != 'USD':
-        colS4.markdown(f"<div style='color: #00dddd; font-size: 13px; font-weight: 700; margin-top: -15px;'>≈ ${renta_test_usd * 365 * tasa:.2f} {moneda}</div>", unsafe_allow_html=True)
+        colS1, colS2 = st.columns(2)
+        colS1.metric("Ingreso 24 Horas", f"${renta_test_usd:.4f} USD")
+        colS2.metric("Mensual Estimado", f"${renta_test_usd * 30:.2f} USD")
+        
+        colS3, colS4 = st.columns(2)
+        colS3.metric("Semanal Estimado", f"${renta_test_usd * 7:.2f} USD")
+        colS4.metric("Anual Estimado", f"${renta_test_usd * 365:.2f} USD")
+        
+st.markdown("<br>", unsafe_allow_html=True)
 
 # --- NUEVO: SIMULADOR AVANZADO ---
 st.subheader("🤖 Simulador Avanzado a 30 Días (F2P vs Explorer Club)")
