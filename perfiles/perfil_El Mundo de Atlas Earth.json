@@ -1,0 +1,18 @@
+{
+    "pais": "Estados Unidos",
+    "moneda": "USD",
+    "horas_boost": 20,
+    "eficiencia": 100,
+    "horas_srb_mes": 50,
+    "c_comun": 1,
+    "c_rara": 0,
+    "c_epica": 0,
+    "c_legendaria": 17,
+    "insignias": 0,
+    "ab_manuales": 13,
+    "eficiencia_anuncios": 90,
+    "meta_dolar": 0.5,
+    "meta_periodo": "Al D\u00eda",
+    "dia_asistencia": 1,
+    "modo_pro": true
+}
