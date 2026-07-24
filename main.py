@@ -441,12 +441,15 @@ with col_dash_left:
     st.subheader("📊 Tu Tablero Actual")
     col1, col2 = st.columns(2)
     col1.metric("Activos", f"{total_parcelas} Parcela(s)")
-    col2.metric("Renta Diaria", f"${renta_diaria_usd:.6f} USD")
+    col2.metric("Meta ($1 USD)", f"{(1.0/renta_diaria_usd):.1f} días" if renta_diaria_usd > 0 else "Infinito")
     
     col3, col4 = st.columns(2)
-    col3.metric("Meta ($1 USD)", f"{(1.0/renta_diaria_usd):.1f} días" if renta_diaria_usd > 0 else "Infinito")
-    if moneda != "USD":
-        col4.metric("Renta Diaria Local", f"${renta_local_dia:.2f} {moneda}")
+    col3.metric("Ingreso 24 Horas", f"${renta_diaria_usd:.4f} USD")
+    col4.metric("Mensual Estimado", f"${renta_diaria_usd * 30:.2f} USD")
+    
+    col5, col6 = st.columns(2)
+    col5.metric("Semanal Estimado", f"${renta_diaria_usd * 7:.2f} USD")
+    col6.metric("Anual Estimado", f"${renta_diaria_usd * 365:.2f} USD")
     
     st.markdown("<hr style='border:1px solid rgba(255,255,255,0.1);'>", unsafe_allow_html=True)
     st.markdown("💡 **Asistente de Estrategia Inteligente**")
@@ -857,15 +860,17 @@ try:
                 btnAI.disabled = true;
                 btnAI.innerHTML = "<span class='material-symbols-outlined animate-spin'>sync</span> Pensando estrategia...";
                 respBox.classList.remove("hidden");
-                respBox.innerHTML = "<div class='flex flex-col items-center justify-center h-full'><span class='material-symbols-outlined text-4xl text-purple-500 animate-pulse mb-2'>psychology</span><span class='text-purple-400 font-bold'>Analizando tu portafolio...</span></div>";
                 
                 try {{
+                    const userToken = "{st.session_state.get('user_token', '')}";
+                    const authHeader = userToken ? "Bearer " + userToken : "Bearer {db.SUPABASE_KEY}";
+                    
                     const req = await fetch("https://yzykfkuoievdwqccyjtc.supabase.co/functions/v1/ai-advisor", {{
                         method: "POST",
                         headers: {{
                             "Content-Type": "application/json",
                             "apikey": "{db.SUPABASE_KEY}",
-                            "Authorization": "Bearer {st.session_state.get('user_token', '')}"
+                            "Authorization": authHeader
                         }},
                         body: JSON.stringify({{
                             user_id: userId,
