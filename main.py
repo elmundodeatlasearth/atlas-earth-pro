@@ -428,8 +428,10 @@ tiempo_esc = motor.formato_tiempo(faltan_netos_ab, ab_por_dia)
 if tipo_pase == "Ninguno (F2P)":
     st.sidebar.markdown("---")
     st.sidebar.subheader("☕ Apoya el Proyecto")
-    st.sidebar.info("¿Esta calculadora te está ayudando a ganar más dinero? ¡Considera invitarme un café para ayudar a mantener los servidores de la IA activos para todos!")
-    st.sidebar.markdown('<div style="text-align: center;"><a href="https://buymeacoffee.com/atlasearthpro" target="_blank" style="display: inline-block; background: linear-gradient(90deg, #ff8a00, #e52e71); color: white; padding: 12px 24px; border-radius: 25px; font-weight: bold; text-decoration: none; box-shadow: 0 4px 15px rgba(229, 46, 113, 0.4); transition: transform 0.2s;">❤️ Donar y Apoyar</a></div>', unsafe_allow_html=True)
+    st.sidebar.info("La Inteligencia Artificial tiene un costo. Los usuarios gratuitos no tienen acceso por defecto. ¡Invítame un café para apoyar los servidores y desbloquear automáticamente 3 consultas con la IA!")
+    user_id_url = st.session_state.get('user_id', '')
+    stripe_url = f"https://buy.stripe.com/00w8wP7Mwf1Y3OdaCVcMM02?client_reference_id={user_id_url}" if user_id_url else "https://buy.stripe.com/00w8wP7Mwf1Y3OdaCVcMM02"
+    st.sidebar.markdown(f'<div style="text-align: center;"><a href="{stripe_url}" target="_blank" style="display: inline-block; background: linear-gradient(90deg, #635bff, #00d4ff); color: white; padding: 12px 24px; border-radius: 25px; font-weight: bold; text-decoration: none; box-shadow: 0 4px 15px rgba(99, 91, 255, 0.4); transition: transform 0.2s;">☕ Donar (Desbloquea 3 IA)</a></div>', unsafe_allow_html=True)
 
 # Visualización rápida en Streamlit (Al estilo de tu Consolidado Final)
 st.title("📊 Tablero de Estrategia PRO")

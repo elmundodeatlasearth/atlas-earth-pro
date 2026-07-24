@@ -62,7 +62,7 @@ serve(async (req) => {
       .single()
 
     // Si no encontramos al usuario en la BD (a veces el trigger falla o es anon), le damos un fallback seguro
-    let ai_credits = 3;
+    let ai_credits = 0;
     let is_ultra = false;
     let is_vip = false;
 
@@ -74,7 +74,7 @@ serve(async (req) => {
 
     if (!is_ultra && ai_credits <= 0) {
       return new Response(JSON.stringify({ 
-        error: "Se te han agotado los créditos. Actualiza a Atlas Earth ULTRA ($10/mes) para consultas ilimitadas." 
+        error: "Acceso bloqueado. Para usar la IA de forma gratuita, apoya el proyecto invitando un café (desbloquea 3 consultas automáticas)." 
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 403,
