@@ -450,13 +450,20 @@ nuevo_total = total_parcelas + parcelas_posibles
 if parcelas_posibles > 0:
     st.info(f"💡 Tienes **{ab_manuales} AB**. Si los gastas ahora mismo, podrías comprar **{parcelas_posibles} parcelas** extra. Llegarías a un total de **{nuevo_total} parcelas**.")
 
-portafolio_test = st.number_input("Simular Renta con esta cantidad de parcelas:", value=nuevo_total, step=50, help="Calcula ingresos basados en la rareza promedio oficial del juego.")
+parcelas_futuras = st.number_input("Parcelas adicionales a comprar:", value=parcelas_posibles, step=10, help="Calcula ingresos sumando estas nuevas parcelas (rareza promedio) a tu portafolio actual.")
 
-if portafolio_test > 0:
-    c_t = int(portafolio_test * 0.50)
-    r_t = int(portafolio_test * 0.30)
-    e_t = int(portafolio_test * 0.15)
-    l_t = portafolio_test - c_t - r_t - e_t
+if parcelas_futuras >= 0:
+    c_extra = int(parcelas_futuras * 0.50)
+    r_extra = int(parcelas_futuras * 0.30)
+    e_extra = int(parcelas_futuras * 0.15)
+    l_extra = parcelas_futuras - c_extra - r_extra - e_extra
+    
+    c_t = c_comun + c_extra
+    r_t = c_rara + r_extra
+    e_t = c_epica + e_extra
+    l_t = c_legendaria + l_extra
+    
+    portafolio_test = total_parcelas + parcelas_futuras
     motor_test = l.MotorAtlasEarth(c_t, r_t, e_t, l_t, nivel_pasaporte, horas_boost, eficiencia)
     mult_test = motor_test._get_tier_mult(portafolio_test, pais, TIERS)
     renta_test_usd = motor_test.calcular_renta(mult_test, horas_srb_mes)
@@ -508,34 +515,27 @@ Matemáticamente, el **Día {opt_data['optimo']['dia_inicio']}** es el momento a
 st.subheader("⚖️ Calculadora Definitiva: ¿Parcelas o Insignias (Badges)?")
 st.markdown("Calcula matemáticamente qué te generará más dinero en este momento.")
 
-if nivel_pasaporte == 5:
-    st.success("🏆 **¡Ya tienes el Nivel Máximo de Pasaporte (Nivel 5)!**\nYa no puedes comprar más insignias para subir tu multiplicador. Tu única opción matemática y lógica ahora es **comprar parcelas** o ahorrar.")
+costo_badge = st.number_input("¿Cuántos Badges necesitas para el siguiente nivel (+5%)?", min_value=1, max_value=40, value=1, help="Nivel 1 requiere 1. Nivel 2 requiere 10. Nivel 3 requiere 20...")
+ab_necesarios = costo_badge * 200
+parcelas_alternativas = ab_necesarios // 100
+
+renta_actual = motor.calcular_renta_generica(total_parcelas, pais, TIERS, horas_srb_mes) * (1 + (nivel_pasaporte * 0.05))
+renta_con_parcelas = motor.calcular_renta_generica(total_parcelas + parcelas_alternativas, pais, TIERS, horas_srb_mes) * (1 + (nivel_pasaporte * 0.05))
+renta_con_badge = motor.calcular_renta_generica(total_parcelas, pais, TIERS, horas_srb_mes) * (1 + ((nivel_pasaporte + 1) * 0.05))
+
+ganancia_parcelas = renta_con_parcelas - renta_actual
+ganancia_badge = renta_con_badge - renta_actual
+
+col_pv1, col_pv2 = st.columns(2)
+with col_pv1:
+    st.metric(f"Comprar {parcelas_alternativas} Parcelas", f"+${ganancia_parcelas:.4f}/mes", help=f"Costo: {ab_necesarios} AB")
+with col_pv2:
+    st.metric(f"Subir Nivel de Pasaporte", f"+${ganancia_badge:.4f}/mes", help=f"Costo: {ab_necesarios} AB")
+
+if ganancia_parcelas > ganancia_badge:
+    st.success(f"✅ **DECISIÓN MATEMÁTICA:** Compra Parcelas. Te generarán **${ganancia_parcelas - ganancia_badge:.4f} USD** más al mes que el pasaporte.")
 else:
-    # Determinar cuántas insignias faltan para el siguiente nivel
-    limites_insignias = [1, 11, 31, 61, 101]
-    siguiente_limite = limites_insignias[nivel_pasaporte]
-    insignias_faltantes = siguiente_limite - insignias
-    
-    ab_necesarios = insignias_faltantes * 200
-    parcelas_alternativas = ab_necesarios // 100
-
-    renta_actual = motor.calcular_renta_generica(total_parcelas, pais, TIERS, horas_srb_mes) * (1 + (nivel_pasaporte * 0.05))
-    renta_con_parcelas = motor.calcular_renta_generica(total_parcelas + parcelas_alternativas, pais, TIERS, horas_srb_mes) * (1 + (nivel_pasaporte * 0.05))
-    renta_con_badge = motor.calcular_renta_generica(total_parcelas, pais, TIERS, horas_srb_mes) * (1 + ((nivel_pasaporte + 1) * 0.05))
-
-    ganancia_parcelas = renta_con_parcelas - renta_actual
-    ganancia_badge = renta_con_badge - renta_actual
-
-    col_pv1, col_pv2 = st.columns(2)
-    with col_pv1:
-        st.metric(f"Comprar {parcelas_alternativas} Parcelas", f"{'+' if ganancia_parcelas >= 0 else ''}${ganancia_parcelas:.4f}/mes", help=f"Costo: {ab_necesarios} AB")
-    with col_pv2:
-        st.metric(f"Subir a Nivel {nivel_pasaporte + 1} de Pasaporte", f"{'+' if ganancia_badge >= 0 else ''}${ganancia_badge:.4f}/mes", help=f"Faltan {insignias_faltantes} insignias (Costo: {ab_necesarios} AB)")
-
-    if ganancia_parcelas > ganancia_badge:
-        st.success(f"✅ **DECISIÓN MATEMÁTICA:** Compra Parcelas. Te generarán **${ganancia_parcelas - ganancia_badge:.4f} USD** más al mes que el pasaporte.")
-    else:
-        st.success(f"✅ **DECISIÓN MATEMÁTICA:** Compra Insignias. El salto de 5% de pasaporte te dará **${ganancia_badge - ganancia_parcelas:.4f} USD** más al mes que {parcelas_alternativas} parcelas.")
+    st.success(f"✅ **DECISIÓN MATEMÁTICA:** Compra Insignias. El salto de 5% de pasaporte te dará **${ganancia_badge - ganancia_parcelas:.4f} USD** más al mes que {parcelas_alternativas} parcelas.")
 st.markdown("<br>", unsafe_allow_html=True)
 
 st.subheader("📋 Análisis de Salto (Tier Jump Analyzer) y Tablas de Comparación")
@@ -850,7 +850,7 @@ try:
                 btnAI.disabled = true;
                 btnAI.innerHTML = "<span class='material-symbols-outlined animate-spin'>sync</span> Pensando estrategia...";
                 respBox.classList.remove("hidden");
-                respBox.innerHTML = "<div class='flex flex-col items-center justify-center h-full'><span class='material-symbols-outlined text-4xl text-purple-500 animate-pulse mb-2'>psychology</span><span class='text-purple-400 font-bold'>Morph LLM está analizando tu portafolio...</span></div>";
+                respBox.innerHTML = "<div class='flex flex-col items-center justify-center h-full'><span class='material-symbols-outlined text-4xl text-purple-500 animate-pulse mb-2'>psychology</span><span class='text-purple-400 font-bold'>Analizando tu portafolio...</span></div>";
                 
                 try {{
                     const req = await fetch("https://yzykfkuoievdwqccyjtc.supabase.co/functions/v1/ai-advisor", {{
