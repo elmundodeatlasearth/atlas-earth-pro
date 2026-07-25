@@ -2,8 +2,8 @@
 // Tab de Simulador con inversión inmediata, parcela vs insignia, Explorer Club optimizer y ROI
 
 "use client";
-import { StatCard, MetricBox, GlowCard } from "./stat-card";
-import { fmt } from "@/utils/atlasMath";
+import { MetricBox, GlowCard } from "./stat-card";
+import { fmt, type VentanaEC } from "@/utils/atlasMath";
 import type { MotorAtlasEarth } from "@/utils/atlasMath";
 
 interface SimuladorTabProps {
@@ -21,7 +21,7 @@ interface SimuladorTabProps {
   parcelasEq: number;
   aumentoParcelas: number;
   aumentoPasaporte: number;
-  optData: { mes1: any; mes2: any; mes3: any; optimo: any };
+  optData: { mes1: VentanaEC; mes2: VentanaEC; mes3: VentanaEC; optimo: VentanaEC };
   roiGlobalDias: number;
   roiMarginalDias: number;
   rentaAdicional: number;

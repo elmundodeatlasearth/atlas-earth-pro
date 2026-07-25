@@ -3,12 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/utils/supabase";
 
 export default function AdminCRM() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<{ user_id: string; ai_credits: number; is_ultra: boolean; total_parcelas: number; meta_dolares: number; created_at: string }[]>([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
 
   const fetchUsers = async () => {
     const { data, error } = await supabase
@@ -21,6 +17,10 @@ export default function AdminCRM() {
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   const addAICredits = async (userId: string, credits: number) => {
     const user = users.find(u => u.user_id === userId);

@@ -12,10 +12,8 @@ import {
   optimizadorExplorerClub,
   calcularNivelPasaporte,
   TIERS_COMPLETOS,
-  PAISES_DISPONIBLES,
-  MONEDAS_DISPONIBLES,
-  MAP_MONEDAS,
   NIVELES_INSIGNIAS,
+  type OptimizadorECResult,
 } from "@/utils/atlasMath";
 import { supabase } from "@/utils/supabase";
 import type { HistorialEntry } from "@/components/HistorialChart";
@@ -95,7 +93,7 @@ export interface AtlasState {
   simTotal: number; simMult: number; simDia: number; simSem: number; simMes: number; simAnio: number;
   desgloseF2p: { total_mes: number; promedio_diario: number; ruleta_diaria: number; anuncios_diarios: number; asistencia_mes: number; minijuegos_mes: number };
   desgloseEc: { total_mes: number; promedio_diario: number; ruleta_diaria: number; anuncios_diarios: number; asistencia_mes: number; minijuegos_mes: number };
-  optData: { mes1: any; mes2: any; mes3: any; optimo: any };
+  optData: OptimizadorECResult;
   diasFree: number; diasEc2: number; tiempoFree: string; tiempoEc: string;
   balanceAlcanza: number; faltanNetosAb: number; porcentajeEsc: number;
   rentaAdicional: number; roiGlobalDias: number; roiMarginalDias: number;
@@ -132,7 +130,7 @@ export function useAtlasState(): AtlasState {
 
   // Auth state
   const [user, setUser] = useState<User | null>(null);
-  const [_session, setSession] = useState<Session | null>(null);
+  const [, setSession] = useState<Session | null>(null);
   const [authEmail, setAuthEmail] = useState("");
   const [authPass, setAuthPass] = useState("");
   const [authLoading, setAuthLoading] = useState(false);
@@ -159,6 +157,45 @@ export function useAtlasState(): AtlasState {
   const [histDiam, setHistDiam] = useState(0);
   const [histMsg, setHistMsg] = useState("");
 
+  // ===== FUNCIONES (declaradas antes de los effects que las usan) =====
+
+  const cargarPerfilNube = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("usuarios_atlas")
+        .select("*")
+        .eq("user_id", userId)
+        .single();
+      if (data && !error) {
+        if (data.perfil_data) {
+          try {
+            const p = JSON.parse(data.perfil_data);
+            startTransition(() => {
+              setPais(p.pais || "Estados Unidos");
+              setMoneda(p.moneda || "USD");
+              setHorasBoost(p.horas_boost ?? 18);
+              setEficiencia(p.eficiencia ?? 95);
+              setHorasSrb(p.horas_srb_mes ?? 32);
+              setParcelasC(p.c_comun ?? 150);
+              setParcelasR(p.c_rara ?? 0);
+              setParcelasE(p.c_epica ?? 0);
+              setParcelasL(p.c_legendaria ?? 0);
+              setInsignias(p.insignias ?? 0);
+              setAbAhorrados(p.ab_manuales ?? 500);
+              setTipoPase(p.tipo_pase ?? "Ninguno (F2P)");
+              setMeta(p.meta_dolar ?? 1);
+            });
+          } catch { /* ignore */ }
+        }
+        startTransition(() => {
+          setIsPro(data.is_vip || false);
+          setIsUltra(data.is_ultra || false);
+          setAiCredits(data.ai_credits || 0);
+        });
+      }
+    } catch { /* ignore */ }
+  };
+
   // ===== EFFECTS =====
 
   // Auth init
@@ -184,8 +221,7 @@ export function useAtlasState(): AtlasState {
       });
     });
     return () => subscription?.unsubscribe();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Local profiles init
   useEffect(() => {
@@ -332,41 +368,6 @@ export function useAtlasState(): AtlasState {
     return "✅ Todo en orden. Sigue acumulando.";
   }, [colapso, motor.total_parcelas, faltanNetosAb, siguiente_tramo, nivelActualPasaporte,
       aumentoPasaporte, aumentoParcelas, insigniasFaltantes, nivelSiguientePasaporte, faltantesTier]);
-
-  // ===== FUNCIONES =====
-
-  const cargarPerfilNube = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("usuarios_atlas")
-        .select("*")
-        .eq("user_id", userId)
-        .single();
-      if (data && !error) {
-        if (data.perfil_data) {
-          try {
-            const p = JSON.parse(data.perfil_data);
-            setPais(p.pais || "Estados Unidos");
-            setMoneda(p.moneda || "USD");
-            setHorasBoost(p.horas_boost ?? 18);
-            setEficiencia(p.eficiencia ?? 95);
-            setHorasSrb(p.horas_srb_mes ?? 32);
-            setParcelasC(p.c_comun ?? 150);
-            setParcelasR(p.c_rara ?? 0);
-            setParcelasE(p.c_epica ?? 0);
-            setParcelasL(p.c_legendaria ?? 0);
-            setInsignias(p.insignias ?? 0);
-            setAbAhorrados(p.ab_manuales ?? 500);
-            setTipoPase(p.tipo_pase ?? "Ninguno (F2P)");
-            setMeta(p.meta_dolar ?? 1);
-          } catch { /* ignore */ }
-        }
-        setIsPro(data.is_vip || false);
-        setIsUltra(data.is_ultra || false);
-        setAiCredits(data.ai_credits || 0);
-      }
-    } catch { /* ignore */ }
-  };
 
   const guardarPerfil = useCallback(() => {
     const perfil = {
