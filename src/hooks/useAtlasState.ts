@@ -11,7 +11,6 @@ import {
   SimuladorDiario,
   optimizadorExplorerClub,
   calcularNivelPasaporte,
-  fmt,
   TIERS_COMPLETOS,
   PAISES_DISPONIBLES,
   MONEDAS_DISPONIBLES,
