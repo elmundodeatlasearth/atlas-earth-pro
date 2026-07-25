@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { MotorAtlasEarth, obtenerTasaCambio, TiersDict } from "@/utils/atlasMath";
+import { supabase } from "@/utils/supabase";
 
 const MONEDAS = ["USD","MXN","EUR","CAD","GBP","AUD","BRL","NZD","ZAR"];
 const PAISES = ["Estados Unidos"];
@@ -49,12 +50,90 @@ export default function Home() {
   const [tasa, setTasa] = useState(1.0);
   const [activeTab, setActiveTab] = useState("dashboard");
 
-  // AI
+  // Auth state
+  const [session, setSession] = useState<any>(null);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
+
+  // AI state
   const [aiLoading, setAiLoading] = useState(false);
   const [aiAdvice, setAiAdvice] = useState("");
   const [aiError, setAiError] = useState("");
 
   useEffect(() => { setTasa(obtenerTasaCambio(moneda)); }, [moneda]);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleLogin = async (e: any) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError("");
+    const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
+    if (error) setAuthError(error.message);
+    setAuthLoading(false);
+  };
+
+  const handleSignUp = async (e: any) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    setAuthError("");
+    const { error } = await supabase.auth.signUp({ email: authEmail, password: authPassword });
+    if (error) setAuthError(error.message);
+    else setAuthError("Registro exitoso. Revisa tu correo o inicia sesión directamente.");
+    setAuthLoading(false);
+  };
+
+  if (!session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#080808]" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <div className="bg-[#111] p-8 rounded-2xl border border-cyan-500/30 shadow-[0_0_50px_rgba(0,221,221,0.1)] w-full max-w-md">
+          <div className="flex flex-col items-center gap-3 mb-8">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-3xl font-black shadow-lg shadow-cyan-500/30">🌎</div>
+            <h1 className="text-2xl font-black text-white">Atlas Earth PRO</h1>
+            <p className="text-gray-400 text-sm">Inicia sesión en la nube para guardar tu progreso y desbloquear la IA.</p>
+          </div>
+
+          <form className="space-y-4">
+            <div>
+              <label className="text-xs text-gray-400 uppercase tracking-widest mb-1 block">Correo Electrónico</label>
+              <input type="email" value={authEmail} onChange={e => setAuthEmail(e.target.value)}
+                className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-cyan-500 focus:outline-none" />
+            </div>
+            <div>
+              <label className="text-xs text-gray-400 uppercase tracking-widest mb-1 block">Contraseña</label>
+              <input type="password" value={authPassword} onChange={e => setAuthPassword(e.target.value)}
+                className="w-full bg-[#1a1a1a] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-cyan-500 focus:outline-none" />
+            </div>
+
+            {authError && <div className="text-red-400 text-sm text-center font-semibold bg-red-900/20 p-2 rounded-lg">{authError}</div>}
+
+            <div className="flex gap-4 pt-4">
+              <button onClick={handleLogin} disabled={authLoading}
+                className="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-50">
+                Entrar
+              </button>
+              <button onClick={handleSignUp} disabled={authLoading}
+                className="flex-1 bg-[#222] hover:bg-[#333] border border-white/10 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-50">
+                Registrarse
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   const pasaporte = insignias >= 101 ? 5 : insignias >= 61 ? 4 : insignias >= 31 ? 3 : insignias >= 11 ? 2 : insignias >= 1 ? 1 : 0;
 
@@ -250,6 +329,13 @@ export default function Home() {
               className="block w-full text-center text-xs font-bold py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white transition-all shadow-md shadow-purple-900/40">
               ☕ Donar — Desbloquear IA
             </a>
+          </div>
+          {/* Logout */}
+          <div className="mt-4 pt-4 border-t border-white/5">
+            <button onClick={() => supabase.auth.signOut()}
+              className="w-full bg-red-900/30 hover:bg-red-900/50 text-red-400 border border-red-500/20 py-2 rounded-lg text-xs font-bold transition-colors">
+              Cerrar Sesión ({session.user.email})
+            </button>
           </div>
         </div>
       </aside>
