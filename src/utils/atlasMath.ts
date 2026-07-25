@@ -277,7 +277,7 @@ export function optimizadorExplorerClub(dia_actual: number): OptimizadorECResult
     }
     let dia_fin = (inicio + 29) % 90;
     if (dia_fin === 0) dia_fin = 90;
-    let dias_espera = inicio >= dia_actual ? inicio - dia_actual : 90 - dia_actual + inicio;
+    const dias_espera = inicio >= dia_actual ? inicio - dia_actual : 90 - dia_actual + inicio;
     const fecha_compra = new Date(hoy);
     fecha_compra.setDate(fecha_compra.getDate() + dias_espera);
     return {
@@ -358,7 +358,7 @@ export function calcularNivelPasaporte(insignias: number): number {
 }
 
 export class EstrategiaPro {
-  analizar_compra(parcelas_actuales: number, meta_parcelas: number): string {
+  analizar_compra(parcelas_actuales: number, _meta_parcelas: number): string {
     if (parcelas_actuales < 150) {
       return "Prioridad: Comprar parcelas hasta el Tier de 150 (Multiplicador Máximo).";
     }

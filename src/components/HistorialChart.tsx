@@ -3,7 +3,7 @@
 
 import { useEffect, useRef } from "react";
 
-interface HistorialEntry {
+export interface HistorialEntry {
   fecha: string;
   ab_generado: number;
   usd_generado: number;
