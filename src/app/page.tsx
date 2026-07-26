@@ -79,7 +79,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="p-8 space-y-8 animate-fade-in">
+        <div className="p-10 space-y-8 animate-fade-in">
           {S.activeTab === "dashboard" && (
             <DashboardTab
               motor={S.motor} multTier={S.multTier} pais={S.pais}

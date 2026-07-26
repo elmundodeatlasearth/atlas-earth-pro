@@ -79,7 +79,33 @@ export default function IaTab(props: IaTabProps) {
             )}
 
             {props.aiAdvice && (
-              <div className="mt-6 p-6 bg-gradient-to-br from-[#0d0d0d] to-[#0a0a0a] rounded-xl border border-purple-500/10 text-gray-200 text-sm leading-relaxed"
+              <div className="mt-6 p-6 bg-gradient-to-br from-[#0d0d0d] to-[#0a0a0a] rounded-xl border border-purple-500/15 text-gray-200 text-sm leading-relaxed max-h-[500px] overflow-y-auto
+                prose prose-invert prose-sm prose-headings:text-purple-300 prose-headings:font-bold prose-headings:mt-4 prose-headings:mb-2
+                prose-strong:text-cyan-300 prose-strong:font-bold
+                prose-li:text-gray-300 prose-li:marker:text-purple-500
+                prose-p:text-gray-300 prose-p:leading-relaxed
+                prose-code:text-pink-300 prose-code:bg-white/5 prose-code:px-1 prose-code:rounded
+                prose-hr:border-white/10
+                [&_h1]:text-lg [&_h1]:font-black [&_h1]:text-purple-300 [&_h1]:border-b [&_h1]:border-purple-500/20 [&_h1]:pb-2
+                [&_h2]:text-base [&_h2]:font-bold [&_h2]:text-purple-300 [&_h2]:border-b [&_h2]:border-purple-500/20 [&_h2]:pb-1.5
+                [&_h3]:text-sm [&_h3]:font-bold [&_h3]:text-purple-200
+                [&_ul]:space-y-1 [&_ul]:my-2
+                [&_li]:text-xs
+                [&_.highlight]:bg-purple-900/30 [&_.highlight]:rounded [&_.highlight]:px-2 [&_.highlight]:py-0.5 [&_.highlight]:text-purple-200
+                [&_.stat]:inline-flex [&_.stat]:bg-white/5 [&_.stat]:rounded [&_.stat]:px-2 [&_.stat]:py-0.5 [&_.stat]:text-xs [&_.stat]:font-mono [&_.stat]:text-cyan-300
+                [&_.badge]:inline-flex [&_.badge]:text-[10px] [&_.badge]:font-bold [&_.badge]:uppercase [&_.badge]:tracking-wider
+                [&_.badge-green]:bg-green-900/40 [&_.badge-green]:text-green-300 [&_.badge-green]:px-2 [&_.badge-green]:py-0.5 [&_.badge-green]:rounded
+                [&_.badge-red]:bg-red-900/40 [&_.badge-red]:text-red-300 [&_.badge-red]:px-2 [&_.badge-red]:py-0.5 [&_.badge-red]:rounded
+                [&_.badge-gold]:bg-amber-900/40 [&_.badge-gold]:text-amber-300 [&_.badge-gold]:px-2 [&_.badge-gold]:py-0.5 [&_.badge-gold]:rounded
+                [&_table]:w-full [&_table]:text-xs [&_table]:border-collapse [&_table]:my-3
+                [&_td]:border [&_td]:border-white/10 [&_td]:p-2 [&_td]:text-gray-300
+                [&_th]:border [&_th]:border-white/10 [&_th]:p-2 [&_th]:bg-purple-900/30 [&_th]:text-purple-200 [&_th]:font-bold
+                [&_.card]:bg-white/5 [&_.card]:rounded-lg [&_.card]:p-3 [&_.card]:border [&_.card]:border-white/10 [&_.card]:my-2
+                [&_.card-green]:bg-green-900/20 [&_.card-green]:border-green-500/20
+                [&_.card-red]:bg-red-900/20 [&_.card-red]:border-red-500/20
+                [&_.card-blue]:bg-blue-900/20 [&_.card-blue]:border-blue-500/20
+                [&_.card-gold]:bg-amber-900/20 [&_.card-gold]:border-amber-500/20
+                scrollbar-thin"
                 dangerouslySetInnerHTML={{ __html: props.aiAdvice }} />
             )}
 

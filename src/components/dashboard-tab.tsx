@@ -130,7 +130,21 @@ export default function DashboardTab(props: DashboardTabProps) {
       {/* Estrategia */}
       <GlowCard>
         <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">🧠 Estrategia Inteligente</div>
-        <div className="text-sm text-gray-300 leading-relaxed" dangerouslySetInnerHTML={{ __html: props.veredictoEstrategia }} />
+        <div className="text-sm text-gray-300 leading-relaxed
+          prose prose-invert prose-sm
+          prose-headings:text-cyan-300 prose-headings:font-bold prose-headings:mt-4 prose-headings:mb-2
+          prose-strong:text-amber-300 prose-strong:font-bold
+          prose-li:text-gray-300
+          prose-p:text-gray-300 prose-p:leading-relaxed
+          [&_h1]:text-base [&_h1]:font-black [&_h1]:text-cyan-300
+          [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-cyan-300
+          [&_.highlight]:bg-cyan-900/20 [&_.highlight]:rounded [&_.highlight]:px-2 [&_.highlight]:py-0.5
+          [&_.stat]:font-mono [&_.stat]:text-cyan-300
+          [&_.badge]:inline-block [&_.badge]:text-[10px] [&_.badge]:font-bold [&_.badge]:uppercase [&_.badge]:px-2 [&_.badge]:py-0.5 [&_.badge]:rounded
+          [&_.badge-green]:bg-green-900/40 [&_.badge-green]:text-green-300
+          [&_.badge-red]:bg-red-900/40 [&_.badge-red]:text-red-300
+          [&_.badge-gold]:bg-amber-900/40 [&_.badge-gold]:text-amber-300"
+          dangerouslySetInnerHTML={{ __html: props.veredictoEstrategia }} />
       </GlowCard>
     </div>
   );

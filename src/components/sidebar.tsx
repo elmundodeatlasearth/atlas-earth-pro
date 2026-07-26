@@ -67,9 +67,9 @@ function InputRow({ label, value, set, min = 0, max }: { label: string; value: n
 
 export default function Sidebar(props: SidebarProps) {
   return (
-    <aside className="w-80 bg-[#0d0d0d]/95 backdrop-blur-xl border-r border-white/5 flex flex-col overflow-y-auto shrink-0">
+    <aside className="w-96 bg-[#0d0d0d]/95 backdrop-blur-xl border-r border-white/5 flex flex-col overflow-y-auto shrink-0">
       {/* Logo + Auth */}
-      <div className="p-5 border-b border-white/5">
+      <div className="p-6 border-b border-white/5">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 flex items-center justify-center text-xl font-black shadow-lg shadow-cyan-500/30 animate-pulse-glow">
             🌎
@@ -90,7 +90,7 @@ export default function Sidebar(props: SidebarProps) {
         />
       </div>
 
-      <div className="p-4 space-y-4 flex-1">
+      <div className="px-5 py-4 space-y-5 flex-1">
         {/* Perfiles */}
         <Section title="📁 Perfil">
           <div className="flex gap-1">
@@ -258,8 +258,10 @@ export default function Sidebar(props: SidebarProps) {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1.5">{title}</div>
-      {children}
+      <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">{title}</div>
+      <div className="space-y-2">
+        {children}
+      </div>
     </div>
   );
 }
@@ -275,8 +277,8 @@ function MiniButton({ onClick, className, title, children }: { onClick: () => vo
 
 function StepperRow({ label, value, set }: { label: string; value: number; set: (v: number) => void }) {
   return (
-    <div className="flex items-center gap-2">
-      <label className="text-xs text-gray-400 w-16 shrink-0">{label}</label>
+    <div className="flex items-center gap-3">
+      <label className="text-xs text-gray-400 w-20 shrink-0">{label}</label>
       <div className="flex items-center bg-[#1a1a1a] border border-white/10 rounded-lg overflow-hidden flex-1">
         <button onClick={() => set(Math.max(0, value - 1))}
           className="px-2 py-1 text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-xs font-bold">−</button>
