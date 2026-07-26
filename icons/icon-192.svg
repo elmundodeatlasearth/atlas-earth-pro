@@ -1,0 +1,38 @@
+<svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a0a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="globe" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="50%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <rect width="192" height="192" rx="40" fill="url(#bg)" stroke="#1f2937" stroke-width="2"/>
+  
+  <!-- Hexagon honeycomb outline -->
+  <g transform="translate(96,90)" fill="none" stroke="url(#globe)" stroke-width="1.5" opacity="0.3">
+    <polygon points="0,-30 26,-15 26,15 0,30 -26,15 -26,-15"/>
+    <polygon points="30,-15 56,0 56,30 30,45 4,30 4,0" opacity="0.2"/>
+    <polygon points="-30,-15 -56,0 -56,30 -30,45 -4,30 -4,0" opacity="0.2"/>
+  </g>
+  
+  <!-- Globe circle -->
+  <circle cx="96" cy="86" r="42" fill="url(#globe)" opacity="0.15"/>
+  <circle cx="96" cy="86" r="42" fill="none" stroke="url(#globe)" stroke-width="2.5"/>
+  
+  <!-- Globe lines -->
+  <ellipse cx="96" cy="86" rx="36" ry="12" fill="none" stroke="url(#globe)" stroke-width="1" opacity="0.4"/>
+  <ellipse cx="96" cy="86" rx="12" ry="36" fill="none" stroke="url(#globe)" stroke-width="1" opacity="0.4"/>
+  
+  <!-- Small globe cross -->
+  <line x1="96" y1="44" x2="96" y2="128" stroke="url(#globe)" stroke-width="1" opacity="0.3"/>
+  <line x1="54" y1="86" x2="138" y2="86" stroke="url(#globe)" stroke-width="1" opacity="0.3"/>
+  
+  <!-- PRO text -->
+  <text x="96" y="160" text-anchor="middle" font-family="Inter, sans-serif" font-weight="900" font-size="24" fill="url(#globe)" letter-spacing="2">PRO</text>
+</svg>

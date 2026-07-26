@@ -1,9 +1,9 @@
 1:"$Sreact.fragment"
-2:I[47257,["/atlas-earth-pro/next_assets/static/chunks/2_w14q_f3n5qm.js","/atlas-earth-pro/next_assets/static/chunks/158myu8e_yme3.js"],"ClientPageRoot"]
-3:I[52683,["/atlas-earth-pro/next_assets/static/chunks/2_w14q_f3n5qm.js","/atlas-earth-pro/next_assets/static/chunks/158myu8e_yme3.js","/atlas-earth-pro/next_assets/static/chunks/0iiuqhcv-5n1o.js","/atlas-earth-pro/next_assets/static/chunks/1gi1wox3liehu.js"],"default"]
-6:I[97367,["/atlas-earth-pro/next_assets/static/chunks/2_w14q_f3n5qm.js","/atlas-earth-pro/next_assets/static/chunks/158myu8e_yme3.js"],"OutletBoundary"]
+2:I[47257,["/atlas-earth-pro/_next/static/chunks/3meeola7ihshu.js","/atlas-earth-pro/_next/static/chunks/45bbbrrwweuvr.js"],"ClientPageRoot"]
+3:I[52683,["/atlas-earth-pro/_next/static/chunks/3meeola7ihshu.js","/atlas-earth-pro/_next/static/chunks/45bbbrrwweuvr.js","/atlas-earth-pro/_next/static/chunks/0-hjbwdsul-ul.js","/atlas-earth-pro/_next/static/chunks/1gi1wox3liehu.js"],"default"]
+6:I[97367,["/atlas-earth-pro/_next/static/chunks/3meeola7ihshu.js","/atlas-earth-pro/_next/static/chunks/45bbbrrwweuvr.js"],"OutletBoundary"]
 7:"$Sreact.suspense"
-0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"Component":"$3","serverProvidedParams":{"searchParams":{},"params":{},"promises":["$@4","$@5"]}}],[["$","script","script-0",{"src":"/atlas-earth-pro/next_assets/static/chunks/0iiuqhcv-5n1o.js","async":true}],["$","script","script-1",{"src":"/atlas-earth-pro/next_assets/static/chunks/1gi1wox3liehu.js","async":true}]],["$","$L6",null,{"children":["$","$7",null,{"name":"Next.MetadataOutlet","children":"$@8"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"O20S0gprsguyRKsa7FM_P"}
+0:{"rsc":["$","$1","c",{"children":[["$","$L2",null,{"Component":"$3","serverProvidedParams":{"searchParams":{},"params":{},"promises":["$@4","$@5"]}}],[["$","script","script-0",{"src":"/atlas-earth-pro/_next/static/chunks/0-hjbwdsul-ul.js","async":true}],["$","script","script-1",{"src":"/atlas-earth-pro/_next/static/chunks/1gi1wox3liehu.js","async":true}]],["$","$L6",null,{"children":["$","$7",null,{"name":"Next.MetadataOutlet","children":"$@8"}]}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"NegY4jrh6Lhcov_7earl-"}
 4:{}
 5:"$0:rsc:props:children:0:props:serverProvidedParams:params"
 8:null
