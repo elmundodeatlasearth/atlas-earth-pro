@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import HoneycombBackground from "@/components/HoneycombBackground";
+import DynamicBackground from "@/components/DynamicBackground";
 import { ToastProvider } from "@/components/toast";
 
 export const metadata: Metadata = {
@@ -58,7 +58,7 @@ export default function RootLayout({
         }} />
       </head>
       <body className="min-h-full flex flex-col font-sans antialiased bg-[#0a0a0a] text-white relative">
-        <HoneycombBackground />
+        <DynamicBackground />
         <div className="relative z-10 flex-1 flex flex-col">
           <ToastProvider>
             {children}
