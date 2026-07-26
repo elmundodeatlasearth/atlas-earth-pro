@@ -144,6 +144,7 @@ export default function Home() {
               desgloseF2p={S.desgloseF2p} desgloseEc={S.desgloseEc}
               veredictoEstrategia={S.veredictoEstrategia}
               totalParcelas={S.motor.total_parcelas}
+              horasSrb={S.horasSrb} eficiencia={S.eficiencia} horasBoost={S.horasBoost}
             />
           )}
           {S.activeTab === "simulador" && (

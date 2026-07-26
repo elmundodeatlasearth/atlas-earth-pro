@@ -5,6 +5,7 @@
 import { StatCard, MetricBox, GlowCard } from "./stat-card";
 import type { MotorAtlasEarth } from "@/utils/atlasMath";
 import { sanitizeHTML } from "@/utils/sanitize";
+import ComparativaPaises from "./comparativa-paises";
 
 interface DashboardTabProps {
   motor: MotorAtlasEarth;
@@ -26,6 +27,9 @@ interface DashboardTabProps {
   desgloseEc: { total_mes: number; promedio_diario: number; ruleta_diaria: number; anuncios_diarios: number; asistencia_mes: number; minijuegos_mes: number };
   veredictoEstrategia: string;
   totalParcelas: number;
+  horasSrb: number;
+  eficiencia: number;
+  horasBoost: number;
 }
 
 export default function DashboardTab(props: DashboardTabProps) {
@@ -127,6 +131,14 @@ export default function DashboardTab(props: DashboardTabProps) {
           </div>
         </GlowCard>
       </div>
+
+      {/* Comparativa de Países */}
+      <ComparativaPaises
+        motor={props.motor}
+        horasSrb={props.horasSrb}
+        eficiencia={props.eficiencia}
+        horasBoost={props.horasBoost}
+      />
 
       {/* Estrategia */}
       <GlowCard>
