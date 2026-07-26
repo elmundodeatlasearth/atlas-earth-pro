@@ -17,6 +17,41 @@ const corsHeaders = {
 };
 
 // ============================================
+// 2a. RATE LIMITER — Simple en memoria
+// ============================================
+
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT = 10; // requests per window
+const RATE_WINDOW_MS = 60_000; // 1 minute
+
+function checkRateLimit(key: string): { allowed: boolean; remaining: number } {
+  const now = Date.now();
+  const entry = rateLimitMap.get(key);
+  
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return { allowed: true, remaining: RATE_LIMIT - 1 };
+  }
+  
+  if (entry.count >= RATE_LIMIT) {
+    return { allowed: false, remaining: 0 };
+  }
+  
+  entry.count++;
+  return { allowed: true, remaining: RATE_LIMIT - entry.count };
+}
+
+// Clean up stale entries every 5 minutes
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of rateLimitMap) {
+      if (now > entry.resetAt) rateLimitMap.delete(key);
+    }
+  }, 300_000);
+}
+
+// ============================================
 // 2. TIPOS
 // ============================================
 
@@ -332,6 +367,15 @@ serve(async (req) => {
       is_vip = userData.is_vip ?? false;
     }
 
+    // ===== RATE LIMIT CHECK =====
+    const rl = checkRateLimit(userId);
+    if (!rl.allowed) {
+      return new Response(JSON.stringify({
+        error: "⏳ Demasiadas solicitudes. Espera un minuto antes de intentar de nuevo.",
+        retry_after: 60,
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 })
+    }
+
     if (!is_ultra && ai_credits <= 0) {
       return new Response(JSON.stringify({
         error: "Acceso bloqueado. Para usar la IA de forma gratuita, apoya el proyecto invitando un café (desbloquea 3 consultas automáticas)."
@@ -409,7 +453,8 @@ serve(async (req) => {
       remaining_credits: is_ultra ? "Ilimitados (ULTRA)" : (usedFallback ? "Ilimitados (Motor Local)" : ai_credits),
       source: usedFallback ? "local" : "morph+local",
       metricas: resultado.metricas, advertencias: resultado.advertencias, recomendaciones: resultado.recomendaciones,
-    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 })
+      _rate_limit_remaining: rl.remaining,
+    }), { headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-RateLimit-Remaining': String(rl.remaining) }, status: 200 })
 
   } catch (err) {
     console.error("Internal Edge Error:", err)

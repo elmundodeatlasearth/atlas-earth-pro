@@ -4,6 +4,7 @@
 "use client";
 import { StatCard, MetricBox, GlowCard } from "./stat-card";
 import type { MotorAtlasEarth } from "@/utils/atlasMath";
+import { sanitizeHTML } from "@/utils/sanitize";
 
 interface DashboardTabProps {
   motor: MotorAtlasEarth;
@@ -144,7 +145,7 @@ export default function DashboardTab(props: DashboardTabProps) {
           [&_.badge-green]:bg-green-900/40 [&_.badge-green]:text-green-300
           [&_.badge-red]:bg-red-900/40 [&_.badge-red]:text-red-300
           [&_.badge-gold]:bg-amber-900/40 [&_.badge-gold]:text-amber-300"
-          dangerouslySetInnerHTML={{ __html: props.veredictoEstrategia }} />
+          dangerouslySetInnerHTML={{ __html: sanitizeHTML(props.veredictoEstrategia) }} />
       </GlowCard>
     </div>
   );

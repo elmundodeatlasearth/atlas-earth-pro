@@ -4,6 +4,7 @@
 "use client";
 import type { User } from "@supabase/supabase-js";
 import { GlowCard } from "./stat-card";
+import { sanitizeHTML } from "@/utils/sanitize";
 
 interface IaTabProps {
   user: User | null;
@@ -107,7 +108,7 @@ export default function IaTab(props: IaTabProps) {
                   [&_.card-blue]:bg-blue-900/20 [&_.card-blue]:border-blue-500/20
                   [&_.card-gold]:bg-amber-900/20 [&_.card-gold]:border-amber-500/20
                   scrollbar-custom"
-                  dangerouslySetInnerHTML={{ __html: props.aiAdvice }} />
+                  dangerouslySetInnerHTML={{ __html: sanitizeHTML(props.aiAdvice) }} />
                 {/* Fade gradient + scroll indicator */}
                 <div className="pointer-events-none absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#0a0a0a] to-transparent rounded-b-xl" />
                 <div className="text-[10px] text-gray-600 text-center mt-1">⬇️ Desplázate para ver el análisis completo</div>

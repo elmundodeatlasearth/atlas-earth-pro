@@ -1,7 +1,21 @@
 // src/components/HistorialChart.tsx
+// Chart.js chart with dark theme, multi-line (AB + USD), tooltips, animations
 "use client";
 
 import { useEffect, useRef } from "react";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import type { ChartConfiguration } from "chart.js";
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
 export interface HistorialEntry {
   fecha: string;
@@ -16,102 +30,136 @@ interface Props {
 
 export default function HistorialChart({ data }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const chartRef = useRef<ChartJS | null>(null);
 
   useEffect(() => {
     if (!canvasRef.current || data.length === 0) return;
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
+    // Destroy previous chart
+    if (chartRef.current) {
+      chartRef.current.destroy();
+      chartRef.current = null;
+    }
+
+    const ctx = canvasRef.current.getContext("2d");
     if (!ctx) return;
-
-    // Clear
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const w = canvas.width;
-    const h = canvas.height;
-    const pad = { top: 20, bottom: 30, left: 50, right: 20 };
-    const chartW = w - pad.left - pad.right;
-    const chartH = h - pad.top - pad.bottom;
 
     const fechas = data.map((d) => {
       const parts = d.fecha.split("-");
       return parts.length === 3 ? `${parts[2]}/${parts[1]}` : d.fecha;
     });
-    const vals = data.map((d) => d.usd_generado);
-    const maxVal = Math.max(...vals, 0.001);
-    const minVal = Math.min(...vals, 0);
-    const range = maxVal - minVal || 1;
 
-    const xStep = chartW / Math.max(data.length - 1, 1);
+    // Check if we have meaningful AB data (not all zero)
+    const hasAb = data.some(d => d.ab_generado > 0);
 
-    // Grid
-    ctx.strokeStyle = "rgba(255,255,255,0.05)";
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 4; i++) {
-      const y = pad.top + (chartH / 4) * i;
-      ctx.beginPath();
-      ctx.moveTo(pad.left, y);
-      ctx.lineTo(w - pad.right, y);
-      ctx.stroke();
+    const config: ChartConfiguration = {
+      type: "line",
+      data: {
+        labels: fechas,
+        datasets: [
+          {
+            label: "USD Generados",
+            data: data.map(d => Number(d.usd_generado.toFixed(6))),
+            borderColor: "#10b981",
+            backgroundColor: "rgba(16, 185, 129, 0.08)",
+            fill: true,
+            tension: 0.35,
+            pointRadius: 3,
+            pointHoverRadius: 6,
+            pointBackgroundColor: "#10b981",
+            pointBorderColor: "#fff",
+            pointBorderWidth: 1,
+            borderWidth: 2,
+            yAxisID: "y",
+          },
+          ...(hasAb ? [{
+            label: "AB Generados",
+            data: data.map(d => d.ab_generado),
+            borderColor: "#8b5cf6",
+            backgroundColor: "rgba(139, 92, 246, 0.08)",
+            fill: true,
+            tension: 0.35,
+            pointRadius: 2,
+            pointHoverRadius: 5,
+            pointBackgroundColor: "#8b5cf6",
+            pointBorderColor: "#fff",
+            pointBorderWidth: 1,
+            borderWidth: 2,
+            yAxisID: "y1",
+          }] as any[] : []),
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: "index",
+          intersect: false,
+        },
+        plugins: {
+          legend: {
+            labels: {
+              color: "#9ca3af",
+              font: { family: "Inter, sans-serif", size: 11 },
+              usePointStyle: true,
+              padding: 16,
+            },
+          },
+          tooltip: {
+            backgroundColor: "rgba(13, 13, 13, 0.95)",
+            titleColor: "#e5e7eb",
+            bodyColor: "#9ca3af",
+            borderColor: "rgba(255,255,255,0.08)",
+            borderWidth: 1,
+            padding: 12,
+            cornerRadius: 10,
+            titleFont: { family: "Inter, sans-serif", size: 12, weight: "bold" as any },
+            bodyFont: { family: "Inter, sans-serif", size: 11 },
+            displayColors: true,
+            boxPadding: 6,
+          },
+        },
+        scales: {
+          x: {
+            grid: { color: "rgba(255,255,255,0.04)" },
+            ticks: {
+              color: "#666",
+              font: { family: "Inter, sans-serif", size: 10 },
+              maxTicksLimit: 10,
+            },
+          },
+          y: {
+            position: "left",
+            grid: { color: "rgba(255,255,255,0.04)" },
+            ticks: {
+              color: "#666",
+              font: { family: "Inter, sans-serif", size: 10 },
+              callback: (val: any) => "$" + Number(val).toFixed(4),
+            },
+          },
+          ...(hasAb ? {
+            y1: {
+              position: "right",
+              grid: { drawOnChartArea: false },
+              ticks: {
+                color: "#666",
+                font: { family: "Inter, sans-serif", size: 10 },
+                callback: (val: any) => Number(val).toFixed(0) + " AB",
+              },
+            },
+          } : {}),
+        },
+      },
+    };
 
-      // Labels
-      const val = maxVal - (range / 4) * i;
-      ctx.fillStyle = "#666";
-      ctx.font = "10px Inter, sans-serif";
-      ctx.textAlign = "right";
-      ctx.fillText(`$${val.toFixed(4)}`, pad.left - 5, y + 4);
-    }
+    chartRef.current = new ChartJS(ctx, config);
 
-    // Line
-    ctx.beginPath();
-    ctx.strokeStyle = "#10b981";
-    ctx.lineWidth = 2;
-    ctx.shadowColor = "#10b98133";
-    ctx.shadowBlur = 10;
-
-    vals.forEach((v, i) => {
-      const x = pad.left + i * xStep;
-      const y = pad.top + chartH - ((v - minVal) / range) * chartH;
-      if (i === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    // Fill gradient
-    const lastX = pad.left + (vals.length - 1) * xStep;
-    ctx.lineTo(lastX, pad.top + chartH);
-    ctx.lineTo(pad.left, pad.top + chartH);
-    ctx.closePath();
-    const grad = ctx.createLinearGradient(0, pad.top, 0, pad.top + chartH);
-    grad.addColorStop(0, "rgba(16,185,129,0.2)");
-    grad.addColorStop(1, "rgba(16,185,129,0.01)");
-    ctx.fillStyle = grad;
-    ctx.fill();
-
-    // Dots
-    vals.forEach((v, i) => {
-      const x = pad.left + i * xStep;
-      const y = pad.top + chartH - ((v - minVal) / range) * chartH;
-      ctx.beginPath();
-      ctx.arc(x, y, 3, 0, Math.PI * 2);
-      ctx.fillStyle = "#10b981";
-      ctx.fill();
-      ctx.strokeStyle = "#fff";
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    });
-
-    // X labels
-    fechas.forEach((f, i) => {
-      if (i % Math.max(1, Math.floor(data.length / 8)) === 0) {
-        const x = pad.left + i * xStep;
-        ctx.fillStyle = "#666";
-        ctx.font = "9px Inter, sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(f, x, h - 5);
+    return () => {
+      if (chartRef.current) {
+        chartRef.current.destroy();
+        chartRef.current = null;
       }
-    });
+    };
   }, [data]);
 
   if (data.length === 0) {
@@ -123,12 +171,8 @@ export default function HistorialChart({ data }: Props) {
   }
 
   return (
-    <canvas
-      ref={canvasRef}
-      width={800}
-      height={300}
-      className="w-full h-full"
-      style={{ maxHeight: "300px" }}
-    />
+    <div className="relative">
+      <canvas ref={canvasRef} className="w-full" style={{ maxHeight: "280px", minHeight: "200px" }} />
+    </div>
   );
 }
