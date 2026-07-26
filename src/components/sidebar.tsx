@@ -57,12 +57,16 @@ interface SidebarProps {
 
 function InputRow({ label, value, set, min = 0, max }: { label: string; value: number; set: (v: number) => void; min?: number; max?: number }) {
   return (
-    <div className="flex items-center justify-between">
-      <label className="text-xs text-gray-400">{label}</label>
+    <div className="flex items-center justify-between gap-3">
+      <label className="text-xs text-gray-400 shrink-0">{label}</label>
       <input type="number" value={value} min={min} max={max} onChange={e => set(Number(e.target.value))}
-        className="w-16 bg-[#1a1a1a] border border-white/10 rounded px-2 py-1 text-xs text-white text-center focus:outline-none focus:border-cyan-500 transition-all duration-200" />
+        className="w-20 bg-[#1a1a1a] border border-white/10 rounded px-3 py-1.5 text-xs text-white text-center focus:outline-none focus:border-cyan-500 transition-all duration-200" />
     </div>
   );
+}
+
+function Divider() {
+  return <div className="border-t border-white/5 my-2" />;
 }
 
 export default function Sidebar(props: SidebarProps) {
@@ -130,6 +134,8 @@ export default function Sidebar(props: SidebarProps) {
           </div>
         </Section>
 
+        <Divider />
+
         {/* Inventario */}
         <Section title="🗺️ Inventario">
           <div className="space-y-1.5">
@@ -143,6 +149,8 @@ export default function Sidebar(props: SidebarProps) {
             ))}
           </div>
         </Section>
+
+        <Divider />
 
         {/* Resumen rápido */}
         <SummaryCard
@@ -165,6 +173,8 @@ export default function Sidebar(props: SidebarProps) {
           </div>
         </Section>
 
+        <Divider />
+
         {/* Pase */}
         <Section title="💎 Pase Mensual">
           <select value={props.tipoPase} onChange={e => props.setTipoPase(e.target.value)}
@@ -175,6 +185,8 @@ export default function Sidebar(props: SidebarProps) {
             <option>Explorer Club ($50.00)</option>
           </select>
         </Section>
+
+        <Divider />
 
         {/* Meta */}
         <Section title="🎯 Meta de Renta">
@@ -223,6 +235,8 @@ export default function Sidebar(props: SidebarProps) {
             className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:border-cyan-500 focus:outline-none" />
         </Section>
 
+        <Divider />
+
         {/* Paywalls */}
         {!props.isPro && !props.isUltra && (
           <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/30 rounded-xl p-4 border border-purple-500/20">
@@ -247,7 +261,7 @@ export default function Sidebar(props: SidebarProps) {
 
         {/* Tasa de cambio */}
         {props.moneda !== "USD" && (
-          <div className="text-[10px] text-gray-500 text-center">💱 1 USD = {props.tasa.toFixed(4)} {props.moneda}</div>
+          <div className="text-[10px] text-gray-500 text-center pb-2">💱 1 USD = {props.tasa.toFixed(4)} {props.moneda}</div>
         )}
       </div>
     </aside>
