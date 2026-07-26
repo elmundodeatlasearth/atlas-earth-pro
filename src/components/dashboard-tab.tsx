@@ -135,8 +135,8 @@ export default function DashboardTab(props: DashboardTabProps) {
       {/* Comparativa Detallada de Tiers */}
       <TierComparativa
         motor={props.motor}
-        pais={props.pais}
-        moneda={props.moneda}
+        paisActual={props.pais}
+        monedaActual={props.moneda}
       />
 
       {/* Estrategia */}
