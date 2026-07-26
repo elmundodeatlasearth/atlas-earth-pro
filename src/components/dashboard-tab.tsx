@@ -5,7 +5,7 @@
 import { StatCard, MetricBox, GlowCard } from "./stat-card";
 import type { MotorAtlasEarth } from "@/utils/atlasMath";
 import { sanitizeHTML } from "@/utils/sanitize";
-import ComparativaPaises from "./comparativa-paises";
+import TierComparativa from "./tier-comparativa";
 
 interface DashboardTabProps {
   motor: MotorAtlasEarth;
@@ -132,12 +132,11 @@ export default function DashboardTab(props: DashboardTabProps) {
         </GlowCard>
       </div>
 
-      {/* Comparativa de Países */}
-      <ComparativaPaises
+      {/* Comparativa Detallada de Tiers */}
+      <TierComparativa
         motor={props.motor}
-        horasSrb={props.horasSrb}
-        eficiencia={props.eficiencia}
-        horasBoost={props.horasBoost}
+        pais={props.pais}
+        moneda={props.moneda}
       />
 
       {/* Estrategia */}
