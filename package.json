@@ -11,6 +11,7 @@
     "deploy": "gh-pages -d out -t true"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.68.0",
     "@supabase/supabase-js": "^2.110.8",
     "@types/dompurify": "^3.0.5",
     "chart.js": "^4.5.1",
