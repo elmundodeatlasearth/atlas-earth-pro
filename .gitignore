@@ -56,6 +56,10 @@ manifest.json
 __next.*
 rename_next.js
 
+# But track our PWA SVG icons
+!public/icons/*.svg
+!public/apple-touch-icon.svg
+
 # media files not used in source
 *.mp4
 *.jpeg

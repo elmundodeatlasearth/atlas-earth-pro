@@ -142,13 +142,13 @@ export default function SimuladorTab(props: SimuladorTabProps) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-[#0e0e0e] rounded-xl p-4 border border-white/5">
             <div className="text-xs text-gray-400 mb-1">🌍 ROI Global</div>
-            <div className="text-lg font-bold text-white">{props.roiGlobalDias > 0 ? (props.motor as any).formato_tiempo_exacto(props.roiGlobalDias) : "N/A"}</div>
+            <div className="text-lg font-bold text-white">{props.roiGlobalDias > 0 ? props.motor.formato_tiempo_exacto(props.roiGlobalDias) : "N/A"}</div>
             <div className="text-[10px] text-gray-500 mt-1">Tiempo en recuperar la inversión con TODAS tus ganancias.</div>
           </div>
           <div className="bg-[#0e0e0e] rounded-xl p-4 border border-white/5">
             <div className="text-xs text-gray-400 mb-1">⚡ ROI Marginal</div>
             <div className={`text-lg font-bold ${props.roiMarginalDias <= 365 ? "text-green-400" : props.roiMarginalDias <= 1095 ? "text-orange-400" : "text-red-400"}`}>
-              {props.roiMarginalDias > 0 ? (props.motor as any).formato_tiempo_exacto(props.roiMarginalDias) : props.rentaAdicional <= 0 ? "Nunca (Pérdida)" : "N/A"}
+              {props.roiMarginalDias > 0 ? props.motor.formato_tiempo_exacto(props.roiMarginalDias) : props.rentaAdicional <= 0 ? "Nunca (Pérdida)" : "N/A"}
             </div>
             <div className="text-[10px] text-gray-500 mt-1">Tiempo en recuperar con SOLO las ganancias extra del salto.</div>
           </div>

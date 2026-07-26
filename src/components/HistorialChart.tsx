@@ -13,6 +13,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
+import type { ChartDataset } from "chart.js";
 import type { ChartConfiguration } from "chart.js";
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
@@ -86,7 +87,7 @@ export default function HistorialChart({ data }: Props) {
             pointBorderWidth: 1,
             borderWidth: 2,
             yAxisID: "y1",
-          }] as any[] : []),
+          }] as const satisfies ChartDataset<'line'>[] : []),
         ],
       },
       options: {
