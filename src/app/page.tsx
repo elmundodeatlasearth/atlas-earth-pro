@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useAtlasState } from "@/hooks/useAtlasState";
 import Sidebar from "@/components/sidebar";
 import DashboardTab from "@/components/dashboard-tab";
@@ -9,6 +9,7 @@ import IaTab from "@/components/ia-tab";
 import HistorialTab from "@/components/historial-tab";
 import TabTransition from "@/components/tab-transition";
 import { exportHistorialCSV } from "@/utils/export-csv";
+import ThemeToggle from "@/components/theme-toggle";
 
 const tabs = [
   { id: "dashboard", label: "\ud83d\udcca Dashboard" },
@@ -21,6 +22,20 @@ const tabs = [
 export default function Home() {
   const S = useAtlasState();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Keyboard shortcuts: Ctrl+1-5 for tabs
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key >= "1" && e.key <= "5") {
+        e.preventDefault();
+        const idx = parseInt(e.key) - 1;
+        const ids = tabs.map(t => t.id);
+        if (idx >= 0 && idx < ids.length) S.setActiveTab(ids[idx]);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   return (
     <div className="min-h-screen flex bg-[#080808]" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -90,6 +105,7 @@ export default function Home() {
             <h1 className="text-base lg:text-lg font-black text-white truncate">
               {S.isPro || S.isUltra ? "\ud83d\udcca Atlas Earth PRO" : "\ud83d\udcca Atlas Earth"}
             </h1>
+            <ThemeToggle />
           </div>
           {/* Tabs - scrollable en mobile */}
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-none -mr-3 pr-3 lg:mr-0 lg:pr-0">
