@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAtlasState } from "@/hooks/useAtlasState";
 import Sidebar from "@/components/sidebar";
 import DashboardTab from "@/components/dashboard-tab";
@@ -23,19 +23,21 @@ export default function Home() {
   const S = useAtlasState();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Keyboard shortcuts: Ctrl+1-5 for tabs
+  // Keyboard shortcuts: Ctrl+1-5 for tabs — use ref to avoid stale closure
+  const sRef = useRef(S);
+  sRef.current = S;
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key >= "1" && e.key <= "5") {
         e.preventDefault();
         const idx = parseInt(e.key) - 1;
         const ids = tabs.map(t => t.id);
-        if (idx >= 0 && idx < ids.length) S.setActiveTab(ids[idx]);
+        if (idx >= 0 && idx < ids.length) sRef.current.setActiveTab(ids[idx]);
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, []); // empty deps — intentional
 
   return (
     <div className="min-h-screen flex bg-[#080808]" style={{ fontFamily: "'Inter', sans-serif" }}>

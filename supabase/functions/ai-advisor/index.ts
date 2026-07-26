@@ -431,8 +431,15 @@ serve(async (req) => {
     }
 
     if (!is_ultra && !usedFallback) {
-      await supabase.from('usuarios_atlas').update({ ai_credits: ai_credits - 1 }).eq('user_id', userId);
-      ai_credits -= 1;
+      // Atomic decrement: only subtract if credits > 0
+      const { error: deductError } = await supabase
+        .from('usuarios_atlas')
+        .update({ ai_credits: ai_credits - 1 })
+        .eq('user_id', userId)
+        .gt('ai_credits', 0);
+      if (!deductError) {
+        ai_credits -= 1;
+      }
     }
 
     let htmlFinal = formatearHTML(resultado, perfil, metaDiaria);

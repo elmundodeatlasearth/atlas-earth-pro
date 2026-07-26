@@ -4,6 +4,7 @@
 "use client";
 import { GlowCard } from "./stat-card";
 import type { MotorAtlasEarth } from "@/utils/atlasMath";
+import { sanitizeHTML } from "@/utils/sanitize";
 
 interface AuditoriaTabProps {
   motor: MotorAtlasEarth;
@@ -122,7 +123,7 @@ export default function AuditoriaTab(props: AuditoriaTabProps) {
           )}
           <div className="p-3 bg-gradient-to-br from-blue-900/20 to-indigo-900/10 border border-blue-500/20 rounded-lg text-sm">
             <strong className="text-blue-400">🧠 Veredicto:</strong>{" "}
-            <span dangerouslySetInnerHTML={{ __html: props.veredictoEstrategia }} />
+            <span dangerouslySetInnerHTML={{ __html: sanitizeHTML(props.veredictoEstrategia) }} />
           </div>
         </div>
 
