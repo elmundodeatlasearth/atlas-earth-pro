@@ -53,6 +53,9 @@ interface SidebarProps {
   faltantesTier: number;
   faltantesMeta: number;
   tasa: number;
+
+  // Mobile close
+  onClose?: () => void;
 }
 
 function InputRow({ label, value, set, min = 0, max }: { label: string; value: number; set: (v: number) => void; min?: number; max?: number }) {
@@ -71,16 +74,24 @@ function Divider() {
 
 export default function Sidebar(props: SidebarProps) {
   return (
-    <aside className="w-96 bg-[#0d0d0d]/95 backdrop-blur-xl border-r border-white/5 flex flex-col overflow-y-auto shrink-0">
+    <aside className="w-72 lg:w-96 bg-[#0d0d0d]/95 backdrop-blur-xl border-r border-white/5 flex flex-col overflow-y-auto shrink-0 pb-4">
+      {/* Mobile close button */}
+      <button onClick={props.onClose}
+        className="lg:hidden absolute top-3 right-3 text-gray-500 hover:text-white z-10 p-1 rounded-lg hover:bg-white/10 transition-all"
+        aria-label="Cerrar menú">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <path d="M18 6L6 18M6 6l12 12" />
+        </svg>
+      </button>
       {/* Logo + Auth */}
-      <div className="p-6 border-b border-white/5">
+      <div className="p-5 lg:p-6 border-b border-white/5">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 flex items-center justify-center text-xl font-black shadow-lg shadow-cyan-500/30 animate-pulse-glow">
+          <div className="w-9 h-9 lg:w-10 lg:h-10 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 flex items-center justify-center text-lg lg:text-xl font-black shadow-lg shadow-cyan-500/30 animate-pulse-glow">
             🌎
           </div>
           <div>
-            <div className="font-black text-white text-base leading-tight">Atlas Earth</div>
-            <div className="text-[10px] text-cyan-400 font-semibold uppercase tracking-widest">PRO Calculator</div>
+            <div className="font-black text-white text-sm lg:text-base leading-tight">Atlas Earth</div>
+            <div className="text-[9px] lg:text-[10px] text-cyan-400 font-semibold uppercase tracking-widest">PRO Calculator</div>
           </div>
         </div>
 

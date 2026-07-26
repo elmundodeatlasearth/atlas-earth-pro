@@ -163,3 +163,27 @@ input[type="number"]::-webkit-outer-spin-button {
 .glow-hover:hover {
   box-shadow: 0 0 30px rgba(0, 221, 221, 0.15);
 }
+
+/* Toast slide up */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+/* Custom scrollbar for IA advice */
+.scrollbar-custom::-webkit-scrollbar {
+  width: 4px;
+}
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.3);
+  border-radius: 2px;
+}
+.scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.5);
+}

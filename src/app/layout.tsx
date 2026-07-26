@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import HoneycombBackground from "@/components/HoneycombBackground";
+import { ToastProvider } from "@/components/toast";
 
 export const metadata: Metadata = {
   title: "Atlas Earth PRO — Calculadora Estratégica Definitiva",
@@ -47,7 +48,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans antialiased bg-[#0a0a0a] text-white relative">
         <HoneycombBackground />
         <div className="relative z-10 flex-1 flex flex-col">
-          {children}
+          <ToastProvider>
+            {children}
+          </ToastProvider>
         </div>
       </body>
     </html>
