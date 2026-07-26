@@ -40,12 +40,30 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# next.js build artifacts
+# next.js build artifacts (also catch root orphans)
 next_assets/
 *.txt
 !src/**/*.txt
 !.gitignore
 404.html
+_not-found.html
+admin.html
+index.html
 favicon.ico
 *.svg
 manifest.json
+.nojekyll
+__next.*
+rename_next.js
+
+# media files not used in source
+*.mp4
+*.jpeg
+*.jpg
+*.png
+!src/**/*.png
+perfil_atlas.json
+perfiles/
+scripts/
+_not-found/
+
