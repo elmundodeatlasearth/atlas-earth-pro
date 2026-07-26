@@ -210,3 +210,26 @@ input[type="number"]::-webkit-outer-spin-button {
 .animate-slide-up {
   animation: slide-up 0.5s ease-out both;
 }
+
+/* Scrollbar none (Tailwind v4 no lo incluye) */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Basic prose (Tailwind v4 no tiene @tailwindcss/typography) */
+.prose { line-height: 1.6; }
+.prose-sm { font-size: 0.875rem; line-height: 1.5; }
+.prose-invert { color: #d1d5db; }
+.prose-invert strong { color: #f3f4f6; }
+.prose-invert a { color: #67e8f9; }
+.prose-invert h1, .prose-invert h2, .prose-invert h3, .prose-invert h4 { color: #f3f4f6; }
+.prose-invert p { color: #d1d5db; }
+.prose-invert ul, .prose-invert ol { color: #d1d5db; }
+.prose-invert li { color: #d1d5db; }
+.prose-invert code { color: #f5d0fe; background: rgba(255,255,255,0.05); padding: 0.125rem 0.25rem; border-radius: 0.25rem; }
+.prose-invert blockquote { border-left-color: #6b7280; color: #9ca3af; }
+.prose-invert hr { border-color: rgba(255,255,255,0.1); }
