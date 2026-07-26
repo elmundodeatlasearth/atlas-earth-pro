@@ -4,13 +4,12 @@ import type { Config } from "jest";
 const config: Config = {
   testEnvironment: "jsdom",
   transform: {
-    "^.+\\.tsx?$": ["ts-jest", { tsconfig: "tsconfig.json" }],
+    "^.+\\.tsx?$": "@swc/jest",
   },
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
   },
-  setupFilesAfterSetup: [],
-  testPathPattern: "src/__tests__/",
+  testMatch: ["<rootDir>/src/__tests__/**/*.test.{ts,tsx}"],
 };
 
 export default config;
