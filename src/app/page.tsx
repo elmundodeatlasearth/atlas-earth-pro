@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useAtlasState } from "@/hooks/useAtlasState";
 import Sidebar from "@/components/sidebar";
 import DashboardTab from "@/components/dashboard-tab";
@@ -7,6 +7,8 @@ import SimuladorTab from "@/components/simulador-tab";
 import AuditoriaTab from "@/components/auditoria-tab";
 import IaTab from "@/components/ia-tab";
 import HistorialTab from "@/components/historial-tab";
+import TabTransition from "@/components/tab-transition";
+import { exportHistorialCSV } from "@/utils/export-csv";
 
 const tabs = [
   { id: "dashboard", label: "\ud83d\udcca Dashboard" },
@@ -90,7 +92,7 @@ export default function Home() {
             </h1>
           </div>
           {/* Tabs - scrollable en mobile */}
-          <div className="flex gap-1 overflow-x-auto scrollbar-none -mr-3 pr-3 lg:mr-0 lg:pr-0">
+          <div className="flex items-center gap-1 overflow-x-auto scrollbar-none -mr-3 pr-3 lg:mr-0 lg:pr-0">
             {tabs.map(t => (
               <button key={t.id} onClick={() => S.setActiveTab(t.id)}
                 className={`px-3 lg:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
@@ -101,11 +103,20 @@ export default function Home() {
                 {t.label}
               </button>
             ))}
+            {/* Export CSV */}
+            {S.historialData.length > 0 && (
+              <button onClick={() => exportHistorialCSV(S.historialData)}
+                className="ml-1 text-[10px] text-gray-500 hover:text-green-400 bg-white/5 hover:bg-green-900/20 px-2 py-1.5 rounded-lg transition-all whitespace-nowrap border border-white/10 hover:border-green-500/30 flex items-center gap-1">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                CSV
+              </button>
+            )}
           </div>
         </div>
 
-        <div className="p-4 lg:p-10 space-y-6 lg:space-y-8 animate-fade-in">
-          {S.activeTab === "dashboard" && (
+        <div className="p-4 lg:p-10 space-y-6 lg:space-y-8">
+          <TabTransition activeTab={S.activeTab}>
+            {S.activeTab === "dashboard" && (
             <DashboardTab
               motor={S.motor} multTier={S.multTier} pais={S.pais}
               tasa={S.tasa} moneda={S.moneda}
@@ -172,6 +183,7 @@ export default function Home() {
               histMsg={S.histMsg} guardarHistorial={S.guardarHistorial}
             />
           )}
+            </TabTransition>
         </div>
       </main>
     </div>
