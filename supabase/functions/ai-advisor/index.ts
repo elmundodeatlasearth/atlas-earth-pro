@@ -410,6 +410,19 @@ serve(async (req) => {
       ai_credits = userData.ai_credits ?? 0;
       is_ultra = userData.is_ultra ?? false;
       is_vip = userData.is_vip ?? false;
+    } else {
+      // Usuario no encontrado → crear registro con créditos gratis
+      try {
+        const { data: newUser, error: insertError } = await supabase
+          .from('usuarios_atlas')
+          .upsert({ user_id: userId, ai_credits: 3, is_vip: false, is_ultra: false })
+          .select('ai_credits')
+          .single();
+        if (!insertError && newUser) ai_credits = newUser.ai_credits ?? 3;
+        else ai_credits = 1; // fallback: 1 crédito de cortesía
+      } catch {
+        ai_credits = 1;
+      }
     }
 
     // ===== RATE LIMIT =====
@@ -420,10 +433,13 @@ serve(async (req) => {
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 })
     }
 
-    if (!is_ultra && ai_credits <= 0) {
-      return new Response(JSON.stringify({
-        error: "Acceso bloqueado. Necesitas créditos IA o plan Ultra."
-      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 })
+    // ===== CRÉDITOS: Solo requerir para usuarios registrados =====
+    if (userId !== "anon") {
+      if (!is_ultra && ai_credits <= 0) {
+        return new Response(JSON.stringify({
+          error: "Acceso bloqueado. Necesitas créditos IA o plan Ultra."
+        }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 })
+      }
     }
 
     // ================================================
