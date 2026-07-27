@@ -1,5 +1,5 @@
-// Service Worker — Atlas Earth PRO v1
-// Offline caching de assets estáticos
+// Service Worker - Atlas Earth PRO v1
+// Offline caching de assets estaticos
 
 var CACHE_NAME = "atlas-pro-v1";
 var STATIC_ASSETS = [

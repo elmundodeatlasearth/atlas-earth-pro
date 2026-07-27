@@ -47,7 +47,7 @@ export function usePermissions(isPro: boolean, isUltra: boolean): Permissions {
     canUseROIAnalysis: isPro || isUltra,
     canViewFullAudit: isPro || isUltra,
     canCompareTiers: isPro || isUltra,
-    canMultiCountry: isPro || isUltra,
+    canMultiCountry: isUltra,
     canHistoryChart: isPro || isUltra,
     canSaveHistory: isPro || isUltra,
     canCloudProfiles: isPro || isUltra,

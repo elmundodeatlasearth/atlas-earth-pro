@@ -51,7 +51,9 @@ export default function IaTab(props: IaTabProps) {
         <div className="text-xs text-gray-500 mb-4">
           Créditos disponibles:{" "}
           <strong className="text-purple-400">
-            {props.isUltra ? `50 / mes (${props.aiCredits} restantes)` : `${props.aiCredits} / ${props.aiCreditsPerMonth} usados este mes`}
+            {props.isUltra
+              ? `50 / mes (${props.aiCredits} restantes este mes)`
+              : `${props.aiCredits} / ${props.aiCreditsPerMonth} restantes este mes`}
           </strong>
         </div>
 
@@ -61,6 +63,11 @@ export default function IaTab(props: IaTabProps) {
           </div>
         ) : (
           <>
+            {!props.isUltra && props.aiCredits <= 0 && (
+              <div className="p-4 bg-amber-900/30 border border-amber-500/30 rounded-xl text-amber-300 text-sm font-semibold flex items-center gap-2 mb-4">
+              💰 No tienes créditos IA disponibles. Los usuarios PRO reciben <strong>5 créditos/mes</strong>. Actualiza a Ultra para 50 créditos/mes o espera al próximo ciclo.
+              </div>
+            )}
             <button onClick={props.handleGenerateAI} disabled={props.aiLoading || (!props.isUltra && props.aiCredits <= 0)}
               className="w-full py-4 rounded-xl font-bold text-white text-sm transition-all duration-300
                 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500

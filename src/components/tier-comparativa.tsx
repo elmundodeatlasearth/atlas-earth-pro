@@ -11,6 +11,7 @@ interface TierComparativaProps {
   motor: MotorAtlasEarth;
   paisActual: string;
   monedaActual: string;
+  allowMultiCountry?: boolean; // ULTRA-only: selector de país
 }
 
 interface TierRow {
@@ -65,9 +66,9 @@ function calcularRentaActual(motor: MotorAtlasEarth, pais: string): number {
   return motor.calcular_renta_generica(motor.total_parcelas, pais, TIERS_COMPLETOS, 0);
 }
 
-export default function TierComparativa({ motor, paisActual, monedaActual }: TierComparativaProps) {
+export default function TierComparativa({ motor, paisActual, monedaActual, allowMultiCountry = false }: TierComparativaProps) {
   const total = motor.total_parcelas;
-  // país a comparar — default: mismo que el usuario, pero puede elegir cualquiera
+  // país a comparar — solo ULTRA puede elegir, PRO usa el mismo país
   const [paisComparar, setPaisComparar] = useState(paisActual);
 
   const rowsUSA = buildTierRows(motor, "Estados Unidos", total);
@@ -169,16 +170,20 @@ export default function TierComparativa({ motor, paisActual, monedaActual }: Tie
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0 flex-1">
                 <span className="text-lg shrink-0">🌍</span>
-                <select
-                  value={paisComparar}
-                  onChange={(e) => setPaisComparar(e.target.value)}
-                  className="bg-transparent border border-white/10 rounded-lg px-2 py-1 text-sm font-bold text-amber-400 focus:outline-none focus:border-amber-500/50 cursor-pointer hover:bg-white/5 transition-colors appearance-none"
-                  style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", backgroundPosition: "right 4px center", backgroundRepeat: "no-repeat", backgroundSize: "16px", paddingRight: "28px" }}
-                >
-                  {PAISES_DISPONIBLES.map(p => (
-                    <option key={p} value={p} className="bg-[#1a1a1a] text-white">{p}</option>
-                  ))}
-                </select>
+                {allowMultiCountry ? (
+                  <select
+                    value={paisComparar}
+                    onChange={(e) => setPaisComparar(e.target.value)}
+                    className="bg-transparent border border-white/10 rounded-lg px-2 py-1 text-sm font-bold text-amber-400 focus:outline-none focus:border-amber-500/50 cursor-pointer hover:bg-white/5 transition-colors appearance-none"
+                    style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", backgroundPosition: "right 4px center", backgroundRepeat: "no-repeat", backgroundSize: "16px", paddingRight: "28px" }}
+                  >
+                    {PAISES_DISPONIBLES.map(p => (
+                      <option key={p} value={p} className="bg-[#1a1a1a] text-white">{p}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="text-sm font-bold text-amber-400">{paisComparar}</span>
+                )}
               </div>
               <span className="text-[10px] text-gray-500 font-mono shrink-0">{monedaPaisComparar}</span>
             </div>

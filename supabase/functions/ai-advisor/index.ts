@@ -554,7 +554,7 @@ INSTRUCCIONES ESTRICTAS (SIGUE AL PIE DE LA LETRA):
 
     return new Response(JSON.stringify({
       advice: formatearHTML(htmlFinal),
-      remaining_credits: is_ultra ? "Ilimitados (ULTRA)" : (usedFallback ? "Ilimitados (Análisis Local)" : String(ai_credits)),
+      remaining_credits: is_ultra ? 999 : (usedFallback ? ai_credits : Math.max(0, ai_credits - 1)),
       source: usedFallback ? "local" : "morph+local",
       _rate_limit_remaining: rl.remaining,
       _local_analysis: htmlFinal.substring(0, 200), // preview para debug
