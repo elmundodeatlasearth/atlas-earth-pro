@@ -1,13 +1,14 @@
 // supabase/functions/ai-advisor/index.ts
-// Edge Function de Asistente IA — analiza datos PRE-COMPUTADOS del frontend
-// YA NO duplica lógica matemática de atlasMath.ts — usa valores enviados por el cliente
+// Edge Function de Asistente IA — EXPERTO EN ATLAS EARTH
+// Recibe datos PRE-COMPUTADOS del frontend y genera análisis profundo + consejos experto
+// NO duplica lógica matemática — usa los valores enviados por el cliente
 
 import "jsr:@supabase/supabase-js@2";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // ============================================
-// 1. CONSTANTES COMPARTIDAS
+// 1. CONSTANTES
 // ============================================
 
 const corsHeaders = {
@@ -17,31 +18,25 @@ const corsHeaders = {
 };
 
 // ============================================
-// 2a. RATE LIMITER — Simple en memoria
+// 2. RATE LIMITER
 // ============================================
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 10; // requests per window
-const RATE_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT = 10;
+const RATE_WINDOW_MS = 60_000;
 
 function checkRateLimit(key: string): { allowed: boolean; remaining: number } {
   const now = Date.now();
   const entry = rateLimitMap.get(key);
-  
   if (!entry || now > entry.resetAt) {
     rateLimitMap.set(key, { count: 1, resetAt: now + RATE_WINDOW_MS });
     return { allowed: true, remaining: RATE_LIMIT - 1 };
   }
-  
-  if (entry.count >= RATE_LIMIT) {
-    return { allowed: false, remaining: 0 };
-  }
-  
+  if (entry.count >= RATE_LIMIT) return { allowed: false, remaining: 0 };
   entry.count++;
   return { allowed: true, remaining: RATE_LIMIT - entry.count };
 }
 
-// Clean up stale entries every 5 minutes
 if (typeof setInterval !== 'undefined') {
   setInterval(() => {
     const now = Date.now();
@@ -52,262 +47,312 @@ if (typeof setInterval !== 'undefined') {
 }
 
 // ============================================
-// 2. TIPOS
+// 3. TIPOS — PAYLOAD COMPLETO DESDE EL FRONTEND
 // ============================================
 
 interface PayloadAnalisis {
+  // Datos crudos del usuario
   user_id: string;
   pais: string;
   moneda: string;
-  comunes: number;
-  raras: number;
-  epicas: number;
-  legendarias: number;
-  insignias: number;
-  ab_ahorrados: number;
-  horas_boost: number;
-  eficiencia: number;
-  horas_srb: number;
-  tipo_pase: string;
-  hora_inicio: string;
-  hora_fin: string;
-  eficiencia_anuncios: number;
-  dia_asistencia: number;
-  meta_dolar: number;
-  meta_periodo: string;
-  // VALORES PRE-COMPUTADOS desde el frontend — NO se recalculan aquí
-  total_parcelas: number;
-  mult_tier: number;
-  pasaporte_nivel: number;
-  renta_diaria: number;
+  comunes: number; raras: number; epicas: number; legendarias: number;
+  insignias: number; ab_ahorrados: number;
+  horas_boost: number; eficiencia: number; horas_srb: number;
+  tipo_pase: string; hora_inicio: string; hora_fin: string;
+  eficiencia_anuncios: number; dia_asistencia: number;
+  meta_dolar: number; meta_periodo: string;
+  // Datos pre-computados
+  total_parcelas: number; mult_tier: number; pasaporte_nivel: number; renta_diaria: number;
+  renta_semanal: number; renta_mensual: number; renta_anual: number;
+  siguiente_tramo: number; faltantes_tier: number; colapso_tier: boolean; porcentaje_escalera: number;
+  faltantes_meta: number; parcelas_meta: number;
+  desglose_f2p_ab_mes: number; desglose_f2p_ab_dia: number;
+  desglose_f2p_ab20min_dia: number; desglose_f2p_ab20min_mes: number; desglose_f2p_pase_mes: number;
+  desglose_ec_ab_mes: number; desglose_ec_ab_dia: number;
+  desglose_ec_ab20min_dia: number; desglose_ec_ab20min_mes: number; desglose_ec_pase_mes: number;
+  ec_optimo_dia_inicio: number; ec_optimo_ab_netos: number; ec_optimo_ab_pase: number; ec_optimo_ab_gratis: number;
+  roi_global_dias: number; roi_marginal_dias: number; renta_adicional: number;
+  costo_meta_ab: number; parcelas_eq: number;
+  aumento_parcelas: number; aumento_pasaporte: number;
+  veredicto_estrategia: string;
+  nivel_pasaporte_actual: number; nivel_pasaporte_siguiente: number;
+  insignias_faltantes: number; costo_ab_pasaporte: number;
   historial_progreso?: Array<{ fecha: string; usd_generado: number; ab_generado: number }>;
 }
 
-interface PerfilAnalisis {
-  pais: string;
-  moneda: string;
-  comunes: number;
-  raras: number;
-  epicas: number;
-  legendarias: number;
-  insignias: number;
-  ab_ahorrados: number;
-  horas_boost: number;
-  eficiencia: number;
-  horas_srb: number;
-  tipo_pase: string;
-  hora_inicio: string;
-  hora_fin: string;
-  eficiencia_anuncios: number;
-  dia_asistencia: number;
-  meta_dolar: number;
-  meta_periodo: string;
-  total_parcelas: number;
-  mult_tier: number;
-  pasaporte_nivel: number;
-  renta_diaria: number;
-}
+// ============================================
+// 4. ANÁLISIS EXPERTO — Usa datos pre-computados
+// ============================================
 
-interface ResultadoAnalisis {
-  veredicto: string;
-  estado: string;
-  alertas: string[];
-  metricas: Record<string, number | string>;
-  recomendaciones: string[];
-  advertencias: string[];
-  proyecciones: Record<string, string>;
-  tabla_comparativa: Record<string, string>;
-}
+function generarAnalisisExperto(p: PayloadAnalisis): string {
+  const partes: string[] = [];
 
-function calcularMetaDiaria(meta: number, periodo: string): number {
-  if (periodo === "month") return meta / 30;
-  if (periodo === "year") return meta / 365;
-  return meta;
-}
+  // Meta diaria real
+  const metaDiaria = p.meta_periodo === "month" ? p.meta_dolar / 30
+    : p.meta_periodo === "year" ? p.meta_dolar / 365
+    : p.meta_dolar;
+  const pctMeta = p.renta_diaria > 0 && metaDiaria > 0
+    ? Math.min(100, (p.renta_diaria / metaDiaria) * 100)
+    : 0;
 
-function evaluarTier(total: number): { nivel: string; alerta: boolean; detalle: string } {
-  const TIERS = [0, 40, 60, 80, 100, 120, 150, 200, 220, 250, 280, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850, 900, 1000, 1100, 1200, 1300, 1400, 1500];
-  let tramoActual = 0;
-  let siguienteTramo = 0;
-  for (let i = 0; i < TIERS.length; i++) {
-    if (total >= TIERS[i] && (i + 1 >= TIERS.length || total < TIERS[i + 1])) {
-      tramoActual = TIERS[i];
-      siguienteTramo = i + 1 < TIERS.length ? TIERS[i + 1] : Infinity;
-      break;
-    }
-  }
-  const faltantes = siguienteTramo > total ? siguienteTramo - total : 0;
-  const alerta = faltantes > 0 && faltantes <= 10;
-  return {
-    nivel: `${tramoActual} → ${siguienteTramo === Infinity ? "Max" : siguienteTramo} (faltan ${faltantes})`,
-    alerta,
-    detalle: alerta ? `⚠️ ¡ZONA DE COLAPSO! Solo te faltan ${faltantes} parcelas. No compres individualmente.` : `🏆 Tier estable. Faltan ${faltantes} para el siguiente salto.`
-  };
-}
-
-function analisisProfundo(p: PerfilAnalisis): ResultadoAnalisis {
-  const alertas: string[] = [];
-  const recomendaciones: string[] = [];
-  const advertencias: string[] = [];
-  const metricas: Record<string, number | string> = {};
-  const proyecciones: Record<string, string> = {};
-  const tabla_comparativa: Record<string, string> = {};
-
-  // ===== Análisis de Eficiencia =====
-  if (p.horas_boost < 18) {
-    alertas.push(`⏰ Solo ${p.horas_boost}h de boost — ideal mínimo 18h.`);
-    recomendaciones.push("📈 Aumenta tus horas de boost a 18-22h para maximizar renta.");
-  }
-  if (p.eficiencia < 90) {
-    alertas.push(`🎯 Efectividad al ${p.eficiencia}% — debería estar sobre 90%.`);
-    recomendaciones.push("🎯 Mejora tu efectividad de boost al 90%+ (no dejes que se apague).");
-  }
-  if (p.horas_srb >= 80) {
-    recomendaciones.push("🚀 Excelente participación en SRB. Considera rotar boost en SRB.");
-  }
-
-  // ===== Análisis de Composición =====
-  const total = p.total_parcelas;
-  const pctComunes = (p.comunes / total) * 100;
-  const pctRaras = (p.raras / total) * 100;
-  const pctEpicas = (p.epicas / total) * 100;
-  const pctLegendarias = (p.legendarias / total) * 100;
-  metricas["Composición"] = `C:${pctComunes.toFixed(0)}% R:${pctRaras.toFixed(0)}% E:${pctEpicas.toFixed(0)}% L:${pctLegendarias.toFixed(0)}%`;
-  if (pctLegendarias >= 10) recomendaciones.push("💎 Buena proporción de legendarias. Sigue así.");
-  if (pctComunes > 70) recomendaciones.push("🔄 Demasiadas comunes — considera fusionar en eventos para subir rareza.");
-
-  // ===== Análisis de Pasaporte =====
-  const nivelPasaporte = p.pasaporte_nivel;
-  const insignias = p.insignias;
-  const NIVELES_INSIGNIAS: Record<number, number> = { 0: 0, 1: 10, 2: 30, 3: 60, 4: 100, 5: 200 };
-  if (nivelPasaporte < 5) {
-    const sigNivel = nivelPasaporte + 1;
-    const req = NIVELES_INSIGNIAS[sigNivel] || 101;
-    const faltantes = Math.max(0, req - insignias);
-    const costoAb = faltantes * 200;
-    metricas["Próximo Pasaporte"] = `Nivel ${sigNivel} (faltan ${faltantes} insignias = ${costoAb.toLocaleString()} AB)`;
-    if (faltantes > 0 && nivelPasaporte < 3) {
-      recomendaciones.push(`🛂 Prioriza insignias: te faltan ${faltantes} para Nivel ${sigNivel} (${costoAb.toLocaleString()} AB).`);
-    }
-    tabla_comparativa[`Pasaporte N${sigNivel}`] = `+5% renta total | ${costoAb.toLocaleString()} AB | —`;
-  }
-
-  // ===== Análisis de Meta =====
-  const metaDiaria = calcularMetaDiaria(p.meta_dolar, p.meta_periodo);
-  const rentaActual = p.renta_diaria;
-  const pctMeta = Math.min(100, (rentaActual / metaDiaria) * 100);
-  metricas["Progreso Meta"] = `${pctMeta.toFixed(1)}%`;
-  if (rentaActual >= metaDiaria) {
-    recomendaciones.push("🎯 ¡META ALCANZADA! Considera aumentar tu objetivo ahora.");
-  } else {
-    advertencias.push(`📉 Faltas ${(100 - pctMeta).toFixed(0)}% para tu meta de $${metaDiaria.toFixed(4)}/día.`);
-    recomendaciones.push(`🎯 Te faltan ${(100 - pctMeta).toFixed(0)}% para tu meta. Sigue farmeando y saltando Tiers.`);
-  }
-
-  // ===== Proyecciones =====
-  proyecciones["Renta Mensual (Estimada)"] = `$${(rentaActual * 30).toFixed(4)} USD`;
-  proyecciones["Renta Anual (Estimada)"] = `$${(rentaActual * 365).toFixed(4)} USD`;
-  const abDiariosEstimados = p.ab_ahorrados > 0 ? p.ab_ahorrados / 30 : 50;
-  const parcelasPorMes = Math.floor(abDiariosEstimados * 30 / 100);
-  proyecciones["Parcelas/mes (Estimado)"] = `${parcelasPorMes}`;
-  const rentaFutura = rentaActual + (parcelasPorMes * p.mult_tier * 0.00000000175 * 3600 * 24);
-  proyecciones["Renta en 30 días (Estimada)"] = `$${rentaFutura.toFixed(4)} USD`;
-
-  // ===== Veredicto =====
+  // ===== 1. VEREDICTO PRINCIPAL =====
   let veredicto = "";
   let estado = "";
-  if (pctMeta >= 100) { veredicto = "🎯 META ALCANZADA — Estás generando suficiente renta. ¡Aumenta tu meta!"; estado = "EXCELENTE"; }
-  else if (pctMeta >= 75) { veredicto = `🔥 Vas por buen camino. Estás al ${pctMeta.toFixed(0)}% de tu meta.`; estado = "BUENO"; }
-  else if (pctMeta >= 50) { veredicto = `📈 Progreso sólido (${pctMeta.toFixed(0)}% de meta). Sigue así.`; estado = "REGULAR"; }
-  else { veredicto = `🌱 Estás comenzando o necesitas acelerar (${pctMeta.toFixed(0)}% de meta).`; estado = "TEMPRANO"; }
+  let emojiEstado = "";
 
-  const tierInfo = evaluarTier(total);
-  if (tierInfo.alerta) {
-    alertas.push(tierInfo.detalle);
-    advertencias.push(tierInfo.detalle);
-    veredicto = `🚨 🚨 ${veredicto} · ¡Y ESTÁS EN ZONA DE COLAPSO! Ahorra antes de comprar. 🚨 🚨`;
+  if (p.renta_diaria >= metaDiaria && metaDiaria > 0) {
+    veredicto = "🎯 ¡META ALCANZADA! Ya generas suficiente renta diaria para cumplir tu objetivo. Es momento de redefinir tu meta al alza o considerar retirar ganancias.";
+    estado = "EXCELENTE"; emojiEstado = "🏆";
+  } else if (pctMeta >= 75) {
+    veredicto = `🔥 Vas excelente. Estás al ${pctMeta.toFixed(0)}% de tu meta de $${metaDiaria.toFixed(4)} USD/día. Unos cuantos saltos de Tier y llegas.`;
+    estado = "BUENO"; emojiEstado = "🔥";
+  } else if (pctMeta >= 50) {
+    veredicto = `📈 Progreso sólido (${pctMeta.toFixed(0)}% de meta). Sigue farmeando AB y optimizando tu estrategia de compras.`;
+    estado = "REGULAR"; emojiEstado = "📈";
+  } else if (pctMeta >= 25) {
+    veredicto = `🌱 Estás en camino (${pctMeta.toFixed(0)}% de meta). Enfócate en acumular parcelas y subir tu pasaporte.`;
+    estado = "TEMPRANO"; emojiEstado = "🌱";
+  } else {
+    veredicto = `🚀 Estás comenzando tu viaje en Atlas Earth (${pctMeta.toFixed(0)}% de meta). Cada parcela cuenta — prioriza llegar a 40 parcelas y activa boost 20h/día.`;
+    estado = "INICIO"; emojiEstado = "🚀";
   }
 
-  // ===== Tabla comparativa F2P vs EC =====
-  const bonusEc = abDiariosEstimados * 0.6;
-  tabla_comparativa["F2P Actual"] = `${abDiariosEstimados.toFixed(0)} AB/día | Sin costo | ${parcelasPorMes} parcelas/mes`;
-  tabla_comparativa["Explorer Club"] = `${(abDiariosEstimados + bonusEc).toFixed(0)} AB/día | $50/mes | ${Math.floor((abDiariosEstimados + bonusEc) * 30 / 100)} parcelas/mes`;
+  // Si está en colapso de Tier, el veredicto se vuelve dramático
+  if (p.colapso_tier) {
+    veredicto = `🚨 🚨 ¡ALERTA MÁXIMA! 🚨 🚨 Estás en ZONA DE COLAPSO — solo te faltan ${p.faltantes_tier} parcelas para el siguiente salto de Tier. NO COMPRES parcelas individuales. Acumula ${p.costo_meta_ab.toLocaleString()} AB y salta directo a ${p.siguiente_tramo} parcelas.`;
+    estado = "COLAPSO";
+    emojiEstado = "🚨";
+  }
 
-  return { veredicto, estado, alertas, metricas, recomendaciones, advertencias, proyecciones, tabla_comparativa };
-}
+  // ===== 2. ESTADO ACTUAL =====
+  partes.push(`<h1>${emojiEstado} Veredicto: ${estado}</h1>`);
+  partes.push(`<div class="card card-${estado === "COLAPSO" ? "red" : estado === "EXCELENTE" ? "green" : estado === "BUENO" ? "green" : estado === "REGULAR" ? "gold" : "blue"}"><strong>${veredicto}</strong></div>`);
 
-// ============================================
-// 3. FORMATO HTML PROFESIONAL
-// ============================================
+  // ===== 3. MÉTRICAS CLAVE =====
+  partes.push(`<h2>📊 Radiografía de tu Cuenta</h2>`);
+  partes.push(`<div class="grid grid-cols-2 gap-2">`);
+  const metricas: [string, string, string][] = [
+    ["Parcelas", `${p.total_parcelas} (${p.comunes}C · ${p.raras}R · ${p.epicas}E · ${p.legendarias}L)`, "text-cyan-400"],
+    ["Multiplicador", `${p.mult_tier}x`, "text-blue-400"],
+    ["Pasaporte", `Nivel ${p.pasaporte_nivel} (+${p.pasaporte_nivel * 5}%) — ${p.insignias} insignias`, "text-amber-400"],
+    ["Renta", `$${p.renta_diaria.toFixed(7)}/día ≈ $${p.renta_mensual.toFixed(4)}/mes`, "text-green-400"],
+    ["AB Ahorrados", `${p.ab_ahorrados.toLocaleString()} AB`, "text-purple-400"],
+    ["Boost", `${p.horas_boost}h/día al ${p.eficiencia}% efectividad`, p.horas_boost >= 18 && p.eficiencia >= 90 ? "text-green-400" : "text-orange-400"],
+    ["SRB", `${p.horas_srb}h/mes`, "text-yellow-400"],
+    ["Tier Actual", `${p.total_parcelas} → Siguiente: ${p.siguiente_tramo} (faltan ${p.faltantes_tier})`, p.colapso_tier ? "text-red-400" : "text-cyan-400"],
+    ["Progreso Meta", `${pctMeta.toFixed(1)}% (${p.faltantes_meta > 0 ? `faltan ${p.faltantes_meta} parcelas` : "✅ Alcanzada"})`, p.faltantes_meta > 0 ? "text-orange-400" : "text-green-400"],
+  ];
 
-function formatearHTML(r: ResultadoAnalisis, p: PerfilAnalisis, metaDiaria: number): string {
-  const partes: string[] = [];
-  partes.push(`<div class="space-y-4 text-sm leading-relaxed">`);
+  // Desglose AB F2P
+  if (p.desglose_f2p_ab20min_dia > 0) {
+    metricas.push(["⏱️ AB 20min/día", `${p.desglose_f2p_ab20min_dia.toFixed(0)} AB/día (×${(p.desglose_f2p_ab20min_mes).toLocaleString()} AB/mes)`, "text-green-400"]);
+  }
+  if (p.desglose_f2p_pase_mes > 0) {
+    metricas.push(["📦 AB Pase/mes", `${p.desglose_f2p_pase_mes.toLocaleString()} AB/mes (${(p.desglose_f2p_pase_mes / 30).toFixed(0)} AB/día)`, "text-amber-400"]);
+  }
+  metricas.push(["🧮 AB F2P total/día", `${p.desglose_f2p_ab_dia.toFixed(1)} AB/día → ${p.desglose_f2p_ab_mes.toLocaleString()} AB/mes`, "text-green-400"]);
+  if (p.tipo_pase !== "Ninguno (F2P)") {
+    metricas.push(["🧮 AB EC total/día", `${p.desglose_ec_ab_dia.toFixed(1)} AB/día → ${p.desglose_ec_ab_mes.toLocaleString()} AB/mes`, "text-amber-400"]);
+  }
+  for (const [label, value, color] of metricas) {
+    partes.push(`<div class="p-2 bg-[#0a0a0a] rounded-lg border border-white/5"><div class="text-[10px] text-gray-500">${label}</div><div class="font-bold ${color} text-sm">${value}</div></div>`);
+  }
+  partes.push(`</div>`);
 
-  const colorHeader = r.estado === "EXCELENTE" ? "from-green-900/40 to-emerald-900/20 border-green-500/20"
-    : r.estado === "BUENO" ? "from-cyan-900/40 to-blue-900/20 border-cyan-500/20"
-    : r.estado === "REGULAR" ? "from-yellow-900/40 to-orange-900/20 border-yellow-500/20"
-    : "from-purple-900/40 to-indigo-900/20 border-purple-500/20";
+  // ===== 4. ANÁLISIS DE COMPOSICIÓN =====
+  const total = p.total_parcelas;
+  const pctC = (p.comunes / total) * 100;
+  const pctR = (p.raras / total) * 100;
+  const pctE = (p.epicas / total) * 100;
+  const pctL = (p.legendarias / total) * 100;
 
-  partes.push(`
-    <div class="p-4 bg-gradient-to-r ${colorHeader} rounded-xl border">
-      <div class="flex items-center gap-2 mb-2">
-        <span class="text-lg">${r.estado === "EXCELENTE" ? "🏆" : r.estado === "BUENO" ? "🔥" : r.estado === "REGULAR" ? "📈" : "🌱"}</span>
-        <span class="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Estado: ${r.estado}</span>
-      </div>
-      <div class="text-lg font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">${r.veredicto}</div>
-    </div>
-  `);
+  partes.push(`<h2>🔬 Análisis de Composición</h2>`);
+  partes.push(`<div class="card">`);
+  partes.push(`<p>Distribución: <strong>${pctC.toFixed(0)}%</strong> Comunes · <strong>${pctR.toFixed(0)}%</strong> Raras · <strong>${pctE.toFixed(0)}%</strong> Épicas · <strong>${pctL.toFixed(0)}%</strong> Legendarias</p>`);
 
-  if (r.alertas.length > 0) {
-    partes.push(`<div class="space-y-1">`);
-    for (const a of r.alertas) {
-      partes.push(`<div class="text-red-400 bg-red-900/20 p-2 rounded-lg border border-red-500/20 text-sm">${a}</div>`);
+  if (pctL >= 10) partes.push(`<p>💎 <strong>Excelente proporción de Legendarias (${pctL.toFixed(0)}%).</strong> Tu renta base es sólida — ahora maximiza multiplicadores.</p>`);
+  else if (pctL >= 5) partes.push(`<p>💎 <strong>Bien de Legendarias (${pctL.toFixed(0)}%).</strong> Considera fusionar en eventos para mejorarlas.</p>`);
+  else partes.push(`<p>⚠️ <strong>Bajas Legendarias (${pctL.toFixed(0)}%).</strong> Tu renta depende mucho de las épicas. Prioriza eventos de fusión.</p>`);
+
+  if (pctC > 70) partes.push(`<p>🔄 Demasiadas <strong>Comunes (${pctC.toFixed(0)}%).</strong> Fusiona en eventos para subir rareza.</p>`);
+  if (pctR > 25) partes.push(`<p>📊 Buen ratio de Raras (${pctR.toFixed(0)}%).</p>`);
+  partes.push(`</div>`);
+
+  // ===== 5. ESTRATEGIA DE TIERS =====
+  partes.push(`<h2>🏆 Estrategia de Tiers</h2>`);
+  if (p.colapso_tier) {
+    partes.push(`<div class="card card-red">`);
+    partes.push(`<p><strong>🚨 ¡ZONA DE COLAPSO ACTIVA!</strong></p>`);
+    partes.push(`<p>Estás en el Tier de <strong>${p.total_parcelas}</strong> parcelas. El siguiente salto es a <strong>${p.siguiente_tramo}</strong>.</p>`);
+    partes.push(`<p>Te faltan solo <strong>${p.faltantes_tier} parcelas</strong> (≈${p.costo_meta_ab.toLocaleString()} AB).</p>`);
+    partes.push(`<p><span class="badge badge-red">⚠️ NO COMPRES PARCELAS INDIVIDUALES</span> Cada parcela individual en colapso te da <strong>menos del 1% del multiplicador</strong> que obtendrías al saltar. Acumula y salta de golpe.</p>`);
+    partes.push(`</div>`);
+  } else {
+    partes.push(`<div class="card card-blue">`);
+    partes.push(`<p>Estás en el Tier de <strong>${p.total_parcelas}</strong>, camino a <strong>${p.siguiente_tramo}</strong>.</p>`);
+    partes.push(`<p>Faltan <strong>${p.faltantes_tier} parcelas</strong> (${p.porcentaje_escalera.toFixed(1)}% del camino). Sigue comprando.</p>`);
+
+    // Calcular AB necesarios
+    if (p.faltantes_tier > 0) {
+      const abNecesarios = p.faltantes_tier * 100;
+      const diasF2P = p.desglose_f2p_ab_dia > 0 ? abNecesarios / p.desglose_f2p_ab_dia : 0;
+      const diasEC = p.desglose_ec_ab_dia > 0 ? abNecesarios / p.desglose_ec_ab_dia : diasF2P;
+      partes.push(`<p>💰 Necesitas ~<strong>${abNecesarios.toLocaleString()} AB</strong> para llegar. `);
+      partes.push(`⏱️ ~<strong>${diasF2P.toFixed(0)} días F2P</strong>`);
+      if (p.tipo_pase === "Ninguno (F2P)") {
+        partes.push(` (${diasF2P > 0 ? `≈${(diasF2P / 30).toFixed(1)} meses` : "N/A"}). Considera Explorer Club para acelerar ×2.</p>`);
+      } else {
+        partes.push(` · ~<strong>${diasEC.toFixed(0)} días con EC</strong>.</p>`);
+      }
     }
     partes.push(`</div>`);
   }
 
-  if (Object.keys(r.metricas).length > 0) {
+  // ===== 6. OPTIMIZACIÓN PASAPORTE =====
+  if (p.nivel_pasaporte_actual < 5) {
+    partes.push(`<h2>🛂 Optimización de Pasaporte</h2>`);
+    partes.push(`<div class="card card-gold">`);
+    if (p.insignias_faltantes > 0) {
+      partes.push(`<p>Pasaporte Nivel <strong>${p.nivel_pasaporte_actual}</strong> → Nivel <strong>${p.nivel_pasaporte_siguiente}</strong>.</p>`);
+      partes.push(`<p>Faltan <strong>${p.insignias_faltantes} insignias</strong> (${p.costo_ab_pasaporte.toLocaleString()} AB).</p>`);
+
+      // Comparación parcela vs pasaporte
+      if (p.aumento_pasaporte > p.aumento_parcelas) {
+        partes.push(`<p>✅ <strong>Prioriza insignias:</strong> cada insignia te da +${((p.aumento_pasaporte - p.aumento_parcelas) / p.aumento_parcelas * 100).toFixed(0)}% más renta que comprar parcelas.</p>`);
+      } else if (p.aumento_parcelas > p.aumento_pasaporte) {
+        partes.push(`<p>✅ <strong>Prioriza parcelas:</strong> ${p.parcelas_eq} parcelas te dan +$${(p.aumento_parcelas - p.aumento_pasaporte).toFixed(7)}/día más que subir pasaporte.</p>`);
+      }
+    } else {
+      partes.push(`<p>✅ Tienes suficientes insignias para el siguiente nivel. ¡Cómpralas ahora!</p>`);
+    }
+    partes.push(`</div>`);
+  } else {
+    partes.push(`<h2>🛂 Pasaporte</h2>`);
+    partes.push(`<div class="card card-green"><p>✅ Pasaporte en Nivel <strong>5 (MÁXIMO)</strong>. Crecimiento puro por parcelas ahora.</p></div>`);
+  }
+
+  // ===== 7. OPTIMIZADOR EXPLORER CLUB =====
+  if (p.ec_optimo_dia_inicio > 0) {
+    partes.push(`<h2>📆 Optimizador Explorer Club</h2>`);
+    partes.push(`<div class="card card-green">`);
+    partes.push(`<p>🧠 <strong>Momento óptimo:</strong> Compra EC el <strong>Día ${p.ec_optimo_dia_inicio}</strong> del mes.</p>`);
+    partes.push(`<p>📦 AB del pase: <strong>${p.ec_optimo_ab_pase.toLocaleString()} AB</strong></p>`);
+    partes.push(`<p>🆓 AB gratis en mismo período: <strong>${p.ec_optimo_ab_gratis.toLocaleString()} AB</strong></p>`);
+    partes.push(`<p>🔥 <strong>Ganancia neta: +${p.ec_optimo_ab_netos.toLocaleString()} AB 🚀</strong></p>`);
+    partes.push(`</div>`);
+  }
+
+  // ===== 8. ANÁLISIS ROI =====
+  if (p.roi_global_dias > 0 || p.roi_marginal_dias > 0) {
+    partes.push(`<h2>📈 Análisis de ROI</h2>`);
     partes.push(`<div class="grid grid-cols-2 gap-2">`);
-    for (const [k, v] of Object.entries(r.metricas)) {
-      partes.push(`<div class="p-2.5 bg-[#0a0a0a] rounded-lg border border-white/5 text-sm"><div class="text-[10px] text-gray-500">${k}</div><div class="font-bold text-white">${v}</div></div>`);
+    if (p.roi_global_dias > 0) {
+      const años = p.roi_global_dias / 365;
+      partes.push(`<div class="p-2 bg-[#0a0a0a] rounded-lg border border-white/5"><div class="text-[10px] text-gray-500">🌍 ROI Global</div><div class="font-bold text-white">${años.toFixed(1)} años</div></div>`);
+    }
+    if (p.roi_marginal_dias > 0) {
+      const color = p.roi_marginal_dias <= 365 ? "text-green-400" : p.roi_marginal_dias <= 1095 ? "text-orange-400" : "text-red-400";
+      partes.push(`<div class="p-2 bg-[#0a0a0a] rounded-lg border border-white/5"><div class="text-[10px] text-gray-500">⚡ ROI Marginal</div><div class="font-bold ${color}">${(p.roi_marginal_dias / 365).toFixed(1)} años</div></div>`);
     }
     partes.push(`</div>`);
   }
 
-  if (Object.keys(r.proyecciones).length > 0) {
-    partes.push(`<div class="mt-3"><div class="text-[10px] text-gray-500 uppercase tracking-widest mb-2 font-bold">🔮 Proyecciones</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">`);
-    for (const [k, v] of Object.entries(r.proyecciones)) {
-      partes.push(`<div class="p-2.5 bg-[#0a0a0a] rounded-lg border border-white/5 text-sm"><div class="text-[10px] text-gray-500">${k}</div><div class="font-bold text-white">${v}</div></div>`);
-    }
-    partes.push(`</div></div>`);
+  // ===== 9. RECOMENDACIONES PERSONALIZADAS =====
+  partes.push(`<h2>🎯 Recomendaciones Prioritarias</h2>`);
+  partes.push(`<ul>`);
+
+  // Recomendación #1: Colapso
+  if (p.colapso_tier) {
+    partes.push(`<li><span class="badge badge-red">🚨 CRÍTICO</span> <strong>NO COMPRES parcelas sueltas.</strong> Acumula ${p.costo_meta_ab.toLocaleString()} AB y salta a ${p.siguiente_tramo} parcelas.</li>`);
   }
 
-  if (Object.keys(r.tabla_comparativa).length > 0) {
-    partes.push(`<div class="mb-4"><div class="text-[10px] text-gray-500 uppercase tracking-widest mb-2 font-bold">⚖️ Comparativa F2P vs Explorer Club</div><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">`);
-    for (const [k, v] of Object.entries(r.tabla_comparativa)) {
-      const parts = v.split("|").map(s => s.trim());
-      partes.push(`<div class="p-3 bg-[#0a0a0a] rounded-lg border border-white/5"><div class="font-bold text-sm ${k.includes('Explorer') ? 'text-amber-400' : 'text-green-400'}">${k}</div><div class="text-xs text-gray-400 mt-1">${parts[0]}</div><div class="text-xs text-gray-400">📦 ${parts[1]}</div><div class="text-xs text-gray-300 mt-1">⏱️ ${parts[2] || '—'}</div></div>`);
-    }
-    partes.push(`</div></div>`);
+  // Recomendación #2: Boost
+  if (p.horas_boost < 18) {
+    partes.push(`<li><span class="badge badge-red">⚠️ BOOST</span> Solo tienes ${p.horas_boost}h de boost. <strong>Mínimo 18h/día</strong> — ideal 20-22h para maximizar renta ×2.</li>`);
+  } else if (p.horas_boost < 22) {
+    partes.push(`<li><span class="badge badge-green">✅ BOOST</span> Buenas ${p.horas_boost}h de boost. Intenta llegar a 22h si puedes.</li>`);
+  } else {
+    partes.push(`<li><span class="badge badge-green">💪 BOOST</span> Excelente! ${p.horas_boost}h/día maximizadas.</li>`);
   }
 
-  const eficienciaBoost = (p.horas_boost / 24) * (p.eficiencia / 100) * 100;
-  const horasOptimas = p.horas_boost >= 18 && p.horas_boost <= 22;
-  const eficienciaOptima = p.eficiencia >= 90;
-  partes.push(`<div class="mt-4 p-3 bg-[#0e0e0e] rounded-lg border border-white/5"><div class="text-[10px] text-gray-500 uppercase tracking-widest mb-2">⚡ Diagnóstico de Eficiencia</div><div class="space-y-1.5 text-sm">
-    <div class="flex justify-between"><span class="text-gray-400">Horas de Boost:</span><span class="font-bold ${horasOptimas ? 'text-green-400' : 'text-orange-400'}">${p.horas_boost}h/día ${horasOptimas ? '✅' : '⚠️ (ideal 18-22h)'}</span></div>
-    <div class="flex justify-between"><span class="text-gray-400">Efectividad:</span><span class="font-bold ${eficienciaOptima ? 'text-green-400' : 'text-orange-400'}">${p.eficiencia}% ${eficienciaOptima ? '✅' : '⚠️ (ideal >90%)'}</span></div>
-    <div class="flex justify-between"><span class="text-gray-400">Eficiencia Total:</span><span class="font-bold text-cyan-400">${eficienciaBoost.toFixed(0)}%</span></div>
-    <div class="flex justify-between"><span class="text-gray-400">Horas SRB/mes:</span><span class="font-bold text-yellow-400">${p.horas_srb}h</span></div>
-  </div></div>`);
+  // Recomendación #3: Efectividad
+  if (p.eficiencia < 90) {
+    partes.push(`<li><span class="badge badge-red">⚠️ EFECTIVIDAD</span> Solo ${p.eficiencia}% — <strong>sube al 90%+</strong> para no perder renta por boost apagado.</li>`);
+  }
 
-  partes.push(`<div class="mt-6 pt-4 border-t border-white/5 text-center text-[10px] text-gray-600">Generado por <strong>Atlas Earth PRO AI</strong> · Datos calculados con tu perfil actual · Recarga para actualizar</div></div>`);
+  // Recomendación #4: Pasaporte
+  if (p.nivel_pasaporte_actual < 3 && p.insignias_faltantes > 0) {
+    partes.push(`<li><span class="badge badge-gold">🛂 PRIORIDAD</span> <strong>Sube tu pasaporte a Nivel ${Math.min(3, p.nivel_pasaporte_siguiente)}</strong> — es la inversión con mejor retorno al principio.</li>`);
+  }
+
+  // Recomendación #5: SRB
+  if (p.horas_srb < 20) {
+    partes.push(`<li><span class="badge badge-blue">🚀 SRB</span> Solo ${p.horas_srb}h de SRB este mes. <strong>Participa más en SRB</strong> — es la mejor fuente de AB extra.</li>`);
+  }
+
+  // Recomendación #6: F2P vs EC
+  if (p.tipo_pase === "Ninguno (F2P)") {
+    const extraAB = p.desglose_ec_ab_mes - p.desglose_f2p_ab_mes;
+    if (extraAB > 0) {
+      partes.push(`<li><span class="badge badge-gold">💎 EC</span> <strong>Explorer Club te daría +${extraAB.toLocaleString()} AB/mes</strong> (${p.desglose_ec_ab_dia.toFixed(0)} AB/día vs ${p.desglose_f2p_ab_dia.toFixed(0)} AB/día).</li>`);
+    }
+  }
+
+  // Recomendación #7: Guardar en nube
+  partes.push(`<li><span class="badge badge-blue">📊 SEGUIMIENTO</span> Guarda tu progreso semanal en el Historial para ver tu evolución.</li>`);
+
+  partes.push(`</ul>`);
+
+  // ===== 10. PRÓXIMOS PASOS CONCRETOS =====
+  partes.push(`<h2>📋 Plan de Acción — Próximos 30 Días</h2>`);
+  partes.push(`<div class="card card-blue">`);
+  if (p.colapso_tier) {
+    partes.push(`<p>1️⃣ 🚫 <strong>No compres nada</strong> hasta tener ${p.costo_meta_ab.toLocaleString()} AB.</p>`);
+    partes.push(`<p>2️⃣ 📺 <strong>Farme anuncios</strong> + ruleta todos los días.</p>`);
+    partes.push(`<p>3️⃣ 🚀 <strong>Salta directo</strong> a ${p.siguiente_tramo} parcelas cuando tengas los AB.</p>`);
+  } else if (p.nivel_pasaporte_actual < 3 && p.insignias_faltantes > 0) {
+    partes.push(`<p>1️⃣ 🛂 <strong>Compra ${p.insignias_faltantes} insignias</strong> para subir a Pasaporte Nivel ${p.nivel_pasaporte_siguiente}.</p>`);
+    partes.push(`<p>2️⃣ 🏞️ <strong>Sigue comprando parcelas</strong> hasta ${p.siguiente_tramo}.</p>`);
+    partes.push(`<p>3️⃣ 📈 <strong>Registra tu progreso</strong> cada semana en el Historial.</p>`);
+  } else {
+    partes.push(`<p>1️⃣ 🏞️ <strong>Sigue comprando parcelas</strong> hasta ${p.siguiente_tramo}.</p>`);
+    partes.push(`<p>2️⃣ ⚡ <strong>Optimiza boost</strong> al máximo (20h+).</p>`);
+    partes.push(`<p>3️⃣ 📈 <strong>Monitorea tu progreso</strong> en el Dashboard.</p>`);
+  }
+  partes.push(`</div>`);
+
+  // ===== 11. FRASE MOTIVACIONAL =====
+  const frases: Record<string, string> = {
+    "COLAPSO": "🔥 La paciencia paga. Un salto de Tier bien ejecutado vale más que 100 compras impulsivas. ¡AGUANTA! 💪",
+    "EXCELENTE": "🏆 Ya domina el juego. Ahora es scale up — más parcelas, más renta, más libertad. ¡A POR EL SIGUIENTE NIVEL! 🚀",
+    "BUENO": "🔥 Vas rompiendo. La meta está cerca — no bajes el ritmo. ¡CADA PARCELA CUENTA! 💪",
+    "REGULAR": "📈 Progreso constante gana la carrera. Sigue farmeando, sigue comprando. ¡EL ÉXITO ES CUESTIÓN DE TIEMPO! ⏳",
+    "TEMPRANO": "🌱 Todos empezamos desde cero. Tu dedicación te llevará lejos. ¡QUE NADIE TE DETENGA! 🚀",
+    "INICIO": "🚀 El viaje de 1000 parcelas comienza con una. ¡TÚ PUEDES! 💪",
+  };
+  partes.push(`<p class="text-center text-sm italic text-purple-300 mt-4">${frases[estado] || "¡Sigue adelante!"}</p>`);
+
   return partes.join("\n");
 }
 
 // ============================================
-// 4. SERVER — Edge Function Principal con JWT Validation
+// 5. FORMATO HTML PREMIUM
+// ============================================
+
+function formatearHTML(contenidoAnalisis: string): string {
+  return `
+    <div class="space-y-4 text-sm leading-relaxed">
+      ${contenidoAnalisis}
+      <div class="mt-6 pt-4 border-t border-white/5 text-center text-[10px] text-gray-600">
+        Generado por <strong>Atlas Earth PRO AI</strong> — Experto en estrategia Atlas Earth ·
+        Datos de tu perfil en tiempo real
+      </div>
+    </div>
+  `;
+}
+
+// ============================================
+// 6. SERVER — Edge Function Principal
 // ============================================
 
 serve(async (req) => {
@@ -318,12 +363,12 @@ serve(async (req) => {
   try {
     const payload: PayloadAnalisis = await req.json();
 
+    // Validar campos requeridos
     const requiredFields: (keyof PayloadAnalisis)[] = [
       'user_id', 'pais', 'comunes', 'raras', 'epicas', 'legendarias',
       'insignias', 'ab_ahorrados', 'horas_boost', 'eficiencia',
-      'horas_srb', 'tipo_pase', 'hora_inicio', 'hora_fin',
-      'eficiencia_anuncios', 'dia_asistencia', 'meta_dolar', 'meta_periodo',
-      'total_parcelas', 'mult_tier', 'pasaporte_nivel', 'renta_diaria'
+      'horas_srb', 'tipo_pase', 'total_parcelas', 'mult_tier',
+      'pasaporte_nivel', 'renta_diaria',
     ];
 
     for (const field of requiredFields) {
@@ -339,7 +384,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     )
 
-    // ===== VALIDACIÓN JWT + OBTENER USUARIO =====
+    // ===== VALIDACIÓN JWT =====
     let userId = payload.user_id;
     const authHeader = req.headers.get('Authorization') || '';
 
@@ -348,7 +393,7 @@ serve(async (req) => {
       try {
         const { data: { user }, error: authError } = await supabase.auth.getUser(token);
         if (!authError && user) userId = user.id;
-      } catch { console.warn("JWT validation failed, user_id from payload"); }
+      } catch { console.warn("JWT validation failed"); }
     }
 
     const { data: userData, error: userError } = await supabase
@@ -367,57 +412,86 @@ serve(async (req) => {
       is_vip = userData.is_vip ?? false;
     }
 
-    // ===== RATE LIMIT CHECK =====
+    // ===== RATE LIMIT =====
     const rl = checkRateLimit(userId);
     if (!rl.allowed) {
       return new Response(JSON.stringify({
-        error: "⏳ Demasiadas solicitudes. Espera un minuto antes de intentar de nuevo.",
-        retry_after: 60,
+        error: "⏳ Demasiadas solicitudes. Espera un minuto.",
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 })
     }
 
     if (!is_ultra && ai_credits <= 0) {
       return new Response(JSON.stringify({
-        error: "Acceso bloqueado. Para usar la IA de forma gratuita, apoya el proyecto invitando un café (desbloquea 3 consultas automáticas)."
+        error: "Acceso bloqueado. Necesitas créditos IA o plan Ultra."
       }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 })
     }
 
     // ================================================
-    // 5. EJECUTAR ANÁLISIS CON DATOS PRE-COMPUTADOS
+    // 7. EJECUTAR ANÁLISIS EXPERTO
     // ================================================
 
-    const perfil: PerfilAnalisis = {
-      pais: payload.pais, moneda: payload.moneda || "USD",
-      comunes: payload.comunes, raras: payload.raras, epicas: payload.epicas, legendarias: payload.legendarias,
-      insignias: payload.insignias, ab_ahorrados: payload.ab_ahorrados,
-      horas_boost: payload.horas_boost, eficiencia: payload.eficiencia, horas_srb: payload.horas_srb,
-      tipo_pase: payload.tipo_pase, hora_inicio: payload.hora_inicio, hora_fin: payload.hora_fin,
-      eficiencia_anuncios: payload.eficiencia_anuncios, dia_asistencia: payload.dia_asistencia,
-      meta_dolar: payload.meta_dolar, meta_periodo: payload.meta_periodo || "day",
-      total_parcelas: payload.total_parcelas, mult_tier: payload.mult_tier,
-      pasaporte_nivel: payload.pasaporte_nivel, renta_diaria: payload.renta_diaria,
-    };
+    // Siempre generar el análisis local primero
+    const analisisLocal = generarAnalisisExperto(payload);
 
-    const metaDiaria = calcularMetaDiaria(perfil.meta_dolar, perfil.meta_periodo);
-    const resultado = analisisProfundo(perfil);
-
-    // Intentar Morph LLM
+    // Intentar Morph LLM para enriquecer
     const morphApiKey = Deno.env.get("MORPH_API_KEY");
     let aiAdvice = "";
     let usedFallback = true;
 
     if (morphApiKey) {
       try {
+        const metaDiaria = payload.meta_periodo === "month" ? payload.meta_dolar / 30
+          : payload.meta_periodo === "year" ? payload.meta_dolar / 365
+          : payload.meta_dolar;
+
+        const promptUsuario = `ANALIZA MI CUENTA DE ATLAS EARTH COMO EXPERTO MUNDIAL:
+
+DATOS DEL PERFIL:
+- País: ${payload.pais} | Moneda: ${payload.moneda}
+- Total parcelas: ${payload.total_parcelas} (${payload.comunes}C ${payload.raras}R ${payload.epicas}E ${payload.legendarias}L)
+- Pasaporte: Nivel ${payload.pasaporte_nivel} (+${payload.pasaporte_nivel * 5}%) | ${payload.insignias} insignias
+- Multiplicador Tier: ${payload.mult_tier}x
+- Renta: $${payload.renta_diaria.toFixed(7)}/día | $${payload.renta_semanal.toFixed(4)}/semana | $${payload.renta_mensual.toFixed(4)}/mes
+- AB ahorrados: ${payload.ab_ahorrados.toLocaleString()}
+- Boost: ${payload.horas_boost}h/día al ${payload.eficiencia}% efectividad
+- SRB: ${payload.horas_srb}h/mes
+- Pase: ${payload.tipo_pase}
+- ⏱️ AB 20min: ${payload.desglose_f2p_ab20min_dia.toFixed(0)} AB/día | ${payload.desglose_f2p_ab20min_mes.toLocaleString()} AB/mes${payload.tipo_pase !== "Ninguno (F2P)" ? `\n- 📦 AB Pase: ${payload.desglose_f2p_pase_mes.toLocaleString()} AB/mes` : ""}
+- 🧮 AB F2P total: ${payload.desglose_f2p_ab_dia.toFixed(1)} AB/día | ${payload.desglose_f2p_ab_mes.toLocaleString()} AB/mes
+${payload.tipo_pase !== "Ninguno (F2P)" ? `- 🧮 AB EC total: ${payload.desglose_ec_ab_dia.toFixed(1)} AB/día | ${payload.desglose_ec_ab_mes.toLocaleString()} AB/mes` : ""}
+- Meta: $${metaDiaria.toFixed(4)} USD/día | Progreso: ${Math.min(100, (payload.renta_diaria / (metaDiaria || 1)) * 100).toFixed(1)}%
+
+ESTRATEGIA COMPUTADA:
+- Tier actual: ${payload.total_parcelas} → Siguiente: ${payload.siguiente_tramo} (faltan ${payload.faltantes_tier})
+- ${payload.colapso_tier ? "🚨 ZONA DE COLAPSO ACTIVA" : "Tier estable"}
+- ${payload.nivel_pasaporte_actual < 5 ? `Pasaporte: faltan ${payload.insignias_faltantes} insignias` : "Pasaporte Máximo"}
+${payload.ec_optimo_dia_inicio > 0 ? `- EC Óptimo: Día ${payload.ec_optimo_dia_inicio} (+${payload.ec_optimo_ab_netos.toLocaleString()} AB netos)` : ""}
+
+INSTRUCCIONES ESTRICTAS (SIGUE AL PIE DE LA LETRA):
+1. Eres el mayor experto mundial en Atlas Earth — conoces Tiers, composición, pasaportes, EC, ROI
+2. Responde SOLO en español, lenguaje DIRECTO y ACCIONABLE
+3. NO saludes NI te presentes — ve directo al análisis
+4. Usa <strong> para cifras clave
+5. Estructura tu respuesta EXACTAMENTE así:
+   Párrafo 1: VEREDICTO PRINCIPAL en 1-2 oraciones contundentes
+   Párrafo 2: QUÉ HACER AHORA (máximo 3 balas con <br/>)
+   Párrafo 3: PRONÓSTICO — qué pasará si sigue esta estrategia en 30/90/365 días
+   Párrafo 4: FRASE MOTIVACIONAL ULTRA agresiva y corta (máximo 10 palabras)
+6. Si está en colapso de Tier, el tono debe ser DRAMÁTICO con mayúsculas
+7. NO repitas los datos que ya te pasé
+8. Máximo 4 párrafos cortos`;
+
         const morphResponse = await fetch("https://api.morphllm.com/v1/chat/completions", {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${morphApiKey}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
             model: "morph-v3-fast",
             messages: [
-              { role: "system", content: `Eres el 'Analista Financiero Jefe' de Atlas Earth, experto en economías de juegos móviles. Tu función es DAR CONSEJOS ULTRAPRECISOS basados en datos matemáticos. REGLAS ESTRICTAS: 1. Responde SOLO en español, lenguaje claro y directo 2. NO saludes con "Hola", "Bienvenido", etc. 3. NO repitas los datos que ya te pasé 4. Usa negritas con <strong> para cifras clave 5. Máximo 4 párrafos cortos 6. El primer párrafo debe ser el veredicto principal 7. El último párrafo debe ser una frase motivacional agresiva y corta 8. Si el usuario está en zona de colapso de Tier, el veredicto debe ser DRAMÁTICO` },
-              { role: "user", content: `ANALIZA MI CUENTA DE ATLAS EARTH (DATOS PRE-COMPUTADOS):\n📍 PAÍS: ${perfil.pais}\n📦 TOTAL PARCELAS: ${perfil.total_parcelas} (${perfil.comunes}C ${perfil.raras}R ${perfil.epicas}E ${perfil.legendarias}L)\n🛂 PASAPORTE: Nivel ${perfil.pasaporte_nivel} (+${perfil.pasaporte_nivel * 5}%) (${perfil.insignias} insignias)\n🔢 MULTIPLICADOR: ${perfil.mult_tier}x\n💰 RENTA DIARIA: $${perfil.renta_diaria.toFixed(7)} USD\n💎 AB AHORRADOS: ${perfil.ab_ahorrados.toLocaleString()}\n⏰ BOOST: ${perfil.horas_boost}h/día | EFECTIVIDAD: ${perfil.eficiencia}%\n🚀 SRB: ${perfil.horas_srb}h/mes\n💎 PASE: ${perfil.tipo_pase}\n🎯 META: $${metaDiaria} USD/día\n\nDAME: 1. Veredicto Principal 2. Análisis de Riesgo 3. Recomendación Optimizada 4. Frase Motivacional` }
+              { role: "system", content: "Eres un experto mundial en Atlas Earth, con conocimiento profundo de mecánicas de Tiers, multiplicadores, composición de parcelas, pasaportes, Explorer Club, SRB y optimización de renta. Das consejos precisos, directos y accionables. Responde SOLO en español. No saludas ni te presentas." },
+              { role: "user", content: promptUsuario }
             ],
-            temperature: 0.5, max_tokens: 400,
+            temperature: 0.4,
+            max_tokens: 500,
           })
         });
         if (morphResponse.ok) {
@@ -427,40 +501,47 @@ serve(async (req) => {
             usedFallback = false;
           }
         }
-      } catch { console.warn("Morph LLM falló, usando análisis local"); }
+      } catch { console.warn("Morph LLM falló"); }
     }
 
+    // Si hay consejo IA, insertarlo al inicio del HTML
+    let htmlFinal = analisisLocal;
+
+    if (aiAdvice && !usedFallback) {
+      // Convertir saltos de línea a <br/> y limpiar
+      const cleanedAdvice = aiAdvice
+        .replace(/\n\n+/g, '</p><p>')
+        .replace(/\n/g, '<br/>');
+      htmlFinal = `
+        <div class="mb-6 p-5 bg-gradient-to-r from-purple-900/30 via-indigo-900/20 to-cyan-900/10 rounded-2xl border border-purple-500/20 shadow-lg shadow-purple-900/20">
+          <div class="text-[10px] text-gray-500 uppercase tracking-widest mb-3 font-bold flex items-center gap-2">
+            <span>🤖 Asesor Experto Atlas Earth</span>
+            <span class="text-purple-400">● LIVE</span>
+          </div>
+          <div class="text-sm leading-relaxed text-gray-100 space-y-2">
+            <p>${cleanedAdvice}</p>
+          </div>
+        </div>
+        ${analisisLocal}
+      `;
+    }
+
+    // Descontar crédito si no es Ultra
     if (!is_ultra && !usedFallback) {
-      // Atomic decrement: only subtract if credits > 0
       const { error: deductError } = await supabase
         .from('usuarios_atlas')
         .update({ ai_credits: ai_credits - 1 })
         .eq('user_id', userId)
         .gt('ai_credits', 0);
-      if (!deductError) {
-        ai_credits -= 1;
-      }
-    }
-
-    let htmlFinal = formatearHTML(resultado, perfil, metaDiaria);
-
-    if (aiAdvice && !usedFallback) {
-      htmlFinal = htmlFinal.replace(
-        '<div class="flex items-center gap-2 mb-2">',
-        `<div class="mb-4 p-4 bg-gradient-to-r from-cyan-900/30 to-blue-900/20 rounded-xl border border-cyan-500/20">
-          <div class="text-[10px] text-gray-500 uppercase tracking-widest mb-2">🤖 Consejo de IA Generativa</div>
-          <div class="text-sm leading-relaxed">${aiAdvice.replace(/\n/g, '<br/>')}</div>
-        </div>
-        <div class="flex items-center gap-2 mb-2">`
-      );
+      if (!deductError) ai_credits -= 1;
     }
 
     return new Response(JSON.stringify({
-      advice: htmlFinal,
-      remaining_credits: is_ultra ? "Ilimitados (ULTRA)" : (usedFallback ? "Ilimitados (Motor Local)" : ai_credits),
+      advice: formatearHTML(htmlFinal),
+      remaining_credits: is_ultra ? "Ilimitados (ULTRA)" : (usedFallback ? "Ilimitados (Análisis Local)" : String(ai_credits)),
       source: usedFallback ? "local" : "morph+local",
-      metricas: resultado.metricas, advertencias: resultado.advertencias, recomendaciones: resultado.recomendaciones,
       _rate_limit_remaining: rl.remaining,
+      _local_analysis: htmlFinal.substring(0, 200), // preview para debug
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-RateLimit-Remaining': String(rl.remaining) }, status: 200 })
 
   } catch (err) {

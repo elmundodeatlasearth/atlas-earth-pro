@@ -3,7 +3,9 @@
 
 "use client";
 import type { User } from "@supabase/supabase-js";
+import type { Permissions } from "@/hooks/usePermissions";
 import AuthSection from "./auth-section";
+import LockedFeature from "./LockedFeature";
 import { PAISES_DISPONIBLES, MONEDAS_DISPONIBLES, MAP_MONEDAS } from "@/utils/atlasMath";
 
 interface SidebarProps {
@@ -34,6 +36,7 @@ interface SidebarProps {
   authPass: string; setAuthPass: (v: string) => void;
   authLoading: boolean; authMsg: string;
   isPro: boolean; isUltra: boolean; aiCredits: number;
+  permissions: Permissions;
   handleAuth: (mode: "login" | "signup") => Promise<void>;
   handleLogout: () => Promise<void>;
 
@@ -124,8 +127,11 @@ export default function Sidebar(props: SidebarProps) {
               }
             }} className="bg-green-600/50 hover:bg-green-500/80 text-green-300 border border-green-500/30" title="Añadir Nuevo Perfil">+</MiniButton>
             <MiniButton onClick={props.guardarPerfil} className="bg-cyan-600 hover:bg-cyan-500 text-white" title="Guardar Perfil Actual">💾</MiniButton>
-            {props.user && (
+            {props.user && props.permissions.canCloudProfiles && (
               <MiniButton onClick={props.guardarPerfilNube} className="bg-indigo-600 hover:bg-indigo-500 text-white" title="Guardar en la Nube">☁️</MiniButton>
+            )}
+            {props.user && !props.permissions.canCloudProfiles && (
+              <MiniButton onClick={() => {}} className="bg-gray-700 text-gray-500 cursor-not-allowed opacity-60" title="🔒 Desbloquea PRO para guardar en la nube">🔒</MiniButton>
             )}
           </div>
           {props.showSaveMsg && <div className="text-[10px] text-green-400 mt-1">✅ Guardado</div>}
@@ -248,24 +254,39 @@ export default function Sidebar(props: SidebarProps) {
 
         <Divider />
 
-        {/* Paywalls */}
+        {/* Paywalls — Mejorados con features list */}
         {!props.isPro && !props.isUltra && (
-          <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/30 rounded-xl p-4 border border-purple-500/20">
-            <div className="text-xs font-bold text-purple-300 mb-1">⭐ Desbloquear PRO</div>
-            <p className="text-[10px] text-gray-400 leading-relaxed mb-2">Todos los países, Pasaporte Nivel 5, IA y más.</p>
+          <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/30 rounded-xl p-4 border border-purple-500/20 space-y-2">
+            <div className="text-xs font-bold text-purple-300">⭐ Desbloquear PRO — $4.99/mes</div>
+            <ul className="text-[10px] text-gray-400 space-y-1">
+              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Simulador</strong> de inversión completo</li>
+              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Auditoría</strong> paso a paso de tu cuenta</li>
+              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Comparativa</strong> de Tiers todos los países</li>
+              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">ROI</strong> y Optimizador Explorer Club</li>
+              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">IA</strong>: 5 análisis personalizados/mes</li>
+              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Historial</strong> con gráficos interactivos</li>
+              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Perfiles</strong> en la nube</li>
+            </ul>
             <a href={process.env.NEXT_PUBLIC_STRIPE_PRO_LINK || "#"} target="_blank" rel="noopener noreferrer"
-              className="block w-full text-center text-xs font-bold py-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black transition-all shadow-md shadow-amber-900/40">
-              ⭐ PRO $4.99/mes
+              className="block w-full text-center text-xs font-bold py-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black transition-all shadow-md shadow-amber-900/40 hover:scale-[1.02] active:scale-[0.98]">
+              ⭐ PRO $4.99/mes — Desbloquear TODO
             </a>
           </div>
         )}
         {!props.isUltra && (
-          <div className="bg-gradient-to-br from-purple-900/40 to-pink-900/30 rounded-xl p-4 border border-pink-500/20">
-            <div className="text-xs font-bold text-pink-300 mb-1">👑 ULTRA</div>
-            <p className="text-[10px] text-gray-400 leading-relaxed mb-2">IA ilimitada, prioridad y más.</p>
+          <div className="bg-gradient-to-br from-purple-900/40 to-pink-900/30 rounded-xl p-4 border border-pink-500/20 space-y-2">
+            <div className="text-xs font-bold text-pink-300">👑 ULTRA — $9.99/mes</div>
+            <ul className="text-[10px] text-gray-400 space-y-1">
+              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">IA Ilimitada</strong> — 50 análisis/mes</li>
+              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Proyecciones</strong> multi-escenario</li>
+              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Alertas</strong> inteligentes de hitos</li>
+              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Badge</strong> exclusivo 👑 en toda la app</li>
+              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Beta</strong> features con acceso anticipado</li>
+              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Soporte</strong> prioritario</li>
+            </ul>
             <a href={process.env.NEXT_PUBLIC_STRIPE_ULTRA_LINK || "#"} target="_blank" rel="noopener noreferrer"
-              className="block w-full text-center text-xs font-bold py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white transition-all shadow-md shadow-purple-900/40">
-              👑 ULTRA $9.99/mes
+              className="block w-full text-center text-xs font-bold py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white transition-all shadow-md shadow-purple-900/40 hover:scale-[1.02] active:scale-[0.98]">
+              👑 ULTRA $9.99/mes — IA Ilimitada
             </a>
           </div>
         )}

@@ -10,6 +10,7 @@ interface IaTabProps {
   user: User | null;
   isUltra: boolean;
   aiCredits: number;
+  aiCreditsPerMonth: number;
   aiLoading: boolean;
   aiAdvice: string;
   aiError: string;
@@ -48,7 +49,10 @@ export default function IaTab(props: IaTabProps) {
         </div>
 
         <div className="text-xs text-gray-500 mb-4">
-          Créditos disponibles: <strong className="text-purple-400">{props.isUltra ? "∞ Ilimitados" : props.aiCredits}</strong>
+          Créditos disponibles:{" "}
+          <strong className="text-purple-400">
+            {props.isUltra ? `50 / mes (${props.aiCredits} restantes)` : `${props.aiCredits} / ${props.aiCreditsPerMonth} usados este mes`}
+          </strong>
         </div>
 
         {!props.user ? (

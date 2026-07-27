@@ -1,11 +1,15 @@
 // src/components/historial-tab.tsx
 // Tab de Historial con chart y formulario de registro de progreso diario
+// FREE: solo formulario sin chart
+// PRO/ULTRA: chart + formulario completo
 
 "use client";
 import type { User } from "@supabase/supabase-js";
 import type { HistorialEntry } from "./HistorialChart";
 import HistorialChart from "./HistorialChart";
 import { GlowCard } from "./stat-card";
+import LockedFeature from "./LockedFeature";
+import type { Permissions } from "@/hooks/usePermissions";
 
 interface HistorialTabProps {
   user: User | null;
@@ -16,26 +20,37 @@ interface HistorialTabProps {
   histDiam: number; setHistDiam: (v: number) => void;
   histMsg: string;
   guardarHistorial: () => Promise<void>;
+  permissions: Permissions;
 }
 
 export default function HistorialTab(props: HistorialTabProps) {
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Chart */}
-      {props.user && props.historialData.length > 0 && (
+      {/* Chart — solo PRO+ */}
+      {props.user && props.historialData.length > 0 && props.permissions.canHistoryChart ? (
         <GlowCard>
           <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">📈 Progreso en el Tiempo</div>
           <div className="h-64">
             <HistorialChart data={props.historialData} />
           </div>
         </GlowCard>
-      )}
+      ) : props.user && props.historialData.length > 0 && !props.permissions.canHistoryChart ? (
+        <LockedFeature
+          title="📈 Gráfico de Progreso"
+          description="Visualiza tu evolución en el tiempo con gráficos interactivos de AB generados, USD y diamantes."
+          compact
+          requiredPlan="PRO"
+        />
+      ) : null}
 
-      {/* Formulario */}
+      {/* Formulario — todos pueden verlo pero solo PRO+ guarda */}
       <GlowCard>
         <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">
           📝 Registrar Progreso Diario
           {!props.user && <span className="ml-2 text-red-400">(Inicia sesión para guardar)</span>}
+          {props.user && !props.permissions.canSaveHistory && (
+            <span className="ml-2 text-amber-400">(🔒 PRO+ para guardar historial)</span>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
@@ -60,7 +75,8 @@ export default function HistorialTab(props: HistorialTabProps) {
               className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none transition-all" />
           </div>
           <div className="flex items-end">
-            <button onClick={props.guardarHistorial} disabled={!props.user}
+            <button onClick={props.guardarHistorial}
+              disabled={!props.user || !props.permissions.canSaveHistory}
               className="w-full py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-xs font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-cyan-900/30">
               💾 Guardar
             </button>

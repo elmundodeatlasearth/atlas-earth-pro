@@ -1,11 +1,16 @@
 // src/components/dashboard-tab.tsx
 // Tab de Dashboard con métricas principales, progreso meta, AB proyectados y estrategia
+// FREE: solo ve renta diaria + total parcelas + multiplicador
+// PRO: dashboard completo
+// ULTRA: dashboard completo + AB proyectados EC + multi-país
 
 "use client";
 import { StatCard, MetricBox, GlowCard } from "./stat-card";
 import type { MotorAtlasEarth } from "@/utils/atlasMath";
 import { sanitizeHTML } from "@/utils/sanitize";
 import TierComparativa from "./tier-comparativa";
+import LockedFeature from "./LockedFeature";
+import type { Permissions } from "@/hooks/usePermissions";
 
 interface DashboardTabProps {
   motor: MotorAtlasEarth;
@@ -23,21 +28,73 @@ interface DashboardTabProps {
   tramo_actual: number;
   siguiente_tramo: number;
   faltantesTier: number;
-  desgloseF2p: { total_mes: number; promedio_diario: number; ruleta_diaria: number; anuncios_diarios: number; asistencia_mes: number; minijuegos_mes: number };
-  desgloseEc: { total_mes: number; promedio_diario: number; ruleta_diaria: number; anuncios_diarios: number; asistencia_mes: number; minijuegos_mes: number };
+  desgloseF2p: { total_mes: number; promedio_diario: number; ruleta_diaria: number; anuncios_diarios: number; ab20min_diario: number; ab20min_mes: number; asistencia_mes: number; pase_mes: number; minijuegos_mes: number };
+  desgloseEc: { total_mes: number; promedio_diario: number; ruleta_diaria: number; anuncios_diarios: number; ab20min_diario: number; ab20min_mes: number; asistencia_mes: number; pase_mes: number; minijuegos_mes: number };
   veredictoEstrategia: string;
   totalParcelas: number;
   horasSrb: number;
   eficiencia: number;
   horasBoost: number;
+  permissions: Permissions;
 }
 
 export default function DashboardTab(props: DashboardTabProps) {
   const pctMeta = Math.min(100, (props.motor.total_parcelas / props.parcelasMeta) * 100);
 
+  // ===== FREE: solo ve la renta diaria + total parcelas =====
+  if (!props.permissions.canViewFullRent) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div>
+          <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">
+            💎 Tu renta actual
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <StatCard label="Por Día" usd={props.rentaDia} local={props.rentaDia * props.tasa} moneda={props.moneda} />
+            <GlowCard className="flex flex-col items-center justify-center text-center p-6 border-white/5">
+              <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">🏞️ Total Parcelas</div>
+              <div className="text-3xl font-black text-white">{props.totalParcelas}</div>
+              <div className="text-xs text-gray-500 mt-1">{props.multTier}x Multiplicador</div>
+            </GlowCard>
+          </div>
+        </div>
+
+        <LockedFeature
+          title="📊 Dashboard Completo"
+          description="Desbloquea renta semanal, mensual y anual, proyecciones de AB, estrategia inteligente y más. Datos precisos en tu moneda local."
+          preview={
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 p-4">
+              {[1,2,3,4].map(i => (
+                <div key={i} className="space-y-2">
+                  <div className="h-4 bg-white/10 rounded animate-pulse w-1/2" />
+                  <div className="h-8 bg-white/10 rounded animate-pulse" />
+                  <div className="h-4 bg-white/10 rounded animate-pulse w-2/3" />
+                </div>
+              ))}
+            </div>
+          }
+        />
+        
+        <LockedFeature
+          title="🎯 Meta y Progreso"
+          description="Sigue tu progreso hacia tu meta financiera y visualiza los saltos de Tier."
+          compact
+          requiredPlan="PRO"
+        />
+
+        <LockedFeature
+          title="🧠 Estrategia Inteligente"
+          description="Recomendaciones personalizadas: ¿parcelas, insignias o esperar? Decisiones basadas en tu setup real."
+          requiredPlan="PRO"
+        />
+      </div>
+    );
+  }
+
+  // ===== PRO / ULTRA: dashboard completo =====
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Métricas principales */}
+      {/* ≡≡≡ MÉTRICAS PRINCIPALES ≡≡≡ */}
       <div>
         <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">
           💎 Rendimiento Actual — {props.totalParcelas} Parcelas · {props.multTier}x Multiplicador
@@ -50,7 +107,7 @@ export default function DashboardTab(props: DashboardTabProps) {
         </div>
       </div>
 
-      {/* Progreso Meta + Tier */}
+      {/* ≡≡≡ PROGRESO META + TIER ≡≡≡ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <GlowCard>
           <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">🎯 Estado de tu Meta</div>
@@ -107,47 +164,79 @@ export default function DashboardTab(props: DashboardTabProps) {
         </GlowCard>
       </div>
 
-      {/* AB Proyectados */}
+      {/* ≡≡≡ AB PROYECTADOS — F2P (PRO+) / EC (ULTRA) ≡≡≡ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <GlowCard>
           <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">🌱 AB Proyectados (F2P)</div>
           <div className="text-3xl font-black bg-gradient-to-r from-green-400 to-emerald-300 bg-clip-text text-transparent">+{props.desgloseF2p.total_mes.toLocaleString()} AB/mes</div>
           <div className="text-sm text-gray-400 mt-1">≈ {props.desgloseF2p.promedio_diario.toFixed(1)} AB/día</div>
-          <div className="grid grid-cols-3 gap-2 mt-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
             <MetricBox label="Ruleta" value={`${props.desgloseF2p.ruleta_diaria.toFixed(1)}/d`} color="text-cyan-400" />
             <MetricBox label="Anuncios" value={`${props.desgloseF2p.anuncios_diarios}/d`} color="text-blue-400" />
+            <MetricBox label="⏱️ 20min" value={`${props.desgloseF2p.ab20min_diario.toFixed(0)}/d`} color="text-green-400" />
             <MetricBox label="Asistencia" value={`${props.desgloseF2p.asistencia_mes}/mes`} color="text-purple-400" />
           </div>
         </GlowCard>
 
-        <GlowCard className="border-amber-500/20">
-          <div className="text-xs text-amber-400 uppercase tracking-widest mb-3">🔥 AB Proyectados (Explorer Club)</div>
-          <div className="text-3xl font-black bg-gradient-to-r from-amber-400 to-orange-300 bg-clip-text text-transparent">+{props.desgloseEc.total_mes.toLocaleString()} AB/mes</div>
-          <div className="text-sm text-gray-400 mt-1">≈ {props.desgloseEc.promedio_diario.toFixed(1)} AB/día</div>
-          <div className="grid grid-cols-3 gap-2 mt-3">
-            <MetricBox label="Ruleta" value={`${props.desgloseEc.ruleta_diaria.toFixed(1)}/d`} color="text-cyan-400" />
-            <MetricBox label="Anuncios" value={`${props.desgloseEc.anuncios_diarios}/d`} color="text-blue-400" />
-            <MetricBox label="Asistencia" value={`${props.desgloseEc.asistencia_mes}/mes`} color="text-purple-400" />
-          </div>
-        </GlowCard>
+        {props.permissions.canUseECOptimizer ? (
+          <GlowCard className="border-amber-500/20">
+            <div className="text-xs text-amber-400 uppercase tracking-widest mb-3">🔥 AB Proyectados (Explorer Club)</div>
+            <div className="text-3xl font-black bg-gradient-to-r from-amber-400 to-orange-300 bg-clip-text text-transparent">+{props.desgloseEc.total_mes.toLocaleString()} AB/mes</div>
+            <div className="text-sm text-gray-400 mt-1">≈ {props.desgloseEc.promedio_diario.toFixed(1)} AB/día</div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
+              <MetricBox label="Ruleta" value={`${props.desgloseEc.ruleta_diaria.toFixed(1)}/d`} color="text-cyan-400" />
+              <MetricBox label="Anuncios" value={`${props.desgloseEc.anuncios_diarios}/d`} color="text-blue-400" />
+              <MetricBox label="⏱️ 20min" value={`${props.desgloseEc.ab20min_diario.toFixed(0)}/d`} color="text-green-400" />
+              <MetricBox label="Asistencia" value={`${props.desgloseEc.asistencia_mes}/mes`} color="text-purple-400" />
+            </div>
+          </GlowCard>
+        ) : (
+          <LockedFeature
+            title="AB Proyectados (Explorer Club)"
+            description="Compara cuánto más ganarías con Explorer Club vs F2P. Datos exactos mes a mes."
+            compact
+            requiredPlan="ULTRA"
+          />
+        )}
       </div>
 
-      {/* Comparativa Detallada de Tiers */}
-      <TierComparativa
-        motor={props.motor}
-        paisActual={props.pais}
-        monedaActual={props.moneda}
-      />
+      {/* ≡≡≡ COMPARATIVA TIERS — PRO/ULTRA con multi-país solo ULTRA ≡≡≡ */}
+      {props.permissions.canCompareTiers ? (
+        <TierComparativa
+          motor={props.motor}
+          paisActual={props.pais}
+          monedaActual={props.moneda}
+        />
+      ) : (
+        <LockedFeature
+          title="Comparativa Detallada de Tiers"
+          description="Comparamos tu renta nivel por nivel frente a todos los países disponibles en Atlas Earth."
+          preview={
+            <div className="p-4 space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <div className="h-8 bg-white/10 rounded animate-pulse" />
+                  <div className="h-6 bg-white/10 rounded animate-pulse w-3/4" />
+                  <div className="h-6 bg-white/10 rounded animate-pulse w-1/2" />
+                </div>
+                <div className="space-y-2">
+                  <div className="h-8 bg-white/10 rounded animate-pulse" />
+                  <div className="h-6 bg-white/10 rounded animate-pulse w-3/4" />
+                  <div className="h-6 bg-white/10 rounded animate-pulse w-1/2" />
+                </div>
+              </div>
+            </div>
+          }
+        />
+      )}
 
-      {/* Estrategia */}
+      {/* ≡≡≡ ESTRATEGIA — Solo PRO+ ≡≡≡ */}
       <GlowCard>
         <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">🧠 Estrategia Inteligente</div>
-        <div className="text-sm text-gray-300 leading-relaxed
-          prose prose-invert prose-sm
+        <div className="text-sm text-gray-300 leading-relaxed prose prose-invert prose-sm
           prose-headings:text-cyan-300 prose-headings:font-bold prose-headings:mt-4 prose-headings:mb-2
           prose-strong:text-amber-300 prose-strong:font-bold
-          prose-li:text-gray-300
-          prose-p:text-gray-300 prose-p:leading-relaxed
+          prose-li:text-gray-300 prose-p:text-gray-300 prose-p:leading-relaxed
           [&_h1]:text-base [&_h1]:font-black [&_h1]:text-cyan-300
           [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-cyan-300
           [&_.highlight]:bg-cyan-900/20 [&_.highlight]:rounded [&_.highlight]:px-2 [&_.highlight]:py-0.5

@@ -1,10 +1,14 @@
 // src/components/auditoria-tab.tsx
 // Tab de Auditoría Completa con análisis detallado de la cuenta
+// FREE: bloqueado con preview
+// PRO/ULTRA: completo
 
 "use client";
 import { GlowCard } from "./stat-card";
 import type { MotorAtlasEarth } from "@/utils/atlasMath";
 import { sanitizeHTML } from "@/utils/sanitize";
+import LockedFeature from "./LockedFeature";
+import type { Permissions } from "@/hooks/usePermissions";
 
 interface AuditoriaTabProps {
   motor: MotorAtlasEarth;
@@ -33,9 +37,37 @@ interface AuditoriaTabProps {
   aumentoParcelas: number;
   veredictoEstrategia: string;
   metaRenta: number;
+  permissions: Permissions;
 }
 
 export default function AuditoriaTab(props: AuditoriaTabProps) {
+  // FREE: bloque completo
+  if (!props.permissions.canViewFullAudit) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <LockedFeature
+          title="📋 Auditoría Completa de tu Cuenta"
+          description="Obtén un análisis detallado en 5 pasos: estado actual, meta financiera, escalera de Tiers, estrategia de compras y acción táctica inmediata. Datos precisos basados en tu setup real."
+          preview={
+            <div className="p-6 space-y-5">
+              <div className="space-y-2">
+                <div className="h-6 bg-white/10 rounded w-1/3 animate-pulse" />
+                <div className="h-4 bg-white/10 rounded w-full animate-pulse" />
+                <div className="h-4 bg-white/10 rounded w-3/4 animate-pulse" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="h-20 bg-white/5 rounded-xl animate-pulse" />
+                <div className="h-20 bg-white/5 rounded-xl animate-pulse" />
+              </div>
+              <div className="h-28 bg-white/5 rounded-xl animate-pulse" />
+              <div className="h-16 bg-white/5 rounded-xl animate-pulse" />
+            </div>
+          }
+        />
+      </div>
+    );
+  }
+
   return (
     <GlowCard className="space-y-6 animate-fade-in">
       <div className="text-xs text-gray-500 uppercase tracking-widest border-b border-white/5 pb-3">

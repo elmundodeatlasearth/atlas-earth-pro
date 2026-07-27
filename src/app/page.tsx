@@ -11,13 +11,18 @@ import TabTransition from "@/components/tab-transition";
 import { exportHistorialCSV } from "@/utils/export-csv";
 import ThemeToggle from "@/components/theme-toggle";
 
-const tabs = [
-  { id: "dashboard", label: "\ud83d\udcca Dashboard" },
-  { id: "simulador", label: "\ud83e\uddee Simulador" },
-  { id: "auditoria", label: "\ud83d\udccb Auditor\u00eda" },
-  { id: "ia", label: "\ud83e\udd16 IA PRO" },
-  { id: "historial", label: "\ud83d\udcc8 Historial" },
-];
+function getTabs(isPro: boolean, isUltra: boolean) {
+  const allTabs = [
+    { id: "dashboard", label: "📊 Dashboard" },
+    { id: "simulador", label: "🧮 Simulador" },
+    { id: "auditoria", label: "📋 Auditoría" },
+    { id: "ia", label: "🤖 IA PRO" },
+    { id: "historial", label: "📈 Historial" },
+  ];
+  // FREE: solo Dashboard
+  if (!isPro && !isUltra) return [allTabs[0]];
+  return allTabs;
+}
 
 export default function Home() {
   const S = useAtlasState();
@@ -31,7 +36,7 @@ export default function Home() {
       if (e.ctrlKey && e.key >= "1" && e.key <= "5") {
         e.preventDefault();
         const idx = parseInt(e.key) - 1;
-        const ids = tabs.map(t => t.id);
+        const ids = getTabs(S.isPro, S.isUltra).map(t => t.id);
         if (idx >= 0 && idx < ids.length) sRef.current.setActiveTab(ids[idx]);
       }
     };
@@ -77,7 +82,7 @@ export default function Home() {
           authEmail={S.authEmail} setAuthEmail={S.setAuthEmail}
           authPass={S.authPass} setAuthPass={S.setAuthPass}
           authLoading={S.authLoading} authMsg={S.authMsg}
-          isPro={S.isPro} isUltra={S.isUltra} aiCredits={S.aiCredits}
+          isPro={S.isPro} isUltra={S.isUltra} aiCredits={S.aiCredits} permissions={S.permissions}
           handleAuth={S.handleAuth} handleLogout={S.handleLogout}
           profileName={S.profileName} setProfileName={S.setProfileName}
           profileList={S.profileList} setProfileList={S.setProfileList} showSaveMsg={S.showSaveMsg}
@@ -111,7 +116,7 @@ export default function Home() {
           </div>
           {/* Tabs - scrollable en mobile */}
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-none -mr-3 pr-3 lg:mr-0 lg:pr-0">
-            {tabs.map(t => (
+            {getTabs(S.isPro, S.isUltra).map(t => (
               <button key={t.id} onClick={() => S.setActiveTab(t.id)}
                 className={`px-3 lg:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                   S.activeTab === t.id
@@ -145,6 +150,7 @@ export default function Home() {
               veredictoEstrategia={S.veredictoEstrategia}
               totalParcelas={S.motor.total_parcelas}
               horasSrb={S.horasSrb} eficiencia={S.eficiencia} horasBoost={S.horasBoost}
+              permissions={S.permissions}
             />
           )}
           {S.activeTab === "simulador" && (
@@ -161,6 +167,7 @@ export default function Home() {
               roiGlobalDias={S.roiGlobalDias} roiMarginalDias={S.roiMarginalDias}
               rentaAdicional={S.rentaAdicional} costoMetaAb={S.costoMetaAb} costoTiendaUsd={S.costoTiendaUsd}
               metaRenta={S.metaRenta}
+              permissions={S.permissions}
             />
           )}
           {S.activeTab === "auditoria" && (
@@ -180,12 +187,14 @@ export default function Home() {
               aumentoPasaporte={S.aumentoPasaporte} parcelasEq={S.parcelasEq}
               aumentoParcelas={S.aumentoParcelas} veredictoEstrategia={S.veredictoEstrategia}
               metaRenta={S.metaRenta}
+              permissions={S.permissions}
             />
           )}
           {S.activeTab === "ia" && (
             <IaTab
               user={S.user} isUltra={S.isUltra}
-              aiCredits={S.aiCredits} aiLoading={S.aiLoading}
+              aiCredits={S.aiCredits} aiCreditsPerMonth={S.permissions.aiCreditsPerMonth}
+              aiLoading={S.aiLoading}
               aiAdvice={S.aiAdvice} aiError={S.aiError}
               totalParcelas={S.motor.total_parcelas} pasaporte={S.pasaporte}
               abPorDia={S.abPorDia} metaUsdDia={S.metaUsdDia}
@@ -200,6 +209,7 @@ export default function Home() {
               histUsd={S.histUsd} setHistUsd={S.setHistUsd}
               histDiam={S.histDiam} setHistDiam={S.setHistDiam}
               histMsg={S.histMsg} guardarHistorial={S.guardarHistorial}
+              permissions={S.permissions}
             />
           )}
             </TabTransition>

@@ -1,10 +1,14 @@
 // src/components/simulador-tab.tsx
 // Tab de Simulador con inversión inmediata, parcela vs insignia, Explorer Club optimizer y ROI
+// FREE: bloqueado con preview
+// PRO/ULTRA: completo
 
 "use client";
 import { MetricBox, GlowCard } from "./stat-card";
 import { fmt, type VentanaEC } from "@/utils/atlasMath";
 import type { MotorAtlasEarth } from "@/utils/atlasMath";
+import LockedFeature from "./LockedFeature";
+import type { Permissions } from "@/hooks/usePermissions";
 
 interface SimuladorTabProps {
   abAhorrados: number;
@@ -28,9 +32,40 @@ interface SimuladorTabProps {
   costoMetaAb: number;
   costoTiendaUsd: number;
   metaRenta: number;
+  permissions: Permissions;
 }
 
 export default function SimuladorTab(props: SimuladorTabProps) {
+  // FREE: bloque completo con preview
+  if (!props.permissions.canUseSimulator) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <LockedFeature
+          title="🔬 Simulador de Inversión"
+          description="Descubre exactamente cuánto generarías al comprar parcelas adicionales, optimizar tu Explorer Club y calcular el ROI de tus inversiones. Todo con datos precisos y en tu moneda local."
+          preview={
+            <div className="p-6 space-y-4">
+              <div className="h-8 bg-white/10 rounded w-1/2 animate-pulse" />
+              <div className="grid grid-cols-4 gap-4">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="space-y-2">
+                    <div className="h-4 bg-white/10 rounded animate-pulse" />
+                    <div className="h-8 bg-white/10 rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
+              <div className="h-20 bg-white/5 rounded-xl animate-pulse" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="h-24 bg-white/5 rounded-xl animate-pulse" />
+                <div className="h-24 bg-white/5 rounded-xl animate-pulse" />
+              </div>
+            </div>
+          }
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Inversión Inmediata */}

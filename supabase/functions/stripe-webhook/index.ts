@@ -83,27 +83,28 @@ serve(async (req) => {
         console.log(`🎉 Usuario ${userId} actualizado a ULTRA`)
       } else {
         // Pago único → PRO / créditos extras
-        const updateData: Record<string, any> = { is_vip: true }
-        
-        // Si es un pago grande (≥ $5), también dar créditos
         const amountUsd = (session.amount_total || 0) / 100
         const creditsToAdd = Math.max(3, Math.floor(amountUsd / 2))
-        if (amountUsd >= 5) {
-          // Obtener créditos actuales para sumar
-          updateData.ai_credits = supabase.rpc('increment', { x: creditsToAdd })
-        } else {
-          updateData.ai_credits = 3
-        }
+        
+        // Obtener créditos actuales para sumar correctamente
+        const { data: currentUser, error: fetchError } = await supabase
+          .from('usuarios_atlas')
+          .select('ai_credits')
+          .eq('user_id', userId)
+          .single()
+        
+        const currentCredits = (!fetchError && currentUser?.ai_credits) ? currentUser.ai_credits : 0
+        const newCredits = amountUsd >= 5 ? currentCredits + creditsToAdd : currentCredits + 3
         
         const { error } = await supabase
           .from('usuarios_atlas')
-          .update(updateData)
+          .update({ is_vip: true, ai_credits: newCredits })
           .eq('user_id', userId)
         if (error) {
           console.error("Error actualizando Supabase PRO:", error)
           return new Response(JSON.stringify({ error: "Update failed" }), { status: 500 })
         }
-        console.log(`🎉 Usuario ${userId} actualizado a PRO con +${creditsToAdd} créditos IA`)
+        console.log(`🎉 Usuario ${userId} actualizado a PRO con +${amountUsd >= 5 ? creditsToAdd : 3} créditos IA (total: ${newCredits})`)
       }
     } 
 

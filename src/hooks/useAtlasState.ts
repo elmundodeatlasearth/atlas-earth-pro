@@ -9,6 +9,7 @@ import type { AtlasCalculations } from "./useAtlasCalculations";
 import { useAtlasInputs, type AtlasInputs } from "./useAtlasInputs";
 import { useAtlasAuth, type AtlasAuth } from "./useAtlasAuth";
 import { useAtlasCalculations } from "./useAtlasCalculations";
+import { usePermissions, type Permissions } from "./usePermissions";
 
 export interface AtlasState extends AtlasInputs, AtlasCalculations {
   // Auth (overrides para compatibilidad)
@@ -20,6 +21,10 @@ export interface AtlasState extends AtlasInputs, AtlasCalculations {
   isPro: boolean;
   isUltra: boolean;
   aiCredits: number;
+
+  // Permissions
+  permissions: Permissions;
+
   handleAuth: (mode: "login" | "signup") => Promise<void>;
   handleLogout: () => Promise<void>;
 
@@ -51,6 +56,7 @@ export function useAtlasState(): AtlasState {
   const I = useAtlasInputs();
   const A = useAtlasAuth();
   const C = useAtlasCalculations(I);
+  const P = usePermissions(A.isPro, A.isUltra);
 
   // ===== AI State =====
   const [aiLoading, setAiLoading] = useState(false);
@@ -209,6 +215,42 @@ export function useAtlasState(): AtlasState {
             meta_dolar: I.meta, meta_periodo: I.metaPeriodo,
             total_parcelas: C.motor.total_parcelas,
             mult_tier: C.multTier, pasaporte_nivel: C.pasaporte, renta_diaria: C.rentaDia,
+            // ≡≡≡ DATOS COMPUTADOS ADICIONALES para análisis experto ≡≡≡
+            renta_semanal: C.rentaSem,
+            renta_mensual: C.rentaMes,
+            renta_anual: C.rentaAnio,
+            siguiente_tramo: C.siguiente_tramo,
+            faltantes_tier: C.faltantesTier,
+            colapso_tier: C.colapso,
+            porcentaje_escalera: C.porcentajeEsc,
+            faltantes_meta: C.faltantesMeta,
+            parcelas_meta: C.parcelasMeta,
+            desglose_f2p_ab_mes: C.desgloseF2p.total_mes,
+            desglose_f2p_ab_dia: C.desgloseF2p.promedio_diario,
+            desglose_f2p_ab20min_dia: C.desgloseF2p.ab20min_diario,
+            desglose_f2p_ab20min_mes: C.desgloseF2p.ab20min_mes,
+            desglose_f2p_pase_mes: C.desgloseF2p.pase_mes,
+            desglose_ec_ab_mes: C.desgloseEc.total_mes,
+            desglose_ec_ab_dia: C.desgloseEc.promedio_diario,
+            desglose_ec_ab20min_dia: C.desgloseEc.ab20min_diario,
+            desglose_ec_ab20min_mes: C.desgloseEc.ab20min_mes,
+            desglose_ec_pase_mes: C.desgloseEc.pase_mes,
+            ec_optimo_dia_inicio: C.optData.optimo.dia_inicio,
+            ec_optimo_ab_netos: C.optData.optimo.neto_ab,
+            ec_optimo_ab_pase: C.optData.optimo.ab_pase,
+            ec_optimo_ab_gratis: C.optData.optimo.ab_gratis,
+            roi_global_dias: C.roiGlobalDias,
+            roi_marginal_dias: C.roiMarginalDias,
+            renta_adicional: C.rentaAdicional,
+            costo_meta_ab: C.costoMetaAb,
+            parcelas_eq: C.parcelasEq,
+            aumento_parcelas: C.aumentoParcelas,
+            aumento_pasaporte: C.aumentoPasaporte,
+            veredicto_estrategia: C.veredictoEstrategia,
+            nivel_pasaporte_actual: C.nivelActualPasaporte,
+            nivel_pasaporte_siguiente: C.nivelSiguientePasaporte,
+            insignias_faltantes: C.insigniasFaltantes,
+            costo_ab_pasaporte: C.costoAbPasaporte,
             historial_progreso: historialData.slice(-30),
           }),
         }
@@ -265,6 +307,8 @@ export function useAtlasState(): AtlasState {
     authPass: A.authPass, setAuthPass: A.setAuthPass,
     authLoading: A.authLoading, authMsg: A.authMsg,
     isPro: A.isPro, isUltra: A.isUltra, aiCredits: A.aiCredits,
+    // Permissions
+    permissions: P,
     handleAuth: A.handleAuth, handleLogout: A.handleLogout,
     // AI
     aiLoading, aiAdvice, aiError, handleGenerateAI,

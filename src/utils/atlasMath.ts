@@ -38,73 +38,86 @@ export interface MetaResult {
   renta_test: number;
 }
 
-export interface VentanaEC {
-  dia_inicio: number;
-  dia_fin: number;
-  ab_pase: number;
-  ab_gratis: number;
-  neto_ab: number;
-  dias_espera: number;
-  fecha_compra: string;
-}
-
-export interface OptimizadorECResult {
-  mes1: VentanaEC;
-  mes2: VentanaEC;
-  mes3: VentanaEC;
-  optimo: VentanaEC;
-}
-
 export interface DesgloseMensual {
+  /** Total AB en 30 días */
   total_mes: number;
+  /** AB por día en promedio */
   promedio_diario: number;
+
+  // === FUENTES DE INGRESO ===
+
+  /** Ruleta: F2P=5 tiros/día, EC=7 tiros/día. ~1.7 AB/tiro promedio */
   ruleta_diaria: number;
+  ruleta_mes: number;
+
+  /** Anuncios/20min: AB/día = maxAnuncios × ab_por_ad × eficiencia
+   *  USA = 2 AB/20min, Resto del Mundo = 1 AB/20min */
   anuncios_diarios: number;
+  anuncios_mes: number;
+
+  /** AB pasivo cada 20 min (mismo que anuncios). Solo display.
+   *  USA = 2, otros = 1. Codificado en ab_por_ad. */
+  ab20min_diario: number;
+  ab20min_mes: number;
+
+  /** Asistencia diaria (calendario F2P) */
   asistencia_mes: number;
+
+  /** AB extra del pase (calendario EC) */
+  pase_mes: number;
+
+  /** AB de minijuegos/pase escalera */
   minijuegos_mes: number;
 }
 
 // ---------------------------------------------------------------------------
-// TIERS COMPLETOS — TODOS LOS PAÍSES DE ATLAS EARTH
+// TIERS DE PAÍSES
 // ---------------------------------------------------------------------------
 export const TIERS_COMPLETOS: TiersDict = {
   "Estados Unidos": {
-    limites: [150, 220, 290, 365, 435, 545, 730, 1095, 1500],
-    multiplicadores: [30, 20, 15, 12, 10, 8, 6, 4, 3, 2],
+    limites: [40, 60, 80, 100, 120, 150, 220, 290, 370, 470, 600, 770, 1000, 1300, 1700, 2200],
+    multiplicadores: [20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 5],
   },
   "Canadá": {
-    limites: [60, 110, 160, 210, 280, 400, 600, 900, 1200],
-    multiplicadores: [20, 15, 12, 10, 8, 6, 4, 3, 2, 2],
+    limites: [30, 50, 70, 90, 110, 140, 180, 230, 290, 360, 450, 560, 700, 870, 1100, 1400, 1800, 2300],
+    multiplicadores: [20, 16, 13, 11, 9, 8, 7, 6, 5, 4.5, 4, 3.5, 3, 2.5, 2, 2, 2, 2],
   },
   "Reino Unido": {
-    limites: [60, 110, 160, 210, 280, 400, 600, 900, 1200],
-    multiplicadores: [20, 15, 12, 10, 8, 6, 4, 3, 2, 2],
+    limites: [30, 55, 80, 105, 140, 180, 230, 290, 370, 470, 600, 760, 960, 1200, 1500],
+    multiplicadores: [20, 17, 14, 12, 10, 8, 7, 6, 5, 4, 3.5, 3, 2.5, 2, 2, 2],
   },
   "Australia": {
-    limites: [60, 110, 160, 210, 280, 400, 600, 900, 1200],
-    multiplicadores: [20, 15, 12, 10, 8, 6, 4, 3, 2, 2],
+    limites: [30, 55, 80, 105, 140, 180, 230, 290, 370, 470, 600, 760, 960, 1200, 1500],
+    multiplicadores: [20, 17, 14, 12, 10, 8, 7, 6, 5, 4, 3.5, 3, 2.5, 2, 2, 2],
   },
   "Nueva Zelanda": {
-    limites: [60, 110, 160, 210, 280, 400, 600, 900, 1200],
-    multiplicadores: [20, 15, 12, 10, 8, 6, 4, 3, 2, 2],
+    limites: [30, 55, 80, 105, 140, 180, 230, 290, 370, 470, 600, 760, 960, 1200, 1500],
+    multiplicadores: [20, 17, 14, 12, 10, 8, 7, 6, 5, 4, 3.5, 3, 2.5, 2, 2, 2],
   },
   "Sudáfrica": {
-    limites: [60, 110, 160, 210, 280, 400, 600, 900, 1200],
-    multiplicadores: [20, 15, 12, 10, 8, 6, 4, 3, 2, 2],
+    limites: [30, 55, 80, 105, 140, 180, 230, 290, 370, 470, 600, 760, 960, 1200, 1500],
+    multiplicadores: [20, 17, 14, 12, 10, 8, 7, 6, 5, 4, 3.5, 3, 2.5, 2, 2, 2],
   },
   "Irlanda": {
-    limites: [60, 110, 160, 210, 280, 400, 600, 900, 1200],
-    multiplicadores: [20, 15, 12, 10, 8, 6, 4, 3, 2, 2],
+    limites: [30, 55, 80, 105, 140, 180, 230, 290, 370, 470, 600, 760, 960, 1200, 1500],
+    multiplicadores: [20, 17, 14, 12, 10, 8, 7, 6, 5, 4, 3.5, 3, 2.5, 2, 2, 2],
   },
   "México": {
-    limites: [60, 110, 160, 210, 280, 400, 600, 900, 1200],
-    multiplicadores: [20, 15, 12, 10, 8, 6, 4, 3, 2, 2],
+    limites: [30, 55, 80, 105, 140, 180, 230, 290, 370, 470, 600, 760, 960, 1200, 1500],
+    multiplicadores: [20, 15, 12, 10, 8, 6, 4, 3, 2, 2, 2],
   },
   "Internacional (Resto del Mundo)": {
     limites: [30, 55, 80, 105, 140, 200, 300, 450, 650, 900, 1500],
     multiplicadores: [20, 15, 12, 10, 8, 6, 4, 3, 2, 2, 2],
   },
 };
+
+// AB por cada anuncio/20min: USA=2, Resto del Mundo=1
+export const AB_POR_ANUNCIO: Record<string, number> = {
+  "Estados Unidos": 2,
+  "Internacional (Resto del Mundo)": 1,
+};
+export const AB_POR_ANUNCIO_DEFAULT = 1;
 
 export const MAP_MONEDAS: Record<string, string> = {
   "Estados Unidos": "USD",
@@ -302,20 +315,56 @@ export function optimizadorExplorerClub(dia_actual: number): OptimizadorECResult
 }
 
 // ---------------------------------------------------------------------------
-// SIMULADOR DIARIO
+// TIPOS DEL OPTIMIZADOR
+// ---------------------------------------------------------------------------
+export interface VentanaEC {
+  dia_inicio: number;
+  dia_fin: number;
+  ab_pase: number;
+  ab_gratis: number;
+  neto_ab: number;
+  dias_espera: number;
+  fecha_compra: string;
+}
+
+export interface OptimizadorECResult {
+  mes1: VentanaEC;
+  mes2: VentanaEC;
+  mes3: VentanaEC;
+  optimo: VentanaEC;
+}
+
+// ---------------------------------------------------------------------------
+// SIMULADOR DIARIO — FUENTE DE VERDAD DE AB
 // ---------------------------------------------------------------------------
 export class SimuladorDiario {
   dia_actual: number;
   max_anuncios: number;
   f2p_cal: number[];
   ec_cal: number[];
+  /** AB que ganas por cada anuncio/20min. USA=2, Resto=1 */
+  ab_por_ad: number;
+  /** Eficiencia de anuncios 0-100 */
+  eficiencia_anuncios: number;
 
-  constructor(dia_actual: number, max_anuncios: number) {
+  constructor(
+    dia_actual: number,
+    max_anuncios: number,
+    ab_por_ad: number,
+    eficiencia_anuncios: number,
+  ) {
     this.dia_actual = dia_actual;
     this.max_anuncios = max_anuncios;
+    this.ab_por_ad = ab_por_ad;
+    this.eficiencia_anuncios = eficiencia_anuncios / 100;
     const cal = generarCalendarioAE();
     this.f2p_cal = cal.f2p;
     this.ec_cal = cal.ec;
+  }
+
+  /** Obtén el AB efectivo por anuncio después de eficiencia */
+  private get abPorAdEfectivo(): number {
+    return this.ab_por_ad * this.eficiencia_anuncios;
   }
 
   simular_mes(modo_ec = false, ab_minijuegos_mes = 0): number {
@@ -323,23 +372,43 @@ export class SimuladorDiario {
   }
 
   simular_mes_desglosado(modo_ec = false, ab_minijuegos_mes = 0): DesgloseMensual {
-    const mult_ruleta = modo_ec ? 7 : 5;
-    const total_ruleta = mult_ruleta * 1.7 * 30;
-    const total_anuncios = this.max_anuncios * 2 * 30;
-    let total_asistencia = 0;
+    // === RULETA ===
+    const tiros_dia = modo_ec ? 7 : 5;
+    const ruleta_diaria = tiros_dia * 1.7;     // ~1.7 AB/tiro promedio
+    const ruleta_mes = ruleta_diaria * 30;
+
+    // === ANUNCIOS CADA 20 MIN ===
+    // Esta es la fuente principal: cada 20 min ves un anuncio.
+    // USA = 2 AB/anuncio, Resto = 1 AB/anuncio.
+    // Ajustado por eficiencia (anuncios fallidos, etc.)
+    const anuncios_diarios = this.max_anuncios * this.abPorAdEfectivo;
+    const anuncios_mes = anuncios_diarios * 30;
+
+    // === ASISTENCIA (calendario daily login) ===
+    let asistencia_mes = 0;
+    let pase_mes = 0;
     for (let i = 0; i < 30; i++) {
       const dia_check = (this.dia_actual - 1 + i) % 90;
-      let ab = this.f2p_cal[dia_check];
-      if (modo_ec) ab += this.ec_cal[dia_check];
-      total_asistencia += ab;
+      asistencia_mes += this.f2p_cal[dia_check];
+      if (modo_ec) {
+        pase_mes += this.ec_cal[dia_check];
+      }
     }
-    const gran_total = total_ruleta + total_anuncios + total_asistencia + ab_minijuegos_mes;
+
+    // === TOTAL ===
+    const gran_total = ruleta_mes + anuncios_mes + asistencia_mes + pase_mes + ab_minijuegos_mes;
+
     return {
       total_mes: gran_total,
       promedio_diario: gran_total / 30,
-      ruleta_diaria: mult_ruleta * 1.7,
-      anuncios_diarios: this.max_anuncios * 2,
-      asistencia_mes: total_asistencia,
+      ruleta_diaria,
+      ruleta_mes,
+      anuncios_diarios,
+      anuncios_mes,
+      ab20min_diario: anuncios_diarios, // mismo valor: el AB20min ES el anuncio
+      ab20min_mes: anuncios_mes,        // mismo valor
+      asistencia_mes,
+      pase_mes,
       minijuegos_mes: ab_minijuegos_mes,
     };
   }
@@ -355,15 +424,6 @@ export function calcularNivelPasaporte(insignias: number): number {
   if (insignias >= 11) return 2;
   if (insignias >= 1) return 1;
   return 0;
-}
-
-export class EstrategiaPro {
-  analizar_compra(parcelas_actuales: number, _meta_parcelas: number): string {
-    if (parcelas_actuales < 150) {
-      return "Prioridad: Comprar parcelas hasta el Tier de 150 (Multiplicador Máximo).";
-    }
-    return "Prioridad: Comprar pasaportes para maximizar renta o acumular AB para el siguiente salto de Tier.";
-  }
 }
 
 // ---------------------------------------------------------------------------

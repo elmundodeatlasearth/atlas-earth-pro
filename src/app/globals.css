@@ -56,84 +56,82 @@ input[type="number"]::-webkit-outer-spin-button {
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-/* ===== ANIMATIONS ===== */
 
-/* Glow pulse */
+/* ===== ANIMATIONS — Consolidated (no duplicates) ===== */
+
+/* Glow pulse — used by cards and lock icon */
 @keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 10px rgba(0,221,221,0.3); }
-  50% { box-shadow: 0 0 25px rgba(0,221,221,0.6); }
+  0%, 100% { box-shadow: 0 0 10px rgba(0,221,221,0.3); filter: drop-shadow(0 0 5px rgba(168, 85, 247, 0.2)); }
+  50% { box-shadow: 0 0 25px rgba(0,221,221,0.6); filter: drop-shadow(0 0 20px rgba(168, 85, 247, 0.7)); }
 }
 
-/* Fade in with slide */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Shimmer effect for skeletons */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 
-/* Float animation for decorative elements */
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
 }
 
-/* Gradient shift for animated backgrounds */
 @keyframes gradient-shift {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
 
-/* Scale in for cards */
 @keyframes scale-in {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
 }
 
-/* Stagger entrance for grid items */
 @keyframes stagger-in {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Spin slower variant */
 @keyframes spin-slow {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes bounce-glow {
+  0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 5px rgba(168, 85, 247, 0.3)); }
+  25% { filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.6)); }
+  50% { transform: translateY(-6px); filter: drop-shadow(0 0 25px rgba(168, 85, 247, 0.9)); }
+  75% { filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.6)); }
+}
+
+@keyframes pop-in {
+  0% { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
 /* Utility classes */
-.animate-fade-in {
-  animation: fade-in 0.5s ease-out;
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
-}
-
+.animate-fade-in { animation: fade-in 0.5s ease-out; }
+.animate-pulse-glow { animation: pulse-glow 3s ease-in-out infinite; }
 .animate-shimmer {
   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
-
-.animate-float {
-  animation: float 4s ease-in-out infinite;
-}
-
-.animate-gradient-shift {
-  background-size: 200% 200%;
-  animation: gradient-shift 6s ease infinite;
-}
-
-.animate-scale-in {
-  animation: scale-in 0.3s ease-out;
-}
+.animate-float { animation: float 4s ease-in-out infinite; }
+.animate-gradient-shift { background-size: 200% 200%; animation: gradient-shift 6s ease infinite; }
+.animate-scale-in { animation: scale-in 0.3s ease-out; }
+.animate-slide-up { animation: slide-up 0.3s ease-out; }
+.animate-bounce-glow { animation: bounce-glow 2s ease-in-out infinite; }
+.animate-pop-in { animation: pop-in 0.5s ease-out; }
 
 /* Stagger children */
 .stagger-children > * {
@@ -149,87 +147,35 @@ input[type="number"]::-webkit-outer-spin-button {
 .stagger-children > *:nth-child(7) { animation-delay: 480ms; }
 .stagger-children > *:nth-child(8) { animation-delay: 560ms; }
 
-/* Gradient text utility */
-.gradient-text {
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
+/* Gradient text */
+.gradient-text { background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-/* Glow effect on hover */
-.glow-hover {
-  transition: box-shadow 0.3s ease;
-}
-.glow-hover:hover {
-  box-shadow: 0 0 30px rgba(0, 221, 221, 0.15);
-}
-
-/* Toast slide up */
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(20px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-.animate-slide-up {
-  animation: slide-up 0.3s ease-out;
-}
+/* Glow hover */
+.glow-hover { transition: box-shadow 0.3s ease; }
+.glow-hover:hover { box-shadow: 0 0 30px rgba(0, 221, 221, 0.15); }
 
 /* Custom scrollbar for IA advice */
-.scrollbar-custom::-webkit-scrollbar {
-  width: 4px;
-}
-.scrollbar-custom::-webkit-scrollbar-track {
-  background: transparent;
-}
-.scrollbar-custom::-webkit-scrollbar-thumb {
-  background: rgba(168, 85, 247, 0.3);
-  border-radius: 2px;
-}
-.scrollbar-custom::-webkit-scrollbar-thumb:hover {
-  background: rgba(168, 85, 247, 0.5);
-}
+.scrollbar-custom::-webkit-scrollbar { width: 4px; }
+.scrollbar-custom::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-custom::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.3); border-radius: 2px; }
+.scrollbar-custom::-webkit-scrollbar-thumb:hover { background: rgba(168, 85, 247, 0.5); }
 
-/* Skeleton shimmer */
-@keyframes shimmer {
-  100% { transform: translateX(100%); }
-}
+/* Scrollbar none (Tailwind v4) */
+.scrollbar-none::-webkit-scrollbar { display: none; }
+.scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Fade in animation */
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in {
-  animation: fade-in 0.4s ease-out both;
-}
-
-/* Slide up */
-@keyframes slide-up {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.animate-slide-up {
-  animation: slide-up 0.5s ease-out both;
-}
-
-/* Scrollbar none (Tailwind v4 no lo incluye) */
-.scrollbar-none::-webkit-scrollbar {
-  display: none;
-}
-.scrollbar-none {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-/* Basic prose (Tailwind v4 no tiene @tailwindcss/typography) */
+/* Prose (Tailwind v4 doesn't include @tailwindcss/typography) */
 .prose { line-height: 1.6; }
 .prose-sm { font-size: 0.875rem; line-height: 1.5; }
 .prose-invert { color: #d1d5db; }
 .prose-invert strong { color: #f3f4f6; }
 .prose-invert a { color: #67e8f9; }
 .prose-invert h1, .prose-invert h2, .prose-invert h3, .prose-invert h4 { color: #f3f4f6; }
-.prose-invert p { color: #d1d5db; }
-.prose-invert ul, .prose-invert ol { color: #d1d5db; }
-.prose-invert li { color: #d1d5db; }
+.prose-invert p, .prose-invert ul, .prose-invert ol, .prose-invert li { color: #d1d5db; }
 .prose-invert code { color: #f5d0fe; background: rgba(255,255,255,0.05); padding: 0.125rem 0.25rem; border-radius: 0.25rem; }
 .prose-invert blockquote { border-left-color: #6b7280; color: #9ca3af; }
 .prose-invert hr { border-color: rgba(255,255,255,0.1); }
+
+
+
+

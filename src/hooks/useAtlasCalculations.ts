@@ -1,5 +1,5 @@
 // src/hooks/useAtlasCalculations.ts
-// Hook con todos los cálculos memorizados — SIN estado, solo derived values
+// Hook con todos los cálculos memorizados — UNA SOLA FUENTE DE VERDAD: el SimuladorDiario
 "use client";
 import { useMemo } from "react";
 import {
@@ -9,8 +9,11 @@ import {
   optimizadorExplorerClub,
   calcularNivelPasaporte,
   TIERS_COMPLETOS,
+  AB_POR_ANUNCIO,
+  AB_POR_ANUNCIO_DEFAULT,
   NIVELES_INSIGNIAS,
   type OptimizadorECResult,
+  type DesgloseMensual,
 } from "@/utils/atlasMath";
 import type { AtlasInputs } from "./useAtlasInputs";
 
@@ -26,11 +29,19 @@ export interface AtlasCalculations {
   metaUsdDia: number;
   parcelasMeta: number; metaRenta: number;
   faltantesMeta: number; costoMetaAb: number; costoTiendaUsd: number;
-  maxAnuncios: number; abAnunciosDia: number;
-  abExtraMes: number; abPorDia: number; abEcDiarios: number;
+
+  // === AB: UNA SOLA FUENTE DE VERDAD (desglose del SimuladorDiario) ===
+  maxAnuncios: number;
+  /** AB/día total F2P (ruleta + anuncios/20min + asistencia + pase escalera) */
+  abPorDia: number;
+  /** AB/día total EC (ruleta EC + anuncios/20min + asistencia + ec_cal + pase escalera) */
+  abEcDiarios: number;
+  /** Desglose completo F2P */
+  desgloseF2p: DesgloseMensual;
+  /** Desglose completo EC */
+  desgloseEc: DesgloseMensual;
+
   simTotal: number; simMult: number; simDia: number; simSem: number; simMes: number; simAnio: number;
-  desgloseF2p: ReturnType<SimuladorDiario["simular_mes_desglosado"]>;
-  desgloseEc: ReturnType<SimuladorDiario["simular_mes_desglosado"]>;
   optData: OptimizadorECResult;
   diasFree: number; diasEc2: number; tiempoFree: string; tiempoEc: string;
   balanceAlcanza: number; faltanNetosAb: number; porcentajeEsc: number;
@@ -87,24 +98,43 @@ export function useAtlasCalculations(I: AtlasInputs): AtlasCalculations {
   const costoMetaAb = Math.max(0, faltantesMeta * 100 - abAhorrados);
   const costoTiendaUsd = (costoMetaAb / 2400) * 99.99;
 
+  // === CÁLCULO DE MAX ANUNCIOS (ventana de horas activas) ===
   const inicioMin = parseTime(horaInicio);
   let finMin = parseTime(horaFin);
   if (finMin < inicioMin) finMin += 1440;
   const minutosTotales = finMin - inicioMin;
   const maxAnuncios = Math.max(0, Math.floor(minutosTotales / 20));
-  const abAnunciosDia = maxAnuncios * 2 * (eficienciaAnuncios / 100);
 
-  const abExtraMes = useMemo(() => {
-    if (tipoPase === "Escalera Anticipada ($9.99)") return 1034;
-    if (tipoPase === "Escalera Tardía ($14.99)") return 1034;
-    if (tipoPase === "Explorer Club ($50.00)") return 3450 + 1034;
-    return 0;
-  }, [tipoPase]);
+  // AB por anuncio según país (USA=2, Resto=1)
+  const abPorAnuncio = AB_POR_ANUNCIO[pais] ?? AB_POR_ANUNCIO_DEFAULT;
 
-  const abPorDia = abAnunciosDia + abExtraMes / 30;
-  const abEcDiarios = abPorDia + 91;
+  // AB extra del pase escalera (anticipada/tardía) — AB directos que otorga el pase
+  // Explorer Club: el bonus va en ec_calendario, más la escalera incluida
+  const paseEscaleraExtra = tipoPase.includes("Escalera") ? 1034 : 0;
 
-  // Simulador
+  // === SIMULADOR FUENTE DE VERDAD ===
+  const sim = useMemo(
+    () => new SimuladorDiario(diaAsistencia, maxAnuncios, abPorAnuncio, eficienciaAnuncios),
+    [diaAsistencia, maxAnuncios, abPorAnuncio, eficienciaAnuncios]
+  );
+
+  // F2P: 5 tiros ruleta, sin calendario EC, con pase escalera si aplica
+  const desgloseF2p = useMemo(
+    () => sim.simular_mes_desglosado(false, paseEscaleraExtra),
+    [sim, paseEscaleraExtra]
+  );
+
+  // EC: 7 tiros ruleta, calendario EC, con pase escalera si aplica
+  const desgloseEc = useMemo(
+    () => sim.simular_mes_desglosado(true, paseEscaleraExtra),
+    [sim, paseEscaleraExtra]
+  );
+
+  // === AB POR DÍA — UNIFICADO del desglose ===
+  const abPorDia = desgloseF2p.promedio_diario;
+  const abEcDiarios = desgloseEc.promedio_diario;
+
+  // === SIMULADOR DE CRECIMIENTO (parcelas extra) ===
   const simTotal = motor.total_parcelas + simExtra;
   const simMult = motor._get_tier_mult(simTotal, pais, TIERS);
   const simMotor = useMemo(
@@ -122,14 +152,9 @@ export function useAtlasCalculations(I: AtlasInputs): AtlasCalculations {
   const simMes = simDia * 30;
   const simAnio = simDia * 365;
 
-  const sim = useMemo(() => new SimuladorDiario(diaAsistencia, maxAnuncios), [diaAsistencia, maxAnuncios]);
-  const abEscaleraF2p = tipoPase !== "Ninguno (F2P)" ? 294 : 0;
-  const abEscaleraEc = tipoPase !== "Ninguno (F2P)" ? 1324 : 0;
-  const desgloseF2p = useMemo(() => sim.simular_mes_desglosado(false, abEscaleraF2p), [sim, abEscaleraF2p]);
-  const desgloseEc = useMemo(() => sim.simular_mes_desglosado(true, abEscaleraEc), [sim, abEscaleraEc]);
   const optData = useMemo(() => optimizadorExplorerClub(diaAsistencia), [diaAsistencia]);
 
-  // Tiempos
+  // Tiempos para la meta — usando AB/día del desglose (fuente de verdad)
   const diasFree = abPorDia > 0 ? costoMetaAb / abPorDia : 0;
   const diasEc2 = abEcDiarios > 0 ? costoMetaAb / abEcDiarios : 0;
   const tiempoFree = motor.formato_tiempo(costoMetaAb, abPorDia);
@@ -144,7 +169,7 @@ export function useAtlasCalculations(I: AtlasInputs): AtlasCalculations {
   const roiGlobalDias = metaRenta > 0 && costoTiendaUsd > 0 ? costoTiendaUsd / metaRenta : 0;
   const roiMarginalDias = rentaAdicional > 0 && costoTiendaUsd > 0 ? costoTiendaUsd / rentaAdicional : 0;
 
-  // Estrategia
+  // Estrategia Pasaporte vs Parcelas
   const nivelActualPasaporte = pasaporte;
   const nivelSiguientePasaporte = Math.min(nivelActualPasaporte + 1, 5);
   const insigniasRequeridas = NIVELES_INSIGNIAS[nivelSiguientePasaporte] || 101;
@@ -187,15 +212,14 @@ export function useAtlasCalculations(I: AtlasInputs): AtlasCalculations {
     tramo_actual, siguiente_tramo, faltantesTier,
     metaUsdDia, parcelasMeta, metaRenta,
     faltantesMeta, costoMetaAb, costoTiendaUsd,
-    maxAnuncios, abAnunciosDia, abExtraMes, abPorDia, abEcDiarios,
-    simTotal, simMult, simDia, simSem, simMes, simAnio,
+    maxAnuncios, abPorDia, abEcDiarios,
     desgloseF2p, desgloseEc, optData,
+    simTotal, simMult, simDia, simSem, simMes, simAnio,
     diasFree, diasEc2, tiempoFree, tiempoEc,
     balanceAlcanza, faltanNetosAb, porcentajeEsc,
     rentaAdicional, roiGlobalDias, roiMarginalDias,
     nivelActualPasaporte, nivelSiguientePasaporte,
-    insigniasRequeridas, insigniasFaltantes,
-    costoAbPasaporte, aumentoPasaporte, parcelasEq, aumentoParcelas,
-    colapso, veredictoEstrategia,
+    insigniasRequeridas, insigniasFaltantes, costoAbPasaporte, aumentoPasaporte,
+    parcelasEq, aumentoParcelas, colapso, veredictoEstrategia,
   };
 }

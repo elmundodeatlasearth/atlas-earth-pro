@@ -78,7 +78,7 @@ export default function AuthSection({
         ) : (
           <span className="text-[10px] text-gray-500 bg-white/5 px-2 py-1 rounded">🔒 Free</span>
         )}
-        <span className="text-[10px] text-gray-500 bg-white/5 px-2 py-1 rounded">💎 {isUltra ? "∞" : aiCredits} créditos IA</span>
+        <span className="text-[10px] text-gray-500 bg-white/5 px-2 py-1 rounded">💎 {isUltra ? `${aiCredits}/50 IA` : isPro ? `${aiCredits}/5 IA` : `0 IA`}</span>
       </div>
     </div>
   );
