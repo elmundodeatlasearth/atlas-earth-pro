@@ -173,7 +173,6 @@ export function useAtlasState(): AtlasState {
     };
     const { error } = await supabase.from("usuarios_atlas").upsert({
       user_id: A.user.id,
-      email: A.user.email,
       perfil_data: JSON.stringify(perfil),
       is_vip: A.isPro,
       is_ultra: A.isUltra,

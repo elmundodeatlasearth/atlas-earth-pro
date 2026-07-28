@@ -3,7 +3,6 @@
 // Recibe datos PRE-COMPUTADOS del frontend y genera análisis profundo + consejos experto
 // NO duplica lógica matemática — usa los valores enviados por el cliente
 
-import "jsr:@supabase/supabase-js@2";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
