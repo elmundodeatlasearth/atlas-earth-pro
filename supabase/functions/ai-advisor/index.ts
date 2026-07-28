@@ -80,7 +80,84 @@ interface PayloadAnalisis {
 }
 
 // ============================================
-// 4. AN√ÅLISIS EXPERTO ‚Äî Usa datos pre-computados
+// 4. SANITIZER ‚Äî BLINDAJE CONTRA undefined
+// ============================================
+
+function safeNum(v: unknown, fallback = 0): number {
+  if (typeof v === 'number' && !Number.isNaN(v)) return v;
+  if (typeof v === 'string') {
+    const n = parseFloat(v);
+    return Number.isNaN(n) ? fallback : n;
+  }
+  return fallback;
+}
+
+function sanitizarPayload(raw: Record<string, unknown>): PayloadAnalisis {
+  return {
+    user_id: String(raw.user_id ?? ""),
+    pais: String(raw.pais ?? ""),
+    moneda: String(raw.moneda ?? "USD"),
+    comunes: safeNum(raw.comunes),
+    raras: safeNum(raw.raras),
+    epicas: safeNum(raw.epicas),
+    legendarias: safeNum(raw.legendarias),
+    insignias: safeNum(raw.insignias),
+    ab_ahorrados: safeNum(raw.ab_ahorrados),
+    horas_boost: safeNum(raw.horas_boost),
+    eficiencia: safeNum(raw.eficiencia),
+    horas_srb: safeNum(raw.horas_srb),
+    tipo_pase: String(raw.tipo_pase ?? "Ninguno (F2P)"),
+    hora_inicio: String(raw.hora_inicio ?? "08:00"),
+    hora_fin: String(raw.hora_fin ?? "22:00"),
+    eficiencia_anuncios: safeNum(raw.eficiencia_anuncios),
+    dia_asistencia: safeNum(raw.dia_asistencia),
+    meta_dolar: safeNum(raw.meta_dolar),
+    meta_periodo: String(raw.meta_periodo ?? "day") as "day" | "month" | "year",
+    total_parcelas: safeNum(raw.total_parcelas),
+    mult_tier: safeNum(raw.mult_tier),
+    pasaporte_nivel: safeNum(raw.pasaporte_nivel),
+    renta_diaria: safeNum(raw.renta_diaria),
+    renta_semanal: safeNum(raw.renta_semanal),
+    renta_mensual: safeNum(raw.renta_mensual),
+    renta_anual: safeNum(raw.renta_anual),
+    siguiente_tramo: safeNum(raw.siguiente_tramo),
+    faltantes_tier: safeNum(raw.faltantes_tier),
+    colapso_tier: !!raw.colapso_tier,
+    porcentaje_escalera: safeNum(raw.porcentaje_escalera),
+    faltantes_meta: safeNum(raw.faltantes_meta),
+    parcelas_meta: safeNum(raw.parcelas_meta),
+    desglose_f2p_ab_mes: safeNum(raw.desglose_f2p_ab_mes),
+    desglose_f2p_ab_dia: safeNum(raw.desglose_f2p_ab_dia),
+    desglose_f2p_ab20min_dia: safeNum(raw.desglose_f2p_ab20min_dia),
+    desglose_f2p_ab20min_mes: safeNum(raw.desglose_f2p_ab20min_mes),
+    desglose_f2p_pase_mes: safeNum(raw.desglose_f2p_pase_mes),
+    desglose_ec_ab_mes: safeNum(raw.desglose_ec_ab_mes),
+    desglose_ec_ab_dia: safeNum(raw.desglose_ec_ab_dia),
+    desglose_ec_ab20min_dia: safeNum(raw.desglose_ec_ab20min_dia),
+    desglose_ec_ab20min_mes: safeNum(raw.desglose_ec_ab20min_mes),
+    desglose_ec_pase_mes: safeNum(raw.desglose_ec_pase_mes),
+    ec_optimo_dia_inicio: safeNum(raw.ec_optimo_dia_inicio),
+    ec_optimo_ab_netos: safeNum(raw.ec_optimo_ab_netos),
+    ec_optimo_ab_pase: safeNum(raw.ec_optimo_ab_pase),
+    ec_optimo_ab_gratis: safeNum(raw.ec_optimo_ab_gratis),
+    roi_global_dias: safeNum(raw.roi_global_dias),
+    roi_marginal_dias: safeNum(raw.roi_marginal_dias),
+    renta_adicional: safeNum(raw.renta_adicional),
+    costo_meta_ab: safeNum(raw.costo_meta_ab),
+    parcelas_eq: safeNum(raw.parcelas_eq),
+    aumento_parcelas: safeNum(raw.aumento_parcelas),
+    aumento_pasaporte: safeNum(raw.aumento_pasaporte),
+    veredicto_estrategia: String(raw.veredicto_estrategia ?? ""),
+    nivel_pasaporte_actual: safeNum(raw.nivel_pasaporte_actual),
+    nivel_pasaporte_siguiente: safeNum(raw.nivel_pasaporte_siguiente),
+    insignias_faltantes: safeNum(raw.insignias_faltantes),
+    costo_ab_pasaporte: safeNum(raw.costo_ab_pasaporte),
+    historial_progreso: Array.isArray(raw.historial_progreso) ? raw.historial_progreso : [],
+  };
+}
+
+// ============================================
+// 5. AN¡LISIS EXPERTO ó Usa datos pre-computados
 // ============================================
 
 function generarAnalisisExperto(p: PayloadAnalisis): string {
@@ -360,22 +437,14 @@ serve(async (req) => {
   }
 
   try {
-    const payload: PayloadAnalisis = await req.json();
+    const rawBody = await req.json();
+    const payload = sanitizarPayload(rawBody);
 
-    // Validar campos requeridos
-    const requiredFields: (keyof PayloadAnalisis)[] = [
-      'user_id', 'pais', 'comunes', 'raras', 'epicas', 'legendarias',
-      'insignias', 'ab_ahorrados', 'horas_boost', 'eficiencia',
-      'horas_srb', 'tipo_pase', 'total_parcelas', 'mult_tier',
-      'pasaporte_nivel', 'renta_diaria',
-    ];
-
-    for (const field of requiredFields) {
-      if (payload[field] === undefined || payload[field] === null) {
-        return new Response(JSON.stringify({ error: `Campo requerido faltante: ${field}` }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400,
-        })
-      }
+    // Validar campos criticos
+    if (!payload.user_id || payload.total_parcelas === 0) {
+      return new Response(JSON.stringify({ error: 'Datos insuficientes para generar analisis' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400,
+      })
     }
 
     const supabase = createClient(
