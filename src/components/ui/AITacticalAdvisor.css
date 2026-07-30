@@ -1,0 +1,16 @@
+/* AITacticalAdvisor styles — component uses glass-card classes from index.css */
+/* Custom additions only needed for specific tactical advisor animations */
+.ai-tactical-advisor .tactical-scanner-line {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.5), transparent);
+    animation: tactical-scan 3s ease-in-out infinite;
+}
+
+@keyframes tactical-scan {
+    0%, 100% { opacity: 0.3; transform: scaleX(0.5); }
+    50% { opacity: 1; transform: scaleX(1); }
+}

@@ -1,0 +1,39 @@
+.time-to-goal {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.time-to-goal .glass-input {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+}
+
+.time-to-goal .glass-input:focus {
+    outline: none;
+    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(15, 23, 42, 0.8);
+}
+
+.time-to-goal .glass-input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Progress bar animation */
+.time-to-goal .bg-gradient-to-r {
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200% center;
+    }
+
+    100% {
+        background-position: 200% center;
+    }
+}

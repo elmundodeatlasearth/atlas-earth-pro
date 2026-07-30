@@ -1,0 +1,18 @@
+.data-manager {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.data-manager input[type="file"] {
+    display: none;
+}
+
+.data-manager button:active,
+.data-manager label:active {
+    transform: scale(0.98);
+}
+
+.data-manager button,
+.data-manager label {
+    transition: all 0.2s;
+}

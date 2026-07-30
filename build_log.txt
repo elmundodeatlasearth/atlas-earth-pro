@@ -1,0 +1,30 @@
+
+> atlas-actual-elite@0.0.0 build
+> vite build
+
+[36mvite v7.3.0 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32mÔ£ô[39m 2487 modules transformed.
+Ô£ù Build failed in 41.94s
+error during build:
+[vite-plugin-pwa:build] There was an error during the build:
+  src/features/stats/AnalyticsDashboard.tsx (3:40): "calculateROI" is not exported by "src/utils/calculations.ts", imported by "src/features/stats/AnalyticsDashboard.tsx".
+Additionally, handling the error in the 'buildEnd' hook caused the following error:
+  src/features/stats/AnalyticsDashboard.tsx (3:40): "calculateROI" is not exported by "src/utils/calculations.ts", imported by "src/features/stats/AnalyticsDashboard.tsx".
+file: E:/Calculadora Atlas Earth/src/features/stats/AnalyticsDashboard.tsx:3:40
+
+1: import React, { useMemo } from 'react';
+2: import { useData } from '../../context/DataContext';
+3: import { calculateProfitWithBoostHours, calculateROI, formatCurrency, getNextMilestone } from '../../utils/calculatio...
+                                           ^
+4: import ProfitChart from '../../components/charts/ProfitChart';
+5: import ParcelDistributionChart from '../../components/charts/ParcelDistributionChart';
+
+    at getRollupError (file:///E:/Calculadora%20Atlas%20Earth/node_modules/rollup/dist/es/shared/parseAst.js:401:41)
+    at file:///E:/Calculadora%20Atlas%20Earth/node_modules/rollup/dist/es/shared/node-entry.js:23467:39
+    at async catchUnfinishedHookActions (file:///E:/Calculadora%20Atlas%20Earth/node_modules/rollup/dist/es/shared/node-entry.js:22925:16)
+    at async rollupInternal (file:///E:/Calculadora%20Atlas%20Earth/node_modules/rollup/dist/es/shared/node-entry.js:23450:5)
+    at async buildEnvironment (file:///E:/Calculadora%20Atlas%20Earth/node_modules/vite/dist/node/chunks/config.js:33540:12)
+    at async Object.build (file:///E:/Calculadora%20Atlas%20Earth/node_modules/vite/dist/node/chunks/config.js:33899:19)
+    at async Object.buildApp (file:///E:/Calculadora%20Atlas%20Earth/node_modules/vite/dist/node/chunks/config.js:33896:153)
+    at async CAC.<anonymous> (file:///E:/Calculadora%20Atlas%20Earth/node_modules/vite/dist/node/cli.js:629:3)
