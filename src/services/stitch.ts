@@ -113,8 +113,7 @@ export const Stitch = {
             return true;
         }
 
-        const integrityToken = generateSecureSignature(JSON.stringify(atlasData));
-        const encryptedData = encryptData(JSON.stringify(atlasData));
+
 
         const payload = {
             user_id: userId,
@@ -162,11 +161,6 @@ export const Stitch = {
         // Store locally as safety net
         setLocalAtlasData(userId, encryptedData);
         throw lastError;
-    }
-
-
-
-
     },
 
     /**

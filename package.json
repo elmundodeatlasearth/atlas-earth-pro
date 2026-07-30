@@ -7,11 +7,11 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ArquitectoSanchez/atlas-actual.git"
+    "url": "git+https://github.com/elmundodeatlasearth/atlas-earth-pro.git"
   },
-  "homepage": "https://github.com/ArquitectoSanchez/atlas-actual#readme",
+  "homepage": "https://github.com/elmundodeatlasearth/atlas-earth-pro#readme",
   "bugs": {
-    "url": "https://github.com/ArquitectoSanchez/atlas-actual/issues"
+    "url": "https://github.com/elmundodeatlasearth/atlas-earth-pro/issues"
   },
   "scripts": {
     "dev": "vite",
