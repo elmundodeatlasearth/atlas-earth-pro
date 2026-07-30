@@ -34,6 +34,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [isSyncing, setIsSyncing] = useState(false);
     const [isCloudLoaded, setIsCloudLoaded] = useState(false);
     const prevSessionIdRef = useRef<string | null>(null);
+    const isFirstRender = useRef(true);
+    const isCloudLoadingRef = useRef(false);
 
     // Initialize from localStorage if available, else default
     const [userData, setUserData] = useState<UserData>(() => {
@@ -62,15 +64,28 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // ── Local persistence ──────────────────────────────────────────────────────
     useEffect(() => {
+        isFirstRender.current = false;
+    }, []);
+
+    useEffect(() => {
         localStorage.setItem('atlas_userdata', JSON.stringify(userData));
+        if (!isFirstRender.current && !isCloudLoadingRef.current) {
+            localStorage.setItem('atlas_last_updated', new Date().toISOString());
+        }
     }, [userData]);
 
     useEffect(() => {
         localStorage.setItem('atlas_boosthours', boostHours.toString());
+        if (!isFirstRender.current && !isCloudLoadingRef.current) {
+            localStorage.setItem('atlas_last_updated', new Date().toISOString());
+        }
     }, [boostHours]);
 
     useEffect(() => {
         localStorage.setItem('atlas_dailytarget', dailyTarget.toString());
+        if (!isFirstRender.current && !isCloudLoadingRef.current) {
+            localStorage.setItem('atlas_last_updated', new Date().toISOString());
+        }
     }, [dailyTarget]);
 
     // ── Cloud load on login (bidirectional sync fix) ───────────────────────────
@@ -82,10 +97,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         prevSessionIdRef.current = currentUserId;
 
         const loadFromCloud = async () => {
+            isCloudLoadingRef.current = true;
             try {
                 const cloudData = await Stitch.loadAtlasData(currentUserId);
                 if (!cloudData) {
                     console.info('☁️ No cloud data found — using local state.');
+                    setIsCloudLoaded(true);
+                    return;
+                }
+
+                // Check local vs cloud timestamp
+                const localLastUpdated = localStorage.getItem('atlas_last_updated');
+                const localTime = localLastUpdated ? new Date(localLastUpdated).getTime() : 0;
+                const cloudTime = cloudData.updated_at ? new Date(cloudData.updated_at).getTime() : 0;
+
+                if (localLastUpdated && localTime > cloudTime) {
+                    console.info('☁️ Local data is newer than cloud data. Keeping local data and scheduled for upload.');
                     setIsCloudLoaded(true);
                     return;
                 }
@@ -114,10 +141,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     setDailyTarget(cloudData.daily_target);
                 }
 
+                // Update local timestamp to match cloud's timestamp
+                if (cloudData.updated_at) {
+                    localStorage.setItem('atlas_last_updated', cloudData.updated_at);
+                }
+
                 console.info('☁️ Cloud data restored successfully.');
             } catch (err) {
                 console.warn('[DataContext] Cloud load failed, using local state:', err);
             } finally {
+                isCloudLoadingRef.current = false;
                 setIsCloudLoaded(true);
             }
         };

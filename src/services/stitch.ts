@@ -59,6 +59,7 @@ export interface LoadedAtlasData {
     boost_hours: number;
     daily_target: number;
     secure_payload: string | null;
+    updated_at?: string;
 }
 
 /**
@@ -196,7 +197,7 @@ export const Stitch = {
 
         const { data, error } = await supabase
             .from('atlas_data')
-            .select('parcel_data, boost_hours, daily_target, secure_payload')
+            .select('parcel_data, boost_hours, daily_target, secure_payload, updated_at')
             .eq('user_id', userId)
             .single();
 
