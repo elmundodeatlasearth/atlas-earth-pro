@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useMemo } from 'react';
 import type { ReactNode } from 'react';
 import type { UserData } from '../types';
 import { useSecurity } from './SecurityContext';
@@ -84,10 +84,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
     };
 
-    // Debounce values for cloud sync to avoid too many requests
-    const debouncedUserData = useDebounce(userData, 2000);
-    const debouncedBoostHours = useDebounce(boostHours, 2000);
-    const debouncedDailyTarget = useDebounce(dailyTarget, 2000);
+    // Combine state values for atomic debouncing to prevent rate limiting & race conditions
+    const combinedData = useMemo(() => ({
+        userData,
+        boostHours,
+        dailyTarget
+    }), [userData, boostHours, dailyTarget]);
+
+    const debouncedCombinedData = useDebounce(combinedData, 2000);
 
     // ── Local persistence ──────────────────────────────────────────────────────
     useEffect(() => {
@@ -183,25 +187,30 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const syncToCloud = async () => {
             setIsSyncing(true);
             try {
+                const { userData: dUserData, boostHours: dBoostHours, dailyTarget: dDailyTarget } = debouncedCombinedData;
+                
                 // Compute current income to persist to atlas_data columns
-                const totalParcels = debouncedUserData.common + debouncedUserData.rare + debouncedUserData.epic + debouncedUserData.legendary;
+                const totalParcels = dUserData.common + dUserData.rare + dUserData.epic + dUserData.legendary;
                 const adBoost = getAdBoostMultiplier(totalParcels);
                 const { daily, monthly } = calculateProfitWithBoostHours(
-                    debouncedUserData,
-                    debouncedUserData.badges,
+                    dUserData,
+                    dUserData.badges,
                     adBoost,
-                    debouncedBoostHours,
+                    dBoostHours,
                 );
 
                 const payload = buildAtlasPayload(
-                    debouncedUserData,
-                    debouncedBoostHours,
-                    debouncedDailyTarget,
+                    dUserData,
+                    dBoostHours,
+                    dDailyTarget,
                     daily,
                     monthly,
                 );
 
-                await Stitch.saveAtlasData(session.user.id, payload);
+                const success = await Stitch.saveAtlasData(session.user.id, payload);
+                if (success) {
+                    hasUserModifiedRef.current = false;
+                }
             } catch (error) {
                 console.error('[DataContext] Cloud sync failed:', error);
             } finally {
@@ -210,7 +219,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         };
 
         syncToCloud();
-    }, [debouncedUserData, debouncedBoostHours, debouncedDailyTarget, session, isCloudLoaded]);
+    }, [debouncedCombinedData, session, isCloudLoaded]);
 
     const updateParcels = (parcels: { common: number; rare: number; epic: number; legendary: number }) => {
         setUserData(prev => ({ ...prev, ...parcels }));
