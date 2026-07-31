@@ -34,11 +34,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [isSyncing, setIsSyncing] = useState(false);
     const [isCloudLoaded, setIsCloudLoaded] = useState(false);
     const prevSessionIdRef = useRef<string | null>(null);
-    const isFirstRender = useRef(true);
-    const isCloudLoadingRef = useRef(false);
 
     // Initialize from localStorage if available, else default
-    const [userData, setUserData] = useState<UserData>(() => {
+    const [userData, setUserDataState] = useState<UserData>(() => {
         try {
             const saved = localStorage.getItem('atlas_userdata');
             return saved ? JSON.parse(saved) : defaultUserData;
@@ -47,15 +45,40 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     });
 
-    const [boostHours, setBoostHours] = useState<number>(() => {
+    const [boostHours, setBoostHoursState] = useState<number>(() => {
         const saved = localStorage.getItem('atlas_boosthours');
         return saved ? parseFloat(saved) : 24;
     });
 
-    const [dailyTarget, setDailyTarget] = useState<number>(() => {
+    const [dailyTarget, setDailyTargetState] = useState<number>(() => {
         const saved = localStorage.getItem('atlas_dailytarget');
         return saved ? parseFloat(saved) : 1.0;
     });
+
+    // Intercept state setters to only update atlas_last_updated timestamp when modified by user
+    const setUserData = (data: React.SetStateAction<UserData>) => {
+        setUserDataState(prev => {
+            const next = typeof data === 'function' ? (data as Function)(prev) : data;
+            localStorage.setItem('atlas_last_updated', new Date().toISOString());
+            return next;
+        });
+    };
+
+    const setBoostHours = (hours: number | ((prev: number) => number)) => {
+        setBoostHoursState(prev => {
+            const next = typeof hours === 'function' ? hours(prev) : hours;
+            localStorage.setItem('atlas_last_updated', new Date().toISOString());
+            return next;
+        });
+    };
+
+    const setDailyTarget = (target: number | ((prev: number) => number)) => {
+        setDailyTargetState(prev => {
+            const next = typeof target === 'function' ? target(prev) : target;
+            localStorage.setItem('atlas_last_updated', new Date().toISOString());
+            return next;
+        });
+    };
 
     // Debounce values for cloud sync to avoid too many requests
     const debouncedUserData = useDebounce(userData, 2000);
@@ -64,28 +87,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // ── Local persistence ──────────────────────────────────────────────────────
     useEffect(() => {
-        isFirstRender.current = false;
-    }, []);
-
-    useEffect(() => {
         localStorage.setItem('atlas_userdata', JSON.stringify(userData));
-        if (!isFirstRender.current && !isCloudLoadingRef.current) {
-            localStorage.setItem('atlas_last_updated', new Date().toISOString());
-        }
     }, [userData]);
 
     useEffect(() => {
         localStorage.setItem('atlas_boosthours', boostHours.toString());
-        if (!isFirstRender.current && !isCloudLoadingRef.current) {
-            localStorage.setItem('atlas_last_updated', new Date().toISOString());
-        }
     }, [boostHours]);
 
     useEffect(() => {
         localStorage.setItem('atlas_dailytarget', dailyTarget.toString());
-        if (!isFirstRender.current && !isCloudLoadingRef.current) {
-            localStorage.setItem('atlas_last_updated', new Date().toISOString());
-        }
     }, [dailyTarget]);
 
     // ── Cloud load on login (bidirectional sync fix) ───────────────────────────
@@ -97,7 +107,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         prevSessionIdRef.current = currentUserId;
 
         const loadFromCloud = async () => {
-            isCloudLoadingRef.current = true;
             try {
                 const cloudData = await Stitch.loadAtlasData(currentUserId);
                 if (!cloudData) {
@@ -124,7 +133,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
                     // Only overwrite if cloud has actual data
                     if (cloudTotal > 0) {
-                        setUserData(prev => ({
+                        setUserDataState(prev => ({
                             ...prev,
                             common,
                             rare,
@@ -135,10 +144,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 }
 
                 if (typeof cloudData.boost_hours === 'number') {
-                    setBoostHours(cloudData.boost_hours);
+                    setBoostHoursState(cloudData.boost_hours);
                 }
                 if (typeof cloudData.daily_target === 'number') {
-                    setDailyTarget(cloudData.daily_target);
+                    setDailyTargetState(cloudData.daily_target);
                 }
 
                 // Update local timestamp to match cloud's timestamp
@@ -150,7 +159,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             } catch (err) {
                 console.warn('[DataContext] Cloud load failed, using local state:', err);
             } finally {
-                isCloudLoadingRef.current = false;
                 setIsCloudLoaded(true);
             }
         };
