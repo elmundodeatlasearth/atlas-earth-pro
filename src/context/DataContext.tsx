@@ -34,6 +34,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [isSyncing, setIsSyncing] = useState(false);
     const [isCloudLoaded, setIsCloudLoaded] = useState(false);
     const prevSessionIdRef = useRef<string | null>(null);
+    const hasUserModifiedRef = useRef(false);
 
     // Initialize from localStorage if available, else default
     const [userData, setUserDataState] = useState<UserData>(() => {
@@ -60,6 +61,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUserDataState(prev => {
             const next = typeof data === 'function' ? (data as Function)(prev) : data;
             localStorage.setItem('atlas_last_updated', new Date().toISOString());
+            hasUserModifiedRef.current = true;
             return next;
         });
     };
@@ -68,6 +70,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setBoostHoursState(prev => {
             const next = typeof hours === 'function' ? hours(prev) : hours;
             localStorage.setItem('atlas_last_updated', new Date().toISOString());
+            hasUserModifiedRef.current = true;
             return next;
         });
     };
@@ -76,6 +79,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setDailyTargetState(prev => {
             const next = typeof target === 'function' ? target(prev) : target;
             localStorage.setItem('atlas_last_updated', new Date().toISOString());
+            hasUserModifiedRef.current = true;
             return next;
         });
     };
@@ -107,6 +111,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         prevSessionIdRef.current = currentUserId;
 
         const loadFromCloud = async () => {
+            hasUserModifiedRef.current = false;
             try {
                 const cloudData = await Stitch.loadAtlasData(currentUserId);
                 if (!cloudData) {
@@ -121,7 +126,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const cloudTime = cloudData.updated_at ? new Date(cloudData.updated_at).getTime() : 0;
 
                 if (localLastUpdated && localTime > cloudTime) {
-                    console.info('☁️ Local data is newer than cloud data. Keeping local data and scheduled for upload.');
+                    console.info('☁️ Local data is newer than cloud data. Keeping local data and scheduling sync.');
+                    hasUserModifiedRef.current = true;
                     setIsCloudLoaded(true);
                     return;
                 }
@@ -169,6 +175,10 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // ── Cloud sync (outbound) ──────────────────────────────────────────────────
     useEffect(() => {
         if (!session?.user?.id || !isCloudLoaded) return;
+        if (!hasUserModifiedRef.current) {
+            console.info('☁️ Skipping cloud sync (no user modifications).');
+            return;
+        }
 
         const syncToCloud = async () => {
             setIsSyncing(true);
