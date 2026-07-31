@@ -34,7 +34,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [isSyncing, setIsSyncing] = useState(false);
     const [isCloudLoaded, setIsCloudLoaded] = useState(false);
     const prevSessionIdRef = useRef<string | null>(null);
-    const hasUserModifiedRef = useRef(false);
+    const hasUserModifiedRef = useRef(localStorage.getItem('atlas_is_dirty') === 'true');
 
     // Initialize from localStorage if available, else default
     const [userData, setUserDataState] = useState<UserData>(() => {
@@ -61,6 +61,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setUserDataState(prev => {
             const next = typeof data === 'function' ? (data as Function)(prev) : data;
             localStorage.setItem('atlas_last_updated', new Date().toISOString());
+            localStorage.setItem('atlas_is_dirty', 'true');
             hasUserModifiedRef.current = true;
             return next;
         });
@@ -70,6 +71,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setBoostHoursState(prev => {
             const next = typeof hours === 'function' ? hours(prev) : hours;
             localStorage.setItem('atlas_last_updated', new Date().toISOString());
+            localStorage.setItem('atlas_is_dirty', 'true');
             hasUserModifiedRef.current = true;
             return next;
         });
@@ -79,6 +81,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setDailyTargetState(prev => {
             const next = typeof target === 'function' ? target(prev) : target;
             localStorage.setItem('atlas_last_updated', new Date().toISOString());
+            localStorage.setItem('atlas_is_dirty', 'true');
             hasUserModifiedRef.current = true;
             return next;
         });
@@ -115,6 +118,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         prevSessionIdRef.current = currentUserId;
 
         const loadFromCloud = async () => {
+            const isDirty = localStorage.getItem('atlas_is_dirty') === 'true';
+            if (isDirty) {
+                console.info('☁️ Local data has unsaved changes (dirty flag set). Keeping local data and scheduling sync.');
+                hasUserModifiedRef.current = true;
+                setIsCloudLoaded(true);
+                return;
+            }
+
             hasUserModifiedRef.current = false;
             try {
                 const cloudData = await Stitch.loadAtlasData(currentUserId);
@@ -210,6 +221,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const success = await Stitch.saveAtlasData(session.user.id, payload);
                 if (success) {
                     hasUserModifiedRef.current = false;
+                    localStorage.setItem('atlas_is_dirty', 'false');
                 }
             } catch (error) {
                 console.error('[DataContext] Cloud sync failed:', error);
