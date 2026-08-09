@@ -2,7 +2,8 @@
   "name": "Atlas Earth PRO",
   "short_name": "Atlas PRO",
   "description": "Calculadora estratégica definitiva para Atlas Earth. Maximiza rentas, simula inversiones y obtén consejos con IA.",
-  "start_url": "/",
+  "start_url": "/atlas-earth-pro/",
+  "scope": "/atlas-earth-pro/",
   "display": "standalone",
   "background_color": "#080808",
   "theme_color": "#06b6d4",
@@ -10,13 +11,13 @@
   "categories": ["games", "finance", "utilities"],
   "icons": [
     {
-      "src": "/icons/icon-192.svg",
+      "src": "/atlas-earth-pro/icons/icon-192.svg",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512.svg",
+      "src": "/atlas-earth-pro/icons/icon-512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
@@ -27,13 +28,13 @@
       "name": "Dashboard",
       "short_name": "Dashboard",
       "description": "Ver métricas principales",
-      "url": "/"
+      "url": "/atlas-earth-pro/"
     },
     {
       "name": "IA Advisor",
       "short_name": "IA",
       "description": "Consejos con inteligencia artificial",
-      "url": "/"
+      "url": "/atlas-earth-pro/"
     }
   ]
 }
