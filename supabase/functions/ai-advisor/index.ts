@@ -157,7 +157,7 @@ function sanitizarPayload(raw: Record<string, unknown>): PayloadAnalisis {
 }
 
 // ============================================
-// 5. AN�LISIS EXPERTO � Usa datos pre-computados
+// 5. AN�LISIS EXPERTO � Usa datos pre-computados
 // ============================================
 
 function generarAnalisisExperto(p: PayloadAnalisis): string {
@@ -452,8 +452,9 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     )
 
-    // ===== VALIDACIÓN JWT =====
-    let userId = payload.user_id;
+    // ===== VALIDACIÓN JWT OBLIGATORIA =====
+    // Si no hay un Bearer token válido, rechazar. Ya no se permite "anon".
+    let userId = "";
     const authHeader = req.headers.get('Authorization') || '';
 
     if (authHeader.startsWith('Bearer ')) {
@@ -462,6 +463,12 @@ serve(async (req) => {
         const { data: { user }, error: authError } = await supabase.auth.getUser(token);
         if (!authError && user) userId = user.id;
       } catch { console.warn("JWT validation failed"); }
+    }
+
+    if (!userId) {
+      return new Response(JSON.stringify({
+        error: "Debes iniciar sesión para usar la IA. Crea una cuenta gratuita en el panel izquierdo."
+      }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 })
     }
 
     const { data: userData, error: userError } = await supabase
@@ -479,18 +486,8 @@ serve(async (req) => {
       is_ultra = userData.is_ultra ?? false;
       is_vip = userData.is_vip ?? false;
     } else {
-      // Usuario no encontrado → crear registro con créditos gratis
-      try {
-        const { data: newUser, error: insertError } = await supabase
-          .from('usuarios_atlas')
-          .upsert({ user_id: userId, ai_credits: 3, is_vip: false, is_ultra: false })
-          .select('ai_credits')
-          .single();
-        if (!insertError && newUser) ai_credits = newUser.ai_credits ?? 3;
-        else ai_credits = 1; // fallback: 1 crédito de cortesía
-      } catch {
-        ai_credits = 1;
-      }
+      // No crear usuarios automáticamente: el trigger on_auth_user_created ya lo hace
+      console.warn("Usuario sin fila en usuarios_atlas:", userId);
     }
 
     // ===== RATE LIMIT =====

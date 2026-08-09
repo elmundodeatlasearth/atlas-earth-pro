@@ -41,17 +41,17 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
           rel="stylesheet"
         />
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href="/atlas-earth-pro/manifest.json" />
         <meta name="theme-color" content="#080808" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.svg" />
+        <link rel="apple-touch-icon" href="/atlas-earth-pro/apple-touch-icon.svg" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <script dangerouslySetInnerHTML={{
           __html: `
             if ('serviceWorker' in navigator) {
               window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js');
+                navigator.serviceWorker.register('/atlas-earth-pro/sw.js', { scope: '/atlas-earth-pro/' });
               });
             }
           `

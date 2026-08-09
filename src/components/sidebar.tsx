@@ -127,11 +127,10 @@ export default function Sidebar(props: SidebarProps) {
               }
             }} className="bg-green-600/50 hover:bg-green-500/80 text-green-300 border border-green-500/30" title="Añadir Nuevo Perfil">+</MiniButton>
             <MiniButton onClick={props.guardarPerfil} className="bg-cyan-600 hover:bg-cyan-500 text-white" title="Guardar Perfil Actual">💾</MiniButton>
-            {props.user && props.permissions.canCloudProfiles && (
+            {props.user ? (
               <MiniButton onClick={props.guardarPerfilNube} className="bg-indigo-600 hover:bg-indigo-500 text-white" title="Guardar en la Nube">☁️</MiniButton>
-            )}
-            {props.user && !props.permissions.canCloudProfiles && (
-              <MiniButton onClick={() => {}} className="bg-gray-700 text-gray-500 cursor-not-allowed opacity-60" title="🔒 Desbloquea PRO para guardar en la nube">🔒</MiniButton>
+            ) : (
+              <MiniButton onClick={() => {}} className="bg-gray-700 text-gray-500 cursor-not-allowed opacity-60" title="Inicia sesión para guardar en la nube">🔒</MiniButton>
             )}
           </div>
           {props.showSaveMsg && <div className="text-[10px] text-green-400 mt-1">✅ Guardado</div>}
@@ -186,7 +185,11 @@ export default function Sidebar(props: SidebarProps) {
             <InputRow label="💰 AB" value={props.abAhorrados} set={props.setAbAhorrados} />
             <InputRow label="⏰ Boost/día" value={props.horasBoost} set={props.setHorasBoost} max={24} />
             <InputRow label="🎯 Eficiencia %" value={props.eficiencia} set={props.setEficiencia} max={100} />
-            <InputRow label="🚀 SRB hrs/mes" value={props.horasSrb} set={props.setHorasSrb} max={200} />
+            <div className="flex items-center justify-between gap-3">
+              <label className="text-xs text-gray-400 shrink-0">🚚 SRB hrs/mes</label>
+              <input type="text" value="64" disabled
+                className="w-20 bg-[#121212] border border-cyan-500/30 rounded px-3 py-1.5 text-xs text-cyan-400 font-bold text-center" />
+            </div>
           </div>
         </Section>
 

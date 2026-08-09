@@ -40,7 +40,7 @@ export function useAtlasInputs(): AtlasInputs {
   const [moneda, setMoneda] = useState("USD");
   const [meta, setMeta] = useState(1.0);
   const [metaPeriodo, setMetaPeriodo] = useState<"day" | "month" | "year">("day");
-  const [horasSrb, setHorasSrb] = useState(32);
+  const [horasSrb, setHorasSrb] = useState(64);
   const [simExtra, setSimExtra] = useState(0);
   const [tipoPase, setTipoPase] = useState<string>("Ninguno (F2P)");
   const [diaAsistencia, setDiaAsistencia] = useState(1);

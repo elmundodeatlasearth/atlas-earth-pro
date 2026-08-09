@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS usuarios_atlas (
   is_vip BOOLEAN NOT NULL DEFAULT false,
   is_ultra BOOLEAN NOT NULL DEFAULT false,
   ai_credits INTEGER NOT NULL DEFAULT 0,
-  profile_name TEXT,
-  profile_data JSONB DEFAULT '{}'::jsonb,
+  perfil_data JSONB DEFAULT '{}'::jsonb,
+  stripe_customer_id TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );

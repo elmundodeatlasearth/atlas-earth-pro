@@ -55,16 +55,19 @@ serve(async (req) => {
         return new Response(JSON.stringify({ received: true, note: "No user ID" }), { status: 200 })
       }
 
-      // 3. Verificar que el usuario existe en Supabase
-      const { data: existingUser, error: userCheckError } = await supabase
+      // 3. Garantizar que el usuario exista (upsert si no hay fila)
+      // Si el usuario pagó antes de usar la app, el trigger on_auth_user_created
+      // ya debería haber creado la fila; pero por seguridad hacemos upsert.
+      const { error: upsertUserError } = await supabase
         .from('usuarios_atlas')
-        .select('user_id, is_ultra, is_vip')
-        .eq('user_id', userId)
-        .single()
-
-      if (userCheckError || !existingUser) {
-        console.error(`Usuario no encontrado: ${userId}`, userCheckError)
-        return new Response(JSON.stringify({ error: "User not found" }), { status: 404 })
+        .upsert({
+          user_id: userId,
+          perfil_data: {},
+          stripe_customer_id: (session.customer as string) || null,
+        }, { onConflict: 'user_id' })
+      if (upsertUserError) {
+        console.error('Error creando usuario en webhook:', upsertUserError)
+        return new Response(JSON.stringify({ error: "User upsert failed" }), { status: 500 })
       }
 
       // 4. Otorgar beneficios según modo de pago
@@ -107,6 +110,28 @@ serve(async (req) => {
         console.log(`🎉 Usuario ${userId} actualizado a PRO con +${amountUsd >= 5 ? creditsToAdd : 3} créditos IA (total: ${newCredits})`)
       }
     } 
+
+    if (event.type === "customer.subscription.deleted") {
+      const subscription = event.data.object as Stripe.Subscription
+      const customerId = subscription.customer as string
+
+      // Buscar el user_id asociado a este customer de Stripe
+      const { data: userRow, error: findError } = await supabase
+        .from('usuarios_atlas')
+        .select('user_id')
+        .eq('stripe_customer_id', customerId)
+        .single()
+
+      if (!findError && userRow) {
+        // Revocar plan al cancelar
+        const { error: revokeError } = await supabase
+          .from('usuarios_atlas')
+          .update({ is_vip: false, is_ultra: false })
+          .eq('user_id', userRow.user_id)
+        if (revokeError) console.error('Error revocando plan:', revokeError)
+        else console.log(`Plan revocado para ${userRow.user_id}`)
+      }
+    }
 
     return new Response(JSON.stringify({ received: true }), { status: 200 })
   } catch (err) {

@@ -1,19 +1,25 @@
-// Service Worker - Atlas Earth PRO v1
-// Offline caching de assets estaticos
+// Service Worker — Atlas Earth PRO v2
+// Offline caching de assets estáticos (GitHub Pages subpath /atlas-earth-pro)
+// IMPORTANTE: con basePath, el SW debe registrarse con la ruta y scope correctos:
+//   navigator.serviceWorker.register('/atlas-earth-pro/sw.js', { scope: '/atlas-earth-pro/' })
 
-var CACHE_NAME = "atlas-pro-v1";
+var CACHE_NAME = "atlas-pro-v2";
+var BASE = "/atlas-earth-pro";
 var STATIC_ASSETS = [
-  "/",
-  "/manifest.json",
-  "/icons/icon-192.svg",
-  "/icons/icon-512.svg",
+  BASE + "/",
+  BASE + "/manifest.json",
+  BASE + "/icons/icon-192.svg",
+  BASE + "/icons/icon-512.svg",
 ];
 
 // Install
 self.addEventListener("install", function(event) {
   event.waitUntil(
     caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(STATIC_ASSETS);
+      return cache.addAll(STATIC_ASSETS).catch(function() {
+        // No fallar si algún asset aún no existe
+        console.warn("[SW] Algunos assets no se pudieron precachear");
+      });
     })
   );
 });
@@ -34,6 +40,10 @@ self.addEventListener("fetch", function(event) {
   if (event.request.method !== "GET") return;
   if (!event.request.url.startsWith("http")) return;
 
+  // Solo manejar peticiones dentro de nuestro scope (no interferir con Supabase)
+  var url = new URL(event.request.url);
+  if (!url.pathname.startsWith(BASE)) return;
+
   event.respondWith(
     fetch(event.request)
       .then(function(response) {
@@ -47,7 +57,12 @@ self.addEventListener("fetch", function(event) {
       })
       .catch(function() {
         return caches.match(event.request).then(function(cached) {
-          return cached || new Response("Offline", { status: 503 });
+          if (cached) return cached;
+          // Fallback a la página principal para navegaciones offline
+          if (event.request.mode === "navigate") {
+            return caches.match(BASE + "/");
+          }
+          return new Response("Offline", { status: 503 });
         });
       })
   );
