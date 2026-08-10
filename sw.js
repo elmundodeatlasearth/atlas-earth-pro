@@ -8,8 +8,12 @@ var BASE = "/atlas-earth-pro";
 var STATIC_ASSETS = [
   BASE + "/",
   BASE + "/manifest.json",
+  BASE + "/og-image.svg",
   BASE + "/icons/icon-192.svg",
   BASE + "/icons/icon-512.svg",
+  BASE + "/icons/icon-192.png",
+  BASE + "/icons/icon-512.png",
+  BASE + "/apple-touch-icon.png",
 ];
 
 // Install

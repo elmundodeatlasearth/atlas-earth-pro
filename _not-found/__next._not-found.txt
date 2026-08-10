@@ -1,5 +1,5 @@
 1:"$Sreact.fragment"
-2:I[39756,["/atlas-earth-pro/_next/static/chunks/3meeola7ihshu.js","/atlas-earth-pro/_next/static/chunks/45bbbrrwweuvr.js"],"default"]
-3:I[37457,["/atlas-earth-pro/_next/static/chunks/3meeola7ihshu.js","/atlas-earth-pro/_next/static/chunks/45bbbrrwweuvr.js"],"default"]
+2:I[39756,["/atlas-earth-pro/_next/static/chunks/2i5-ljbdorxia.js","/atlas-earth-pro/_next/static/chunks/18sotvvmcs59d.js"],"default"]
+3:I[37457,["/atlas-earth-pro/_next/static/chunks/2i5-ljbdorxia.js","/atlas-earth-pro/_next/static/chunks/18sotvvmcs59d.js"],"default"]
 4:[]
-0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"isPartial":false,"staleTime":300,"varyParams":"$W4","buildId":"q2vjuzDVz_Kwl4nC9AAT8"}
+0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"isPartial":false,"staleTime":300,"varyParams":"$W4","buildId":"oqSqbl4WPHu5nAxHVm_7Z"}

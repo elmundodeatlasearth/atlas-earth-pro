@@ -1,0 +1,5 @@
+User-Agent: *
+Allow: /
+Disallow: /admin
+
+Sitemap: https://elmundodeatlasearth.github.io/atlas-earth-pro/sitemap.xml
