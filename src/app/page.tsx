@@ -30,7 +30,10 @@ export default function Home() {
 
   // Keyboard shortcuts: Ctrl+1-5 for tabs — use ref to avoid stale closure
   const sRef = useRef(S);
-  sRef.current = S;
+  // Sincronizar el ref DESPUÉS del render (regla de React 19: no mutar refs en render)
+  useEffect(() => {
+    sRef.current = S;
+  });
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key >= "1" && e.key <= "5") {
@@ -42,6 +45,8 @@ export default function Home() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
+    // Los tabs se leen vía sRef.current (ref fresco por render) para evitar stale closure.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intencional: solo se registra una vez
   }, []); // empty deps — intentional
 
   return (
@@ -194,6 +199,7 @@ export default function Home() {
             <IaTab
               user={S.user} isUltra={S.isUltra}
               aiCredits={S.aiCredits} aiCreditsPerMonth={S.permissions.aiCreditsPerMonth}
+              aiCreditsResetDate={S.aiCreditsResetDate}
               aiLoading={S.aiLoading}
               aiAdvice={S.aiAdvice} aiError={S.aiError}
               totalParcelas={S.motor.total_parcelas} pasaporte={S.pasaporte}
@@ -208,7 +214,7 @@ export default function Home() {
               histAb={S.histAb} setHistAb={S.setHistAb}
               histUsd={S.histUsd} setHistUsd={S.setHistUsd}
               histDiam={S.histDiam} setHistDiam={S.setHistDiam}
-              histMsg={S.histMsg} guardarHistorial={S.guardarHistorial}
+              histMsg={S.histMsg} guardarHistorial={S.guardarHistorial} borrarHistorial={S.borrarHistorial}
               permissions={S.permissions}
             />
           )}

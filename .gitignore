@@ -68,6 +68,12 @@ rename_next.js
 !src/**/*.png
 perfil_atlas.json
 perfiles/
-scripts/
+# Los scripts de deploy/documentación SÍ van al repo (referenciados en README)
+!scripts/
+!scripts/*
+scripts/*.env
+scripts/*.log
+# favicon.svg es parte de la PWA (además de favicon.ico)
+!public/favicon.svg
 _not-found/
 

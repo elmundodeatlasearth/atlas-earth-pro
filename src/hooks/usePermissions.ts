@@ -34,8 +34,12 @@ export interface Permissions {
   aiCreditsPerMonth: number; // 5 = PRO, 50 = Ultra
 }
 
-export function usePermissions(isPro: boolean, isUltra: boolean): Permissions {
-  return useMemo(() => ({
+/**
+ * Función pura de cálculo de permisos — extraída para poder testearla.
+ * Regla de negocio central: qué puede ver/hacer cada plan.
+ */
+export function computePermissions(isPro: boolean, isUltra: boolean): Permissions {
+  return {
     // FREE — SOLO renta diaria
     canViewRentDaily: true,
 
@@ -61,5 +65,9 @@ export function usePermissions(isPro: boolean, isUltra: boolean): Permissions {
     // IA
     canUseAI: isPro || isUltra,
     aiCreditsPerMonth: isUltra ? 50 : isPro ? 5 : 0,
-  }), [isPro, isUltra]);
+  };
+}
+
+export function usePermissions(isPro: boolean, isUltra: boolean): Permissions {
+  return useMemo(() => computePermissions(isPro, isUltra), [isPro, isUltra]);
 }

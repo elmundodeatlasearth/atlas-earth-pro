@@ -1,7 +1,7 @@
 // src/hooks/useAtlasAuth.ts
 // Hook de autenticación Supabase + planes
 "use client";
-import { useState, useEffect, useCallback, startTransition } from "react";
+import { useState, useEffect, startTransition } from "react";
 import type { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/utils/supabase";
 
@@ -69,7 +69,7 @@ export function useAtlasAuth(): AtlasAuth {
       });
     });
     return () => subscription?.unsubscribe();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleAuth = async (mode: "login" | "signup") => {
     setAuthLoading(true);

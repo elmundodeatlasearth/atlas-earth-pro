@@ -17,14 +17,20 @@ const corsHeaders = {
 };
 
 // ============================================
-// 2. RATE LIMITER
+// 2. RATE LIMITER — PERSISTENTE (tabla rate_limits + RPC atómico)
 // ============================================
+// El RPC check_rate_limit (migración 004) hace INSERT ... ON CONFLICT en
+// Postgres: la ventana sobrevive cold starts. Si el RPC falla (p.ej. la
+// tabla aún no existe), caemos a un Map local como respaldo mínimo.
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT = 10;
 const RATE_WINDOW_MS = 60_000;
 
-function checkRateLimit(key: string): { allowed: boolean; remaining: number } {
+type RateLimitResult = { allowed: boolean; remaining: number };
+
+// Fallback local (si el RPC no está disponible)
+function checkRateLimitLocal(key: string): RateLimitResult {
   const now = Date.now();
   const entry = rateLimitMap.get(key);
   if (!entry || now > entry.resetAt) {
@@ -43,6 +49,28 @@ if (typeof setInterval !== 'undefined') {
       if (now > entry.resetAt) rateLimitMap.delete(key);
     }
   }, 300_000);
+}
+
+// Versión persistente: RPC atómico en Postgres, fallback local
+async function checkRateLimit(
+  key: string,
+  supabase: ReturnType<typeof createClient>,
+): Promise<RateLimitResult> {
+  try {
+    const { data, error } = await supabase.rpc('check_rate_limit', {
+      p_user_id: key,
+      p_limit: RATE_LIMIT,
+      p_window_s: 60,
+    });
+    if (!error && data && Array.isArray(data) && data.length > 0) {
+      const row = data[0] as { allowed: boolean; remaining: number };
+      return { allowed: row.allowed, remaining: row.remaining };
+    }
+    if (error) console.warn('check_rate_limit RPC falló, usando fallback local:', error.message);
+  } catch (e) {
+    console.warn('check_rate_limit RPC excepción, usando fallback local:', String(e));
+  }
+  return checkRateLimitLocal(key);
 }
 
 // ============================================
@@ -157,7 +185,7 @@ function sanitizarPayload(raw: Record<string, unknown>): PayloadAnalisis {
 }
 
 // ============================================
-// 5. AN�LISIS EXPERTO � Usa datos pre-computados
+// 5. ANÁLISIS EXPERTO — Usa datos pre-computados
 // ============================================
 
 function generarAnalisisExperto(p: PayloadAnalisis): string {
@@ -473,25 +501,37 @@ serve(async (req) => {
 
     const { data: userData, error: userError } = await supabase
       .from('usuarios_atlas')
-      .select('ai_credits, is_ultra, is_vip')
+      .select('ai_credits, is_ultra, is_vip, credits_updated_at')
       .eq('user_id', userId)
       .single();
 
     let ai_credits = 0;
     let is_ultra = false;
-    let is_vip = false;
 
     if (!userError && userData) {
       ai_credits = userData.ai_credits ?? 0;
       is_ultra = userData.is_ultra ?? false;
-      is_vip = userData.is_vip ?? false;
+
+      // ===== RENOVACIÓN MENSUAL (respaldo de pg_cron) =====
+      // El paywall promete: PRO=5/mes, ULTRA=50/mes. Si pg_cron no está
+      // disponible (plan gratuito), este RPC aplica el reset bajo demanda:
+      // solo renueva si credits_updated_at es de un mes anterior.
+      try {
+        const { data: renewed, error: renewError } = await supabase.rpc(
+          'reset_monthly_credits_if_needed',
+          { p_user_id: userId }
+        );
+        if (!renewError && typeof renewed === 'number' && renewed !== ai_credits) {
+          ai_credits = renewed;
+        }
+      } catch { console.warn("Monthly credits reset RPC failed"); }
     } else {
       // No crear usuarios automáticamente: el trigger on_auth_user_created ya lo hace
       console.warn("Usuario sin fila en usuarios_atlas:", userId);
     }
 
     // ===== RATE LIMIT =====
-    const rl = checkRateLimit(userId);
+    const rl = await checkRateLimit(userId, supabase);
     if (!rl.allowed) {
       return new Response(JSON.stringify({
         error: "⏳ Demasiadas solicitudes. Espera un minuto.",
@@ -620,6 +660,8 @@ INSTRUCCIONES ESTRICTAS (SIGUE AL PIE DE LA LETRA):
     return new Response(JSON.stringify({
       advice: formatearHTML(htmlFinal),
       remaining_credits: is_ultra ? 999 : (usedFallback ? ai_credits : Math.max(0, ai_credits - 1)),
+      // Información para que la UI muestre la fecha de renovación mensual
+      credits_reset_date: (userData?.credits_updated_at as string) || null,
       source: usedFallback ? "local" : "morph+local",
       _rate_limit_remaining: rl.remaining,
       _local_analysis: htmlFinal.substring(0, 200), // preview para debug

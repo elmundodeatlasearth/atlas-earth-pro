@@ -18,8 +18,8 @@ Una aplicación web premium para jugadores de **Atlas Earth** que te permite cal
 - **Pagos**: Stripe Webhooks
 - **IA**: Morph LLM para asistente de estrategia
 - **PWA**: Service Worker + Manifest para instalación en dispositivos
-- **Tests**: Jest + SWC
-- **CI/CD**: GitHub Actions
+- **Tests**: Jest + SWC (91 tests)
+- **CI/CD**: GitHub Actions (lint + tests + deploy Pages)
 
 ## 📋 Prerrequisitos
 
@@ -38,81 +38,93 @@ npm install
 cp .env.example .env.local
 # Editar .env.local con tus credenciales
 
-# 3. Iniciar servidor de desarrollo
+# 3. Aplicar migraciones (Dashboard → SQL Editor)
+#    Supabase → SQL Editor → ejecutar en orden:
+#    supabase/migrations/001_init.sql
+#    supabase/migrations/002_fix_rls_and_schema.sql
+#    supabase/migrations/003_monthly_credits_and_security.sql
+#    supabase/migrations/004_persistent_rate_limiting.sql
+#    (Guía completa: scripts/SQL-EDITOR-GUIDE.md)
+
+# 4. Desplegar edge functions (requiere Supabase CLI)
+#    powershell -ExecutionPolicy Bypass -File scripts/deploy-supabase.ps1
+
+# 5. Iniciar servidor de desarrollo
 npm run dev
 
-# 4. Abrir http://localhost:3000
+# 6. Abrir http://localhost:3000
 ```
 
 ## 🗄️ Base de Datos (Supabase)
 
-Crea las siguientes tablas en tu proyecto Supabase:
+Migraciones idempotentes en `supabase/migrations/`:
 
-### `usuarios_atlas`
-```sql
-CREATE TABLE usuarios_atlas (
-  user_id UUID PRIMARY KEY REFERENCES auth.users(id),
-  is_vip BOOLEAN DEFAULT false,
-  is_ultra BOOLEAN DEFAULT false,
-  ai_credits INTEGER DEFAULT 0,
-  profile_name TEXT,
-  profile_data JSONB,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-```
+| Migración | Qué hace |
+|---|---|
+| `001_init.sql` | Tablas `usuarios_atlas` + `historial_atlas` + RLS básico |
+| `002_fix_rls_and_schema.sql` | RLS correcto, triggers, 3 créditos al registrarse |
+| `003_monthly_credits_and_security.sql` | Créditos mensuales (PRO=5/ULTRA=50), RPCs seguros, historial borrable |
+| `004_persistent_rate_limiting.sql` | Rate limiting persistente anti-abuso (tabla + RPC atómico) |
 
-### `historial_atlas`
-```sql
-CREATE TABLE historial_atlas (
-  id BIGSERIAL PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id),
-  fecha DATE NOT NULL,
-  ab_generado INTEGER DEFAULT 0,
-  usd_generado REAL DEFAULT 0,
-  diamantes_obtenidos INTEGER DEFAULT 0,
-  created_at TIMESTAMPTZ DEFAULT now(),
-  UNIQUE(user_id, fecha)
-);
-```
+> [!IMPORTANT]
+> La 003 es **crítica**: elimina la política que permitía a cualquier usuario
+> auto-concederse ULTRA con un simple `UPDATE`. Aplícala antes de producción.
 
 ## 🚢 Deploy
 
-El proyecto está configurado para deploy en **Vercel**:
+El proyecto exporta a **estático** (`output: "export"` en `next.config.ts`).
+Dos opciones:
+
+- **GitHub Pages** (recomendado): el workflow `.github/workflows/ci.yml`
+  hace lint + tests + build + deploy automático con cada push a `main`.
+- **Vercel**: configura `SPA` con las env vars del proyecto.
 
 ```bash
-npm run build    # Build de producción
-npm run start    # Iniciar servidor de producción
+npm run build    # Build de producción (export estático → /out)
+npm run deploy   # gh-pages -d out
 ```
 
-Para deploy manual a Vercel:
+Edge functions (Supabase):
 ```bash
-npx vercel --prod
+supabase functions deploy ai-advisor --project-ref TU_REF --no-verify-jwt
+supabase functions deploy stripe-webhook --project-ref TU_REF --no-verify-jwt
+supabase functions deploy admin-list-users --project-ref TU_REF --no-verify-jwt
 ```
 
-## 🧪 Tests
+## 🧪 Tests & Calidad
 
 ```bash
-npm test         # Ejecutar tests
-npm run lint     # Verificar linting
+npm test         # 91 tests (6 suites)
+npm run lint     # 0 errores
+npm run build    # type-check + export estático
 ```
+
+Suites:
+- `atlasMath.test.ts` — motor de cálculos (renta, tiers, ROI)
+- `atlasMathEdge.test.ts` — casos límite (colapso, escalera, países)
+- `permissions.test.ts` — permisos FREE/PRO/ULTRA
+- `persistencia.test.ts` — perfiles locales, restauración segura
+- `sanitize.test.ts` — sanitización de HTML de la IA
+- `contratoIA.test.ts` — contrato frontend ↔ edge function ai-advisor
 
 ## 📁 Estructura del Proyecto
 
 ```
 src/
 ├── app/                  # Páginas Next.js (App Router)
-│   ├── layout.tsx        # Layout principal con Supabase Auth
+│   ├── layout.tsx        # Layout principal con PWA + fonts
 │   ├── page.tsx          # Página principal con tabs
 │   ├── globals.css       # Estilos globales y animaciones
-│   └── admin/            # Panel de administración
+│   └── admin/            # Panel CRM admin (rol "admin")
 ├── components/           # Componentes React
 │   ├── sidebar.tsx       # Barra lateral con inputs y auth
 │   ├── dashboard-tab.tsx # Tab de dashboard
 │   ├── simulador-tab.tsx # Tab de simulador de inversión
 │   ├── auditoria-tab.tsx # Tab de auditoría completa
-│   ├── ia-tab.tsx        # Tab de asistente IA
+│   ├── ia-tab.tsx        # Tab de asistente IA (créditos)
 │   ├── historial-tab.tsx # Tab de historial y progreso
 │   ├── tier-comparativa.tsx # Comparativa de tiers por país
+│   ├── HoneycombBackground.tsx # Fondo animado
 │   └── ...
 ├── hooks/                # Custom hooks
 │   ├── useAtlasState.ts  # Orquestador de estado global
@@ -124,14 +136,21 @@ src/
 │   ├── atlasMath.ts      # Motor de cálculos principal
 │   ├── supabase.ts       # Cliente Supabase
 │   ├── sanitize.ts       # Sanitización HTML
+│   ├── persistencia.ts   # Perfiles locales seguros
 │   └── export-csv.ts     # Exportación CSV
-└── __tests__/            # Tests
-    └── atlasMath.test.ts # Tests del motor de cálculos
+└── __tests__/            # Tests (91)
 
 supabase/
+├── migrations/           # 001-004 (idempotentes)
 └── functions/
-    ├── ai-advisor/       # Edge Function: Asistente IA
-    └── stripe-webhook/   # Edge Function: Webhook de pagos
+    ├── ai-advisor/       # IA + rate limiting + créditos mensuales
+    ├── stripe-webhook/   # Webhook de pagos
+    └── admin-list-users/ # CRM admin (service_role + rol verificado)
+
+scripts/
+├── deploy-supabase.ps1     # Deploy edge functions
+├── SQL-EDITOR-GUIDE.md     # Cómo aplicar migraciones
+└── STRIPE-WEBHOOK-GUIDE.md # Cómo configurar Stripe
 ```
 
 ## 📄 Licencia

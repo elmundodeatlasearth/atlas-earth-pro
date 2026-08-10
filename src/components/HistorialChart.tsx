@@ -19,6 +19,7 @@ import type { ChartConfiguration } from "chart.js";
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend);
 
 export interface HistorialEntry {
+  id?: number; // bigserial de la BD — usado para borrar entradas
   fecha: string;
   ab_generado: number;
   usd_generado: number;
@@ -114,7 +115,7 @@ export default function HistorialChart({ data }: Props) {
             borderWidth: 1,
             padding: 12,
             cornerRadius: 10,
-            titleFont: { family: "Inter, sans-serif", size: 12, weight: "bold" as any },
+            titleFont: { family: "Inter, sans-serif", size: 12, weight: "bold" as const },
             bodyFont: { family: "Inter, sans-serif", size: 11 },
             displayColors: true,
             boxPadding: 6,
@@ -135,7 +136,7 @@ export default function HistorialChart({ data }: Props) {
             ticks: {
               color: "#666",
               font: { family: "Inter, sans-serif", size: 10 },
-              callback: (val: any) => "$" + Number(val).toFixed(4),
+              callback: (val: unknown) => "$" + Number(val).toFixed(4),
             },
           },
           ...(hasAb ? {
@@ -145,7 +146,7 @@ export default function HistorialChart({ data }: Props) {
               ticks: {
                 color: "#666",
                 font: { family: "Inter, sans-serif", size: 10 },
-                callback: (val: any) => Number(val).toFixed(0) + " AB",
+                callback: (val: unknown) => Number(val).toFixed(0) + " AB",
               },
             },
           } : {}),

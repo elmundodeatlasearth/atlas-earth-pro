@@ -1,7 +1,7 @@
 // src/components/toast.tsx
 // Sistema de notificaciones toast elegante
 "use client";
-import { useState, useEffect, createContext, useContext, useCallback } from "react";
+import { useState, createContext, useContext, useCallback } from "react";
 
 interface ToastMessage {
   id: number;

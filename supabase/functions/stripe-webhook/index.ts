@@ -77,7 +77,7 @@ serve(async (req) => {
         // Suscripción mensual → ULTRA
         const { error } = await supabase
           .from('usuarios_atlas')
-          .update({ is_vip: true, is_ultra: true, ai_credits: 50 })
+          .update({ is_vip: true, is_ultra: true, ai_credits: 50, credits_updated_at: new Date().toISOString() })
           .eq('user_id', userId)
         if (error) {
           console.error("Error actualizando Supabase ULTRA:", error)
@@ -101,7 +101,7 @@ serve(async (req) => {
         
         const { error } = await supabase
           .from('usuarios_atlas')
-          .update({ is_vip: true, ai_credits: newCredits })
+          .update({ is_vip: true, ai_credits: newCredits, credits_updated_at: new Date().toISOString() })
           .eq('user_id', userId)
         if (error) {
           console.error("Error actualizando Supabase PRO:", error)

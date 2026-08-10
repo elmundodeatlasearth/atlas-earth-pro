@@ -5,7 +5,6 @@
 import type { User } from "@supabase/supabase-js";
 import type { Permissions } from "@/hooks/usePermissions";
 import AuthSection from "./auth-section";
-import LockedFeature from "./LockedFeature";
 import { PAISES_DISPONIBLES, MONEDAS_DISPONIBLES, MAP_MONEDAS } from "@/utils/atlasMath";
 
 interface SidebarProps {

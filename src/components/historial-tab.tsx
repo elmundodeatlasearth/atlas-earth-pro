@@ -20,6 +20,7 @@ interface HistorialTabProps {
   histDiam: number; setHistDiam: (v: number) => void;
   histMsg: string;
   guardarHistorial: () => Promise<void>;
+  borrarHistorial: (id: number) => Promise<void>;
   permissions: Permissions;
 }
 
@@ -29,9 +30,33 @@ export default function HistorialTab(props: HistorialTabProps) {
       {/* Chart — solo PRO+ */}
       {props.user && props.historialData.length > 0 && props.permissions.canHistoryChart ? (
         <GlowCard>
-          <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">📈 Progreso en el Tiempo</div>
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-xs text-gray-500 uppercase tracking-widest">📈 Progreso en el Tiempo</div>
+          </div>
           <div className="h-64">
             <HistorialChart data={props.historialData} />
+          </div>
+          {/* Lista de entradas con botón borrar */}
+          <div className="mt-4 space-y-2">
+            {props.historialData.slice().reverse().map(entry => (
+              <div key={entry.id} className="flex items-center justify-between bg-white/[0.03] border border-white/5 rounded-lg px-3 py-2">
+                <div className="flex gap-4 text-xs text-gray-300">
+                  <span className="font-mono">📅 {entry.fecha}</span>
+                  <span className="text-purple-300">💎 {entry.ab_generado} AB</span>
+                  <span className="text-green-400">💰 ${Number(entry.usd_generado || 0).toFixed(4)}</span>
+                  {entry.diamantes_obtenidos > 0 && <span className="text-cyan-300">💎 {entry.diamantes_obtenidos} diam</span>}
+                </div>
+                <button
+                  onClick={() => {
+                    if (window.confirm(`¿Eliminar el registro del ${entry.fecha}?`)) props.borrarHistorial(entry.id!);
+                  }}
+                  className="text-gray-500 hover:text-red-400 bg-white/5 hover:bg-red-900/30 px-2 py-1 rounded transition-all text-[10px] font-bold"
+                  title="Eliminar registro"
+                >
+                  🗑️
+                </button>
+              </div>
+            ))}
           </div>
         </GlowCard>
       ) : props.user && props.historialData.length > 0 && !props.permissions.canHistoryChart ? (

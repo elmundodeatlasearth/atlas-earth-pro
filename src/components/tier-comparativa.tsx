@@ -9,8 +9,7 @@ import { GlowCard } from "./stat-card";
 
 interface TierComparativaProps {
   motor: MotorAtlasEarth;
-  paisActual: string;
-  monedaActual: string;
+  paisActual: string; // país del usuario (para el estado inicial del selector)
   allowMultiCountry?: boolean; // ULTRA-only: selector de país
 }
 
@@ -66,7 +65,7 @@ function calcularRentaActual(motor: MotorAtlasEarth, pais: string): number {
   return motor.calcular_renta_generica(motor.total_parcelas, pais, TIERS_COMPLETOS, 0);
 }
 
-export default function TierComparativa({ motor, paisActual, monedaActual, allowMultiCountry = false }: TierComparativaProps) {
+export default function TierComparativa({ motor, paisActual, allowMultiCountry = false }: TierComparativaProps) {
   const total = motor.total_parcelas;
   // país a comparar — solo ULTRA puede elegir, PRO usa el mismo país
   const [paisComparar, setPaisComparar] = useState(paisActual);

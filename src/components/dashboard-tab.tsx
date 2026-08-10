@@ -205,7 +205,6 @@ export default function DashboardTab(props: DashboardTabProps) {
         <TierComparativa
           motor={props.motor}
           paisActual={props.pais}
-          monedaActual={props.moneda}
           allowMultiCountry={props.permissions.canMultiCountryUltra}
         />
       ) : (

@@ -11,6 +11,7 @@ interface IaTabProps {
   isUltra: boolean;
   aiCredits: number;
   aiCreditsPerMonth: number;
+  aiCreditsResetDate: string | null;
   aiLoading: boolean;
   aiAdvice: string;
   aiError: string;
@@ -48,13 +49,20 @@ export default function IaTab(props: IaTabProps) {
           ))}
         </div>
 
-        <div className="text-xs text-gray-500 mb-4">
-          Créditos disponibles:{" "}
-          <strong className="text-purple-400">
-            {props.isUltra
-              ? `50 / mes (${props.aiCredits} restantes este mes)`
-              : `${props.aiCredits} / ${props.aiCreditsPerMonth} restantes este mes`}
-          </strong>
+        <div className="text-xs text-gray-500 mb-4 flex flex-wrap items-center gap-x-4 gap-y-1">
+          <span>
+            Créditos disponibles:{" "}
+            <strong className="text-purple-400">
+              {props.isUltra
+                ? `50 / mes (${props.aiCredits} restantes este mes)`
+                : `${props.aiCredits} / ${props.aiCreditsPerMonth} restantes este mes`}
+            </strong>
+          </span>
+          {props.aiCreditsResetDate && (
+            <span className="text-[10px] text-gray-600">
+              🔄 Renovación mensual: <strong className="text-cyan-400">{new Date(props.aiCreditsResetDate).toLocaleDateString("es", { day: "numeric", month: "long" })}</strong>
+            </span>
+          )}
         </div>
 
         {!props.user ? (

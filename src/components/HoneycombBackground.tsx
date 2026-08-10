@@ -28,7 +28,6 @@ export default function HoneycombBackground() {
     let animId = 0;
     let mouseX = -1000;
     let mouseY = -1000;
-    let time = 0;
 
     const HEX_SIZE = 30;
     const ROW_H = HEX_SIZE * 1.8;
@@ -117,7 +116,6 @@ export default function HoneycombBackground() {
     }
 
     function animate() {
-      time++;
       const w = window.innerWidth;
       const h = window.innerHeight;
 

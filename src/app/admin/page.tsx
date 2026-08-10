@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { supabase } from "@/utils/supabase";
 import type { User } from "@supabase/supabase-js";
 
@@ -76,7 +77,12 @@ export default function AdminCRM() {
   }, []);
 
   useEffect(() => {
-    if (isAdmin) fetchUsers(page);
+    if (isAdmin) {
+      // Diferir a microtarea: evita setState síncrono dentro del effect
+      // (React 19 — cascading renders). La UI ya muestra el skeleton loading.
+      const t = setTimeout(() => fetchUsers(page), 0);
+      return () => clearTimeout(t);
+    }
   }, [isAdmin, page, fetchUsers]);
 
   const addAICredits = async (userId: string, amount: number) => {
@@ -84,16 +90,28 @@ export default function AdminCRM() {
     setOperating(userId);
     const user = users.find(u => u.user_id === userId);
     const newCredits = (user?.ai_credits || 0) + amount;
-    const { error } = await supabase
-      .from("usuarios_atlas")
-      .update({ ai_credits: newCredits })
-      .eq("user_id", userId);
-    if (!error) {
+    const { data: { session } } = await supabase.auth.getSession();
+    // Con RLS endurecido, el admin YA NO puede hacer UPDATE directo con anon key.
+    // Las mutaciones van por la edge function (service_role + verificación de rol admin).
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-list-users`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+          Authorization: `Bearer ${session?.access_token || ""}`,
+        },
+        body: JSON.stringify({ action: "add_credits", user_id: userId, amount }),
+      }
+    );
+    const data = await res.json();
+    if (res.ok && data.ok) {
       setUsers(prev => prev.map(u =>
         u.user_id === userId ? { ...u, ai_credits: newCredits } : u
       ));
     } else {
-      alert("❌ Error: " + error.message);
+      alert("❌ Error: " + (data.error || "Error del servidor"));
     }
     setOperating(null);
   };
@@ -101,16 +119,26 @@ export default function AdminCRM() {
   const toggleVip = async (userId: string, currentIsVip: boolean) => {
     if (!window.confirm(`¿${currentIsVip ? "Quitar" : "Activar"} PRO a este usuario?`)) return;
     setOperating(userId);
-    const { error } = await supabase
-      .from("usuarios_atlas")
-      .update({ is_vip: !currentIsVip })
-      .eq("user_id", userId);
-    if (!error) {
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-list-users`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+          Authorization: `Bearer ${session?.access_token || ""}`,
+        },
+        body: JSON.stringify({ action: "toggle_vip", user_id: userId }),
+      }
+    );
+    const data = await res.json();
+    if (res.ok && data.ok) {
       setUsers(prev => prev.map(u =>
         u.user_id === userId ? { ...u, is_vip: !currentIsVip } : u
       ));
     } else {
-      alert("❌ Error: " + error.message);
+      alert("❌ Error: " + (data.error || "Error del servidor"));
     }
     setOperating(null);
   };
@@ -130,9 +158,9 @@ export default function AdminCRM() {
           <div className="text-5xl mb-4">🔒</div>
           <h1 className="text-xl font-bold text-white mb-2">Acceso Restringido</h1>
           <p className="text-sm text-gray-400 mb-6">{authError}</p>
-          <a href="/" className="inline-block text-xs font-bold py-2.5 px-8 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white transition-all shadow-lg shadow-cyan-900/30">
+          <Link href="/" className="inline-block text-xs font-bold py-2.5 px-8 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white transition-all shadow-lg shadow-cyan-900/30">
             Volver al Inicio
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -145,7 +173,7 @@ export default function AdminCRM() {
           <div className="text-4xl mb-4">❌</div>
           <h1 className="text-xl font-bold text-white mb-2">Sesión no encontrada</h1>
           <p className="text-sm text-gray-400 mb-6">Tu sesión expiró.</p>
-          <a href="/" className="inline-block text-xs font-bold py-2.5 px-8 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition-all">Ir al Inicio</a>
+          <Link href="/" className="inline-block text-xs font-bold py-2.5 px-8 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition-all">Ir al Inicio</Link>
         </div>
       </div>
     );
@@ -297,7 +325,7 @@ export default function AdminCRM() {
           <ol className="text-xs text-gray-400 space-y-1.5 list-decimal list-inside">
             <li>Ve al <strong className="text-gray-300">Dashboard de Supabase → Authentication → Users</strong></li>
             <li>Selecciona tu usuario y haz clic en <strong className="text-gray-300">Edit</strong></li>
-            <li>Agrega en <strong className="text-gray-300">User Metadata</strong>: <code className="bg-white/5 px-1.5 py-0.5 rounded text-purple-300">{"{"}"role": "admin"{"}"}</code></li>
+            <li>Agrega en <strong className="text-gray-300">User Metadata</strong>: <code className="bg-white/5 px-1.5 py-0.5 rounded text-purple-300">{"{ \"role\": \"admin\" }"}</code></li>
             <li>Guarda y recarga esta página</li>
           </ol>
         </div>

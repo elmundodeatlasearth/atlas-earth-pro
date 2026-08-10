@@ -428,5 +428,5 @@ entrypoint = "./functions/ai-advisor/index.ts"
 [functions.admin-list-users]
 enabled = true
 verify_jwt = false
-import_map = "./functions/stripe-webhook/deno.json"
+import_map = "./functions/admin-list-users/deno.json"
 entrypoint = "./functions/admin-list-users/index.ts"

@@ -7,9 +7,10 @@ import { supabase } from "@/utils/supabase";
 import type { HistorialEntry } from "@/components/HistorialChart";
 import type { AtlasCalculations } from "./useAtlasCalculations";
 import { useAtlasInputs, type AtlasInputs } from "./useAtlasInputs";
-import { useAtlasAuth, type AtlasAuth } from "./useAtlasAuth";
+import { useAtlasAuth } from "./useAtlasAuth";
 import { useAtlasCalculations } from "./useAtlasCalculations";
 import { usePermissions, type Permissions } from "./usePermissions";
+import { parsePerfilGuardado, leerListaPerfiles, leerPerfilActivo, campoPerfil } from "@/utils/persistencia";
 
 export interface AtlasState extends AtlasInputs, AtlasCalculations {
   // Auth (overrides para compatibilidad)
@@ -32,6 +33,7 @@ export interface AtlasState extends AtlasInputs, AtlasCalculations {
   aiLoading: boolean;
   aiAdvice: string;
   aiError: string;
+  aiCreditsResetDate: string | null;
   handleGenerateAI: () => Promise<void>;
 
   // Profiles
@@ -50,6 +52,7 @@ export interface AtlasState extends AtlasInputs, AtlasCalculations {
   histDiam: number; setHistDiam: (v: number) => void;
   histMsg: string;
   guardarHistorial: () => Promise<void>;
+  borrarHistorial: (id: number) => Promise<void>;
 }
 
 export function useAtlasState(): AtlasState {
@@ -62,6 +65,8 @@ export function useAtlasState(): AtlasState {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiAdvice, setAiAdvice] = useState("");
   const [aiError, setAiError] = useState("");
+  // Fecha de la última renovación mensual de créditos (devuelta por ai-advisor)
+  const [aiCreditsResetDate, setAiCreditsResetDate] = useState<string | null>(null);
 
   // ===== Profile State =====
   const [profileName, setProfileName] = useState("Principal");
@@ -86,50 +91,37 @@ export function useAtlasState(): AtlasState {
 
   // Local profiles init + restore último estado guardado del perfil activo
   useEffect(() => {
-    let list: string[] = ["Principal"];
-    const stored = localStorage.getItem("ae_profiles");
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) list = parsed;
-      } catch { /* ignore */ }
-    }
+    const list = leerListaPerfiles();
     startTransition(() => setProfileList(list));
 
     // Restaurar el perfil ACTIVO (el último usado), no siempre el primero
-    const activeName = localStorage.getItem("ae_active_profile");
-    const nombreActivo = activeName && list.includes(activeName) ? activeName : list[0];
+    const nombreActivo = leerPerfilActivo(list);
     startTransition(() => setProfileName(nombreActivo));
 
     // Restaurar el estado guardado localmente para que los datos NO se pierdan
-    const saved = localStorage.getItem(`ae_profile_${nombreActivo}`);
-    if (saved) {
-      try {
-        const p = JSON.parse(saved);
-        if (typeof p === "object" && p !== null && Object.keys(p).length >= 5) {
-          startTransition(() => {
-            I.setPais(p.pais || "Estados Unidos");
-            I.setMoneda(p.moneda || "USD");
-            I.setHorasBoost(p.horas_boost ?? 18);
-            I.setEficiencia(p.eficiencia ?? 95);
-            I.setHorasSrb(64);
-            I.setParcelasC(p.c_comun ?? 150);
-            I.setParcelasR(p.c_rara ?? 0);
-            I.setParcelasE(p.c_epica ?? 0);
-            I.setParcelasL(p.c_legendaria ?? 0);
-            I.setInsignias(p.insignias ?? 0);
-            I.setAbAhorrados(p.ab_manuales ?? 500);
-            I.setEficienciaAnuncios(p.eficiencia_anuncios ?? 90);
-            I.setTipoPase(p.tipo_pase ?? "Ninguno (F2P)");
-            I.setMeta(p.meta_dolar ?? 1);
-            I.setMetaPeriodo(p.meta_periodo ?? "day");
-            I.setMetaParcelas(p.meta_parcelas ?? 150);
-            I.setDiaAsistencia(p.dia_asistencia ?? 1);
-            I.setHoraInicio(p.hora_inicio ?? "08:00");
-            I.setHoraFin(p.hora_fin ?? "22:00");
-          });
-        }
-      } catch { /* ignore */ }
+    const p = parsePerfilGuardado(localStorage.getItem(`ae_profile_${nombreActivo}`));
+    if (p) {
+      startTransition(() => {
+        I.setPais(campoPerfil(p, "pais", "Estados Unidos"));
+        I.setMoneda(campoPerfil(p, "moneda", "USD"));
+        I.setHorasBoost(campoPerfil(p, "horas_boost", 18));
+        I.setEficiencia(campoPerfil(p, "eficiencia", 95));
+        I.setHorasSrb(64);
+        I.setParcelasC(campoPerfil(p, "c_comun", 150));
+        I.setParcelasR(campoPerfil(p, "c_rara", 0));
+        I.setParcelasE(campoPerfil(p, "c_epica", 0));
+        I.setParcelasL(campoPerfil(p, "c_legendaria", 0));
+        I.setInsignias(campoPerfil(p, "insignias", 0));
+        I.setAbAhorrados(campoPerfil(p, "ab_manuales", 500));
+        I.setEficienciaAnuncios(campoPerfil(p, "eficiencia_anuncios", 90));
+        I.setTipoPase(campoPerfil(p, "tipo_pase", "Ninguno (F2P)"));
+        I.setMeta(campoPerfil(p, "meta_dolar", 1));
+        I.setMetaPeriodo(campoPerfil(p, "meta_periodo", "day"));
+        I.setMetaParcelas(campoPerfil(p, "meta_parcelas", 150));
+        I.setDiaAsistencia(campoPerfil(p, "dia_asistencia", 1));
+        I.setHoraInicio(campoPerfil(p, "hora_inicio", "08:00"));
+        I.setHoraFin(campoPerfil(p, "hora_fin", "22:00"));
+      });
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -203,7 +195,7 @@ export function useAtlasState(): AtlasState {
     localStorage.setItem("ae_profiles", JSON.stringify(updated));
     setShowSaveMsg(true);
     setTimeout(() => setShowSaveMsg(false), 2000);
-  }, [I.pais, I.moneda, I.horasBoost, I.eficiencia, I.horasSrb, I.parcelasC, I.parcelasR, I.parcelasE, I.parcelasL,
+  }, [I.pais, I.moneda, I.horasBoost, I.eficiencia, I.parcelasC, I.parcelasR, I.parcelasE, I.parcelasL,
       I.insignias, I.abAhorrados, I.eficienciaAnuncios, I.tipoPase, I.meta, I.metaPeriodo, I.metaParcelas,
       I.diaAsistencia, I.horaInicio, I.horaFin, profileName, profileList]);
 
@@ -252,12 +244,12 @@ export function useAtlasState(): AtlasState {
       meta_parcelas: I.metaParcelas, dia_asistencia: I.diaAsistencia,
       hora_inicio: I.horaInicio, hora_fin: I.horaFin,
     };
-    // NO tocar is_vip / is_ultra / ai_credits: esos campos los controla el webhook de Stripe
-    // (service_role). Si usamos la anon key solo podemos actualizar la fila propia.
-    const { error } = await supabase.from("usuarios_atlas").upsert({
-      user_id: A.user.id,
-      perfil_data: perfil, // JSONB nativo — sin JSON.stringify
-    }, { onConflict: "user_id" });
+    // Usar RPC SECURITY DEFINER: el usuario ya NO puede hacer UPDATE directo
+    // a su fila (RLS endurecido). Este RPC solo actualiza perfil_data, nunca
+    // is_vip/is_ultra/ai_credits (esos los controla el webhook de Stripe).
+    const { error } = await supabase.rpc("update_own_perfil_data", {
+      p_perfil_data: perfil,
+    });
     if (!error) {
       // Persistir también localmente para que la carga local tenga estos datos
       localStorage.setItem(`ae_profile_${profileName}`, JSON.stringify(perfil));
@@ -270,7 +262,7 @@ export function useAtlasState(): AtlasState {
       console.error("guardarPerfilNube error:", error);
     }
   }, [A.user, profileName, profileList,
-      I.pais, I.moneda, I.horasBoost, I.eficiencia, I.horasSrb,
+      I.pais, I.moneda, I.horasBoost, I.eficiencia,
       I.parcelasC, I.parcelasR, I.parcelasE, I.parcelasL, I.insignias, I.abAhorrados, I.eficienciaAnuncios,
       I.tipoPase, I.meta, I.metaPeriodo, I.metaParcelas, I.diaAsistencia, I.horaInicio, I.horaFin]);
 
@@ -303,17 +295,20 @@ export function useAtlasState(): AtlasState {
 
   // Flush sincrónico al cerrar/recargar: garantiza que la última edición se guarde
   const latestRef = useRef<{ perfil: Record<string, unknown>; nombre: string }>({ perfil: {}, nombre: profileName });
-  latestRef.current = {
-    perfil: {
-      pais: I.pais, moneda: I.moneda, horas_boost: I.horasBoost, eficiencia: I.eficiencia, horas_srb_mes: 64,
-      c_comun: I.parcelasC, c_rara: I.parcelasR, c_epica: I.parcelasE, c_legendaria: I.parcelasL,
-      insignias: I.insignias, ab_manuales: I.abAhorrados, eficiencia_anuncios: I.eficienciaAnuncios,
-      tipo_pase: I.tipoPase, meta_dolar: I.meta, meta_periodo: I.metaPeriodo,
-      meta_parcelas: I.metaParcelas, dia_asistencia: I.diaAsistencia,
-      hora_inicio: I.horaInicio, hora_fin: I.horaFin,
-    },
-    nombre: profileName,
-  };
+  // Sincronizar el ref DESPUÉS del render (regla de React 19: no mutar refs en render)
+  useEffect(() => {
+    latestRef.current = {
+      perfil: {
+        pais: I.pais, moneda: I.moneda, horas_boost: I.horasBoost, eficiencia: I.eficiencia, horas_srb_mes: 64,
+        c_comun: I.parcelasC, c_rara: I.parcelasR, c_epica: I.parcelasE, c_legendaria: I.parcelasL,
+        insignias: I.insignias, ab_manuales: I.abAhorrados, eficiencia_anuncios: I.eficienciaAnuncios,
+        tipo_pase: I.tipoPase, meta_dolar: I.meta, meta_periodo: I.metaPeriodo,
+        meta_parcelas: I.metaParcelas, dia_asistencia: I.diaAsistencia,
+        hora_inicio: I.horaInicio, hora_fin: I.horaFin,
+      },
+      nombre: profileName,
+    };
+  });
   useEffect(() => {
     const flush = () => {
       const p = latestRef.current;
@@ -412,13 +407,16 @@ export function useAtlasState(): AtlasState {
         const parsed = parseInt(data.remaining_credits);
         if (!isNaN(parsed)) A.setAiCredits(parsed);
       }
+      // Guardar fecha de renovación mensual para mostrarla en la UI
+      if (data.credits_reset_date) setAiCreditsResetDate(String(data.credits_reset_date));
     } catch (e: unknown) {
       setAiError(e instanceof Error ? e.message : String(e));
     } finally {
       setAiLoading(false);
     }
-  }, [I.pais, I.moneda, I.parcelasC, I.parcelasR, I.parcelasE, I.parcelasL,
-      I.insignias, I.abAhorrados, I.horasBoost, I.eficiencia, I.horasSrb,
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- snapshot completo del perfil al momento de llamar
+    }, [I.pais, I.moneda, I.parcelasC, I.parcelasR, I.parcelasE, I.parcelasL,
+      I.insignias, I.abAhorrados, I.horasBoost, I.eficiencia,
       I.tipoPase, I.horaInicio, I.horaFin, I.eficienciaAnuncios, I.diaAsistencia,
       I.meta, I.metaPeriodo, C.motor, C.multTier, C.pasaporte, C.rentaDia, A.user, historialData, A.setAiCredits]);
 
@@ -437,6 +435,19 @@ export function useAtlasState(): AtlasState {
     } else setHistMsg("✅ Progreso guardado");
     setTimeout(() => setHistMsg(""), 4000);
   };
+
+  const borrarHistorial = useCallback(async (id: number) => {
+    if (!A.user) return;
+    const { error } = await supabase.rpc("borrar_historial", { p_id: id });
+    if (!error) {
+      setHistorialData(prev => prev.filter(h => h.id !== id));
+      setHistMsg("🗑️ Registro eliminado");
+    } else {
+      console.error("borrarHistorial error:", error);
+      setHistMsg(`❌ Error al borrar: ${error.message}`);
+    }
+    setTimeout(() => setHistMsg(""), 4000);
+  }, [A.user]);
 
   const cargarHistorial = useCallback(async () => {
     if (!A.user) return;
@@ -462,13 +473,13 @@ export function useAtlasState(): AtlasState {
     permissions: P,
     handleAuth: A.handleAuth, handleLogout: A.handleLogout,
     // AI
-    aiLoading, aiAdvice, aiError, handleGenerateAI,
+    aiLoading, aiAdvice, aiError, handleGenerateAI, aiCreditsResetDate,
     // Profiles
     profileName, setProfileName, profileList, setProfileList, showSaveMsg,
     guardarPerfil, cargarPerfil, guardarPerfilNube,
     // History
     historialData, histFecha, setHistFecha, histAb, setHistAb,
-    histUsd, setHistUsd, histDiam, setHistDiam, histMsg, guardarHistorial,
+    histUsd, setHistUsd, histDiam, setHistDiam, histMsg, guardarHistorial, borrarHistorial,
     // Calculations
     ...C,
   };
