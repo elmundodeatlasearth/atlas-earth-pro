@@ -1,6 +1,23 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import Stripe from "https://esm.sh/stripe@12"
+import {
+  mutacionCheckoutCompletado,
+  mutacionFacturaPagada,
+  mutacionSuscripcionCancelada,
+  sumarCreditosPagoUnico,
+} from "./_shared/pagos.ts"
+
+// ============================================================
+// STRIPE WEBHOOK — v2 (eventos completos)
+//   checkout.session.completed      → ULTRA (subscription) | PRO (payment)
+//   invoice.paid                    → RENOVACIÓN mensual ULTRA (50 créditos)
+//   customer.subscription.deleted   → revocar plan
+//   customer.subscription.updated   → revocar si cancelado/pausado/degradado
+//
+// La lógica de negocio vive en _shared/pagos.ts (mismo código que el
+// frontend testea con Jest). Aquí SOLO orquestamos la persistencia.
+// ============================================================
 
 const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
   apiVersion: "2022-11-15",
@@ -19,7 +36,7 @@ serve(async (req) => {
 
   try {
     const body = await req.text()
-    
+
     // Verificar firma de Stripe
     const event = await stripe.webhooks.constructEventAsync(
       body,
@@ -39,96 +56,131 @@ serve(async (req) => {
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session
-      
-      // ===== VALIDACIONES MEJORADAS =====
-      
-      // 1. Verificar que el pago fue exitoso
+
+      // 1. Verificar pago exitoso
       if (session.payment_status !== "paid") {
         console.log(`Pago no completado: ${session.payment_status}`)
         return new Response(JSON.stringify({ received: true, note: "Payment not completed" }), { status: 200 })
       }
 
-      // 2. Verificar que client_reference_id (userId) existe
+      // 2. client_reference_id = userId
       const userId = session.client_reference_id
       if (!userId) {
-        console.log("No se proporcionó client_reference_id — sesión:", session.id)
+        console.log("No client_reference_id — sesión:", session.id)
         return new Response(JSON.stringify({ received: true, note: "No user ID" }), { status: 200 })
       }
 
-      // 3. Garantizar que el usuario exista (upsert si no hay fila)
-      // Si el usuario pagó antes de usar la app, el trigger on_auth_user_created
-      // ya debería haber creado la fila; pero por seguridad hacemos upsert.
-      const { error: upsertUserError } = await supabase
-        .from('usuarios_atlas')
+      // 3. Aplicar mutación calculada por la lógica pura
+      const mutacion = mutacionCheckoutCompletado(
+        {
+          mode: session.mode || "",
+          payment_status: session.payment_status || "",
+          amount_total: session.amount_total,
+          customer: (session.customer as string) || null,
+        },
+        new Date().toISOString(),
+      )
+
+      if (!mutacion) {
+        return new Response(JSON.stringify({ received: true, note: "Nothing to apply" }), { status: 200 })
+      }
+
+      // 4. Asegurar fila de usuario (upsert)
+      const { error: upsertError } = await supabase
+        .from("usuarios_atlas")
         .upsert({
           user_id: userId,
           perfil_data: {},
           stripe_customer_id: (session.customer as string) || null,
-        }, { onConflict: 'user_id' })
-      if (upsertUserError) {
-        console.error('Error creando usuario en webhook:', upsertUserError)
+        }, { onConflict: "user_id" })
+      if (upsertError) {
+        console.error("Error creando usuario en webhook:", upsertError)
         return new Response(JSON.stringify({ error: "User upsert failed" }), { status: 500 })
       }
 
-      // 4. Otorgar beneficios según modo de pago
-      console.log(`✅ Otorgando beneficios a: ${userId} | Modo: ${session.mode} | Monto: ${session.amount_total}`)
-
-      if (session.mode === "subscription") {
-        // Suscripción mensual → ULTRA
-        const { error } = await supabase
-          .from('usuarios_atlas')
-          .update({ is_vip: true, is_ultra: true, ai_credits: 50, credits_updated_at: new Date().toISOString() })
-          .eq('user_id', userId)
-        if (error) {
-          console.error("Error actualizando Supabase ULTRA:", error)
-          return new Response(JSON.stringify({ error: "Update failed" }), { status: 500 })
-        }
-        console.log(`🎉 Usuario ${userId} actualizado a ULTRA`)
-      } else {
-        // Pago único → PRO / créditos extras
-        const amountUsd = (session.amount_total || 0) / 100
-        const creditsToAdd = Math.max(3, Math.floor(amountUsd / 2))
-        
-        // Obtener créditos actuales para sumar correctamente
-        const { data: currentUser, error: fetchError } = await supabase
-          .from('usuarios_atlas')
-          .select('ai_credits')
-          .eq('user_id', userId)
+      // 5. Para pago único, sumar a créditos existentes
+      if (session.mode !== "subscription") {
+        const { data: currentUser } = await supabase
+          .from("usuarios_atlas")
+          .select("ai_credits")
+          .eq("user_id", userId)
           .single()
-        
-        const currentCredits = (!fetchError && currentUser?.ai_credits) ? currentUser.ai_credits : 0
-        const newCredits = amountUsd >= 5 ? currentCredits + creditsToAdd : currentCredits + 3
-        
-        const { error } = await supabase
-          .from('usuarios_atlas')
-          .update({ is_vip: true, ai_credits: newCredits, credits_updated_at: new Date().toISOString() })
-          .eq('user_id', userId)
-        if (error) {
-          console.error("Error actualizando Supabase PRO:", error)
-          return new Response(JSON.stringify({ error: "Update failed" }), { status: 500 })
-        }
-        console.log(`🎉 Usuario ${userId} actualizado a PRO con +${amountUsd >= 5 ? creditsToAdd : 3} créditos IA (total: ${newCredits})`)
+        const actuales = (currentUser?.ai_credits as number) || 0
+        mutacion.ai_credits = sumarCreditosPagoUnico(actuales, session.amount_total || 0)
       }
-    } 
 
-    if (event.type === "customer.subscription.deleted") {
-      const subscription = event.data.object as Stripe.Subscription
-      const customerId = subscription.customer as string
+      const { error } = await supabase
+        .from("usuarios_atlas")
+        .update(mutacion)
+        .eq("user_id", userId)
+
+      if (error) {
+        console.error("Error aplicando beneficios:", error)
+        return new Response(JSON.stringify({ error: "Update failed" }), { status: 500 })
+      }
+
+      console.log(`🎉 Beneficios aplicados a ${userId}:`, mutacion)
+    }
+
+    // ===== RENOVACIÓN MENSUAL ULTRA =====
+    if (event.type === "invoice.paid") {
+      const invoice = event.data.object as Stripe.Invoice
+      const customerId = (invoice.customer as string) || ""
+      if (!customerId) {
+        return new Response(JSON.stringify({ received: true, note: "No customer" }), { status: 200 })
+      }
 
       // Buscar el user_id asociado a este customer de Stripe
       const { data: userRow, error: findError } = await supabase
-        .from('usuarios_atlas')
-        .select('user_id')
-        .eq('stripe_customer_id', customerId)
+        .from("usuarios_atlas")
+        .select("user_id")
+        .eq("stripe_customer_id", customerId)
+        .single()
+
+      if (findError || !userRow) {
+        console.log("Invoice paid sin usuario vinculado (customer:", customerId, ")")
+        return new Response(JSON.stringify({ received: true, note: "No linked user" }), { status: 200 })
+      }
+
+      // La renovación es un RESET mensual: 50 créditos para ULTRA
+      const mutacion = mutacionFacturaPagada()
+      const { error: renewError } = await supabase
+        .from("usuarios_atlas")
+        .update({ ...mutacion, credits_updated_at: new Date().toISOString() })
+        .eq("user_id", userRow.user_id)
+
+      if (renewError) {
+        console.error("Error renovando créditos:", renewError)
+        return new Response(JSON.stringify({ error: "Update failed" }), { status: 500 })
+      }
+      console.log(`🔄 Créditos ULTRA renovados para ${userRow.user_id}`)
+    }
+
+    // ===== CANCELACIÓN / REVOCACIÓN =====
+    if (event.type === "customer.subscription.deleted" ||
+        event.type === "customer.subscription.updated") {
+      const subscription = event.data.object as Stripe.Subscription
+      const customerId = subscription.customer as string
+
+      // Solamente revocar si la suscripción ya no está activa
+      const active = subscription.status === "active" || subscription.status === "trialing"
+      if (event.type === "customer.subscription.updated" && active) {
+        return new Response(JSON.stringify({ received: true, note: "Subscription still active" }), { status: 200 })
+      }
+
+      const { data: userRow, error: findError } = await supabase
+        .from("usuarios_atlas")
+        .select("user_id")
+        .eq("stripe_customer_id", customerId)
         .single()
 
       if (!findError && userRow) {
-        // Revocar plan al cancelar
+        const mutacion = mutacionSuscripcionCancelada()
         const { error: revokeError } = await supabase
-          .from('usuarios_atlas')
-          .update({ is_vip: false, is_ultra: false })
-          .eq('user_id', userRow.user_id)
-        if (revokeError) console.error('Error revocando plan:', revokeError)
+          .from("usuarios_atlas")
+          .update(mutacion)
+          .eq("user_id", userRow.user_id)
+        if (revokeError) console.error("Error revocando plan:", revokeError)
         else console.log(`Plan revocado para ${userRow.user_id}`)
       }
     }

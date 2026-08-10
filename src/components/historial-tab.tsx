@@ -6,7 +6,18 @@
 "use client";
 import type { User } from "@supabase/supabase-js";
 import type { HistorialEntry } from "./HistorialChart";
-import HistorialChart from "./HistorialChart";
+import dynamic from "next/dynamic";
+
+// Lazy-load: chart.js (~200KB) solo se descarga cuando el usuario abre el tab
+// Historial, no en el bundle inicial.
+const HistorialChart = dynamic(() => import("./HistorialChart"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-64 flex items-center justify-center text-gray-500 text-sm animate-pulse">
+      Cargando gráfico…
+    </div>
+  ),
+});
 import { GlowCard } from "./stat-card";
 import LockedFeature from "./LockedFeature";
 import type { Permissions } from "@/hooks/usePermissions";

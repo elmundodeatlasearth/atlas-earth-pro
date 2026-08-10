@@ -4,6 +4,7 @@ import DynamicBackground from "@/components/DynamicBackground";
 import { ToastProvider } from "@/components/toast";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://elmundodeatlasearth.github.io/atlas-earth-pro"),
   title: "Atlas Earth PRO — Calculadora Estratégica Definitiva",
   description:
     "Maximiza tus ganancias en Atlas Earth. Calculadora de rentas, simulador de inversiones, optimizador Explorer Club, análisis de ROI y estrategia con IA.",
@@ -16,12 +17,23 @@ export const metadata: Metadata = {
       "La herramienta más avanzada para maximizar tus ganancias en Atlas Earth.",
     type: "website",
     locale: "es_ES",
+    url: "https://elmundodeatlasearth.github.io/atlas-earth-pro",
+    siteName: "Atlas Earth PRO",
+    images: [
+      {
+        url: "/og-image.svg",
+        width: 1200,
+        height: 630,
+        alt: "Atlas Earth PRO — Calculadora Estratégica",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Atlas Earth PRO",
     description:
       "Calcula rentas, simula inversiones y obtén estrategias con IA.",
+    images: ["/og-image.svg"],
   },
 };
 
@@ -46,7 +58,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#080808" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <link rel="apple-touch-icon" href="/atlas-earth-pro/apple-touch-icon.svg" />
+        <link rel="apple-touch-icon" href="/atlas-earth-pro/apple-touch-icon.png" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <script dangerouslySetInnerHTML={{
           __html: `

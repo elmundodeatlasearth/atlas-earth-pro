@@ -58,7 +58,10 @@ function parseTime(hora: string): number {
   return h * 60 + m;
 }
 
-export function useAtlasCalculations(I: AtlasInputs): AtlasCalculations {
+export function useAtlasCalculations(
+  I: AtlasInputs,
+  tasasOverride?: Record<string, number> | null,
+): AtlasCalculations {
   const {
     pais, moneda, horasBoost, eficiencia, horasSrb,
     parcelasC, parcelasR, parcelasE, parcelasL,
@@ -66,7 +69,10 @@ export function useAtlasCalculations(I: AtlasInputs): AtlasCalculations {
     horaInicio, horaFin, eficienciaAnuncios, meta, metaPeriodo, simExtra,
   } = I;
 
-  const tasa = useMemo(() => obtenerTasaCambio(moneda), [moneda]);
+  const tasa = useMemo(
+    () => (tasasOverride?.[moneda] ?? obtenerTasaCambio(moneda)),
+    [moneda, tasasOverride]
+  );
   const pasaporte = useMemo(() => calcularNivelPasaporte(insignias), [insignias]);
 
   const motor = useMemo(

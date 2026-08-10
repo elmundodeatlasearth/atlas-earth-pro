@@ -58,7 +58,21 @@ export interface AtlasState extends AtlasInputs, AtlasCalculations {
 export function useAtlasState(): AtlasState {
   const I = useAtlasInputs();
   const A = useAtlasAuth();
-  const C = useAtlasCalculations(I);
+  // Tasas de cambio EN VIVO (open.er-api.com) con cache 24h — actualiza el
+  // sidebar y la conversión sin recargar. Fallback: tasas estáticas.
+  const [tasasEnVivo, setTasasEnVivo] = useState<Record<string, number> | null>(null);
+  useEffect(() => {
+    let activo = true;
+    import("@/utils/tasasCambio").then(({ obtenerTasasEnVivo }) =>
+      obtenerTasasEnVivo().then((tasas) => {
+        if (activo) setTasasEnVivo(tasas);
+      })
+    ).catch(() => {
+      if (activo) setTasasEnVivo(null); // fallback estático
+    });
+    return () => { activo = false; };
+  }, []);
+  const C = useAtlasCalculations(I, tasasEnVivo);
   const P = usePermissions(A.isPro, A.isUltra);
 
   // ===== AI State =====

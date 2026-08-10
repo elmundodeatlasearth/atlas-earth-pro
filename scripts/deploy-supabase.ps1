@@ -42,4 +42,5 @@ Write-Host "Configúralas en: Dashboard → Edge Functions → (función) → Se
 Write-Host "  ai-advisor:     SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, MORPH_API_KEY"
 Write-Host "  stripe-webhook: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET"
 Write-Host "  admin-list-users: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY"
-Write-Host "`nRecuerda aplicar las migraciones 001-004 en el SQL Editor antes de probar." -ForegroundColor Yellow
+Write-Host "`nEl directorio _shared/ (pagos.ts) se sube junto con cada función automáticamente."
+Write-Host "`nRecuerda aplicar las migraciones 001-005 en el SQL Editor antes de probar." -ForegroundColor Yellow

@@ -279,12 +279,11 @@ export default function Sidebar(props: SidebarProps) {
           <div className="bg-gradient-to-br from-purple-900/40 to-pink-900/30 rounded-xl p-4 border border-pink-500/20 space-y-2">
             <div className="text-xs font-bold text-pink-300">👑 ULTRA — $9.99/mes</div>
             <ul className="text-[10px] text-gray-400 space-y-1">
-              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">IA Ilimitada</strong> — 50 análisis/mes</li>
-              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Proyecciones</strong> multi-escenario</li>
-              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Alertas</strong> inteligentes de hitos</li>
+              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">IA 50 análisis/mes</strong> (10x más que PRO)</li>
+              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Comparativa multi-país</strong> completa</li>
+              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Optimizador EC detallado</strong></li>
+              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Rentas y ROI</strong> extendidos</li>
               <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Badge</strong> exclusivo 👑 en toda la app</li>
-              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Beta</strong> features con acceso anticipado</li>
-              <li className="flex items-center gap-1.5">✅ <strong className="text-gray-300">Soporte</strong> prioritario</li>
             </ul>
             <a href={process.env.NEXT_PUBLIC_STRIPE_ULTRA_LINK || "#"} target="_blank" rel="noopener noreferrer"
               className="block w-full text-center text-xs font-bold py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white transition-all shadow-md shadow-purple-900/40 hover:scale-[1.02] active:scale-[0.98]">

@@ -4,6 +4,9 @@
 // POST /admin-list-users              → mutaciones {action, user_id, amount?}
 //   action: "add_credits" | "toggle_vip" | "set_ultra" | "remove_ultra"
 // Solo accesible por usuarios con rol "admin" en auth.user_metadata
+//
+// v2: JOIN con auth.users para traer el email real + parseo de perfil_data
+//     (total_parcelas, meta_dolares) — antes la UI mostraba columnas inexistentes.
 
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -45,6 +48,18 @@ async function checkAdminRateLimit(
   }
   entry.count++;
   return entry.count <= ADMIN_RATE_LIMIT;
+}
+
+/** Extrae total_parcelas y meta_dolares del JSONB perfil_data (formato texto) */
+function computarDesdePerfil(perfilData: unknown): { total_parcelas: number; meta_dolares: number } {
+  const p = (perfilData && typeof perfilData === "object" ? perfilData : {}) as Record<string, unknown>;
+  const total =
+    Number(p.total_parcelas ?? 0) ||
+    Number(p.c_comun ?? 0) + Number(p.c_rara ?? 0) + Number(p.c_epica ?? 0) + Number(p.c_legendaria ?? 0);
+  return {
+    total_parcelas: Number.isFinite(total) ? total : 0,
+    meta_dolares: Number.isFinite(Number(p.meta_dolar)) ? Number(p.meta_dolar) : 0,
+  };
 }
 
 serve(async (req) => {
@@ -158,8 +173,44 @@ serve(async (req) => {
       });
     }
 
+    // ===== ENRIQUECER con email (auth.users) + perfil computado =====
+    // auth.users NO es accesible vía PostgREST; usamos la API de Admin de GoTrue
+    const emails = new Map<string, string>();
+    try {
+      const ids = (users || []).map((u: Record<string, unknown>) => String(u.user_id));
+      if (ids.length > 0) {
+        const { data: authUsers, error: auError } = await supabase.auth.admin.listUsers({
+          page: 1,
+          perPage: 1000,
+        });
+        if (!auError && authUsers?.users) {
+          for (const au of authUsers.users) {
+            const found = ids.find(id => id === au.id);
+            if (found) emails.set(found, au.email || "");
+          }
+        }
+      }
+    } catch (e) {
+      console.warn("No se pudo enriquecer emails:", String(e));
+    }
+
+    // Mapear la respuesta a lo que espera la UI (con datos reales)
+    const enriched = (users || []).map((u: Record<string, unknown>) => {
+      const perfil = computarDesdePerfil(u.perfil_data);
+      return {
+        user_id: u.user_id,
+        email: emails.get(String(u.user_id)) || "",
+        is_vip: !!u.is_vip,
+        is_ultra: !!u.is_ultra,
+        ai_credits: u.ai_credits ?? 0,
+        total_parcelas: perfil.total_parcelas,
+        meta_dolares: perfil.meta_dolares,
+        created_at: u.created_at,
+      };
+    });
+
     return new Response(JSON.stringify({
-      users,
+      users: enriched,
       pagination: {
         page,
         limit,
