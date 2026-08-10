@@ -25,7 +25,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob:",
-              "connect-src 'self' https://*.supabase.co https://api.morphllm.com",
+              "connect-src 'self' https://*.supabase.co https://api.morphllm.com https://open.er-api.com",
               "frame-src 'self'",
               "base-uri 'self'",
             ].join("; "),
