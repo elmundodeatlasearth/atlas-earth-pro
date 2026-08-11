@@ -82,3 +82,6 @@ scripts/*.log
 !public/favicon.svg
 _not-found/
 
+
+# Scripts temporales de prueba
+scratch/
