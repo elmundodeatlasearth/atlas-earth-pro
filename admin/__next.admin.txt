@@ -2,4 +2,4 @@
 2:I[39756,["/atlas-earth-pro/_next/static/chunks/2i5-ljbdorxia.js","/atlas-earth-pro/_next/static/chunks/18sotvvmcs59d.js"],"default"]
 3:I[37457,["/atlas-earth-pro/_next/static/chunks/2i5-ljbdorxia.js","/atlas-earth-pro/_next/static/chunks/18sotvvmcs59d.js"],"default"]
 4:[]
-0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"isPartial":false,"staleTime":300,"varyParams":"$W4","buildId":"CgSJ0PrI_Y8yihaFGtmOt"}
+0:{"rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"isPartial":false,"staleTime":300,"varyParams":"$W4","buildId":"zEZVQerKHZAN6MoW7SwxC"}
