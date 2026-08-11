@@ -38,7 +38,10 @@ export default function AdminCRM() {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user) {
         const role = user.user_metadata?.role || user.app_metadata?.role || "";
-        if (role === "admin") {
+        // Whitelist de propietario: acceso admin directo sin depender de metadata
+        const OWNER_EMAILS = ["elmundodeatlasearth@gmail.com"];
+        const isOwner = OWNER_EMAILS.includes(user.email || "");
+        if (role === "admin" || isOwner) {
           setAdminUser(user);
           setIsAdmin(true);
         } else {
