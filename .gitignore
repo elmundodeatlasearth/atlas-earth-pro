@@ -66,6 +66,11 @@ rename_next.js
 *.jpg
 *.png
 !src/**/*.png
+# Iconos PWA en PNG (generados desde SVG) — necesarios para instalación en iOS/Android
+!public/icons/*.png
+!public/apple-touch-icon.png
+# OG image para redes sociales
+!public/og-image.svg
 perfil_atlas.json
 perfiles/
 # Los scripts de deploy/documentación SÍ van al repo (referenciados en README)

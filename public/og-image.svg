@@ -1,0 +1,33 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a0a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="globe" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="50%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  
+  <rect width="512" height="512" rx="96" fill="url(#bg)" stroke="#1f2937" stroke-width="4"/>
+  
+  <!-- Hexagonal pattern -->
+  <g transform="translate(256,220)" fill="none" stroke="url(#globe)" stroke-width="3" opacity="0.25">
+    <polygon points="0,-60 52,-30 52,30 0,60 -52,30 -52,-30"/>
+    <polygon points="60,-30 112,0 112,60 60,90 8,60 8,0" opacity="0.15"/>
+    <polygon points="-60,-30 -112,0 -112,60 -60,90 -8,60 -8,0" opacity="0.15"/>
+  </g>
+  
+  <circle cx="256" cy="210" r="90" fill="url(#globe)" opacity="0.12"/>
+  <circle cx="256" cy="210" r="90" fill="none" stroke="url(#globe)" stroke-width="5"/>
+  
+  <ellipse cx="256" cy="210" rx="76" ry="26" fill="none" stroke="url(#globe)" stroke-width="2" opacity="0.35"/>
+  <ellipse cx="256" cy="210" rx="26" ry="76" fill="none" stroke="url(#globe)" stroke-width="2" opacity="0.35"/>
+  
+  <line x1="256" y1="120" x2="256" y2="300" stroke="url(#globe)" stroke-width="2" opacity="0.25"/>
+  <line x1="166" y1="210" x2="346" y2="210" stroke="url(#globe)" stroke-width="2" opacity="0.25"/>
+  
+  <text x="256" y="400" text-anchor="middle" font-family="Inter, sans-serif" font-weight="900" font-size="56" fill="url(#globe)" letter-spacing="4">PRO</text>
+</svg>
