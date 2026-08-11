@@ -409,6 +409,18 @@ export function useAtlasState(): AtlasState {
             nivel_pasaporte_siguiente: C.nivelSiguientePasaporte,
             insignias_faltantes: C.insigniasFaltantes,
             costo_ab_pasaporte: C.costoAbPasaporte,
+            // Tabla completa de saltos de Tier con costo escalonado real
+            saltos_tier: C.saltosTier.map(s => ({
+              tramo: s.tramo,
+              mult_antes: s.mult_antes,
+              mult_despues: s.mult_despues,
+              faltan_parcelas: s.faltan_parcelas,
+              ab_necesarios: s.ab_necesarios,
+              ab_netos: s.ab_netos,
+              dias_f2p: Math.round(s.dias_f2p),
+              dias_ec: Math.round(s.dias_ec),
+              renta_estimada: s.renta_estimada,
+            })),
             historial_progreso: historialData.slice(-30),
           }),
         }

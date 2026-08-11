@@ -105,6 +105,17 @@ interface PayloadAnalisis {
   nivel_pasaporte_actual: number; nivel_pasaporte_siguiente: number;
   insignias_faltantes: number; costo_ab_pasaporte: number;
   historial_progreso?: Array<{ fecha: string; usd_generado: number; ab_generado: number }>;
+  saltos_tier?: Array<{
+    tramo: number;
+    mult_antes: number;
+    mult_despues: number;
+    faltan_parcelas: number;
+    ab_necesarios: number;
+    ab_netos: number;
+    dias_f2p: number;
+    dias_ec: number;
+    renta_estimada: number;
+  }>;
 }
 
 // ============================================
@@ -181,6 +192,7 @@ function sanitizarPayload(raw: Record<string, unknown>): PayloadAnalisis {
     insignias_faltantes: safeNum(raw.insignias_faltantes),
     costo_ab_pasaporte: safeNum(raw.costo_ab_pasaporte),
     historial_progreso: Array.isArray(raw.historial_progreso) ? raw.historial_progreso : [],
+    saltos_tier: Array.isArray(raw.saltos_tier) ? raw.saltos_tier : [],
   };
 }
 
@@ -231,6 +243,52 @@ function generarAnalisisExperto(p: PayloadAnalisis): string {
   // ===== 2. ESTADO ACTUAL =====
   partes.push(`<h1>${emojiEstado} Veredicto: ${estado}</h1>`);
   partes.push(`<div class="card card-${estado === "COLAPSO" ? "red" : estado === "EXCELENTE" ? "green" : estado === "BUENO" ? "green" : estado === "REGULAR" ? "gold" : "blue"}"><strong>${veredicto}</strong></div>`);
+
+  // ===== 2b. TABLA DE SALTOS DE TIER DETALLADA (costo escalonado real) =====
+  if (p.saltos_tier && p.saltos_tier.length > 0) {
+    partes.push(`<h2>🪜 Escalera de Tiers — Análisis Exacto Hasta tu Meta</h2>`);
+    partes.push(`<div class="card">`);
+    partes.push(`<p class="text-[10px] text-gray-500 mb-2">Costo escalonado real (cada 10 parcelas +100 AB) · AB/día según tu desglose</p>`);
+    partes.push(`<div class="overflow-x-auto"><table class="w-full text-[11px]"><thead><tr class="text-gray-500 border-b border-white/10">`);
+    partes.push(`<th class="text-left py-1 px-1">Tramo</th><th class="text-right py-1 px-1">Mult</th><th class="text-right py-1 px-1">Faltan</th><th class="text-right py-1 px-1">AB costo</th><th class="text-right py-1 px-1">AB netos</th><th class="text-right py-1 px-1">Días F2P</th><th class="text-right py-1 px-1">Días EC</th><th class="text-right py-1 px-1">Renta est.</th></tr></thead><tbody>`);
+    for (const s of p.saltos_tier) {
+      const esUltimo = s.tramo >= (p.parcelas_meta || 0);
+      const saltoMult = s.mult_despues > s.mult_antes ? `<span class="text-green-400">${s.mult_antes}x→${s.mult_despues}x</span>` : `<span class="text-gray-400">${s.mult_antes}x→${s.mult_despues}x</span>`;
+      const diasF2P = s.dias_f2p > 0 ? `${Math.round(s.dias_f2p)}d (${(s.dias_f2p / 30.43).toFixed(1)}m)` : "—";
+      const diasEC = s.dias_ec > 0 ? `${Math.round(s.dias_ec)}d` : "—";
+      partes.push(`<tr class="border-b border-white/5 ${esUltimo ? "bg-green-500/10" : ""}">`);
+      partes.push(`<td class="py-1 px-1 font-bold ${esUltimo ? "text-green-400" : "text-cyan-400"}">${s.tramo}${esUltimo ? " 🎯" : ""}</td>`);
+      partes.push(`<td class="py-1 px-1 text-right">${saltoMult}</td>`);
+      partes.push(`<td class="py-1 px-1 text-right text-gray-300">${s.faltan_parcelas}</td>`);
+      partes.push(`<td class="py-1 px-1 text-right">${s.ab_necesarios.toLocaleString()}</td>`);
+      partes.push(`<td class="py-1 px-1 text-right text-purple-300">${s.ab_netos.toLocaleString()}</td>`);
+      partes.push(`<td class="py-1 px-1 text-right text-green-400">${diasF2P}</td>`);
+      partes.push(`<td class="py-1 px-1 text-right text-amber-400">${diasEC}</td>`);
+      partes.push(`<td class="py-1 px-1 text-right">$${s.renta_estimada.toFixed(5)}/d</td>`);
+      partes.push(`</tr>`);
+    }
+    partes.push(`</tbody></table></div>`);
+
+    // Resumen del análisis de saltos
+    const ultimo = p.saltos_tier[p.saltos_tier.length - 1];
+    if (ultimo) {
+      const totalAB = p.saltos_tier.reduce((acc, s) => acc + s.ab_necesarios, 0);
+      const diasTotalesF2P = p.saltos_tier.reduce((acc, s) => acc + s.dias_f2p, 0);
+      const saltoMejor = p.saltos_tier.reduce((max, s) => (s.mult_despues - s.mult_antes > (max?.mult_despues - max?.mult_antes || 0) ? s : max), p.saltos_tier[0]);
+      partes.push(`<div class="mt-3 p-3 rounded-lg bg-[#0a0a0a] border border-white/5 text-xs space-y-1">`);
+      partes.push(`<p>🧮 <strong>Total AB necesarios hasta la meta:</strong> ${totalAB.toLocaleString()} AB</p>`);
+      partes.push(`<p>⏱️ <strong>Tiempo total estimado F2P:</strong> ${diasTotalesF2P > 0 ? `${Math.round(diasTotalesF2P)} días (${(diasTotalesF2P / 30.43).toFixed(1)} meses)` : "—"}</p>`);
+      if (saltoMejor && saltoMejor.mult_despues > saltoMejor.mult_antes) {
+        const pctMejora = ((saltoMejor.mult_despues - saltoMejor.mult_antes) / saltoMejor.mult_antes) * 100;
+        partes.push(`<p>⚡ <strong>Salto más rentable:</strong> llegar a ${saltoMejor.tramo} parcelas (${saltoMejor.mult_antes}x → ${saltoMejor.mult_despues}x) — mejora tu multiplicador +${pctMejora.toFixed(0)}%.</p>`);
+      } else if (saltoMejor && saltoMejor.mult_despues < saltoMejor.mult_antes) {
+        const pctPerdida = ((saltoMejor.mult_antes - saltoMejor.mult_despues) / saltoMejor.mult_antes) * 100;
+        partes.push(`<p>⚠️ <strong>Salto con menor pérdida de multiplicador:</strong> llegar a ${saltoMejor.tramo} parcelas (${saltoMejor.mult_antes}x → ${saltoMejor.mult_despues}x) — pierdes solo ${pctPerdida.toFixed(0)}% del multiplicador, pero ganas ${saltoMejor.faltan_parcelas} parcelas de renta base.</p>`);
+      }
+      partes.push(`</div>`);
+    }
+    partes.push(`</div>`);
+  }
 
   // ===== 3. MÉTRICAS CLAVE =====
   partes.push(`<h2>📊 Radiografía de tu Cuenta</h2>`);
@@ -296,12 +354,16 @@ function generarAnalisisExperto(p: PayloadAnalisis): string {
     partes.push(`<p>Estás en el Tier de <strong>${p.total_parcelas}</strong>, camino a <strong>${p.siguiente_tramo}</strong>.</p>`);
     partes.push(`<p>Faltan <strong>${p.faltantes_tier} parcelas</strong> (${p.porcentaje_escalera.toFixed(1)}% del camino). Sigue comprando.</p>`);
 
-    // Calcular AB necesarios
+    // Calcular AB necesarios — costo REAL escalonado del primer salto (de saltos_tier)
     if (p.faltantes_tier > 0) {
-      const abNecesarios = p.faltantes_tier * 100;
-      const diasF2P = p.desglose_f2p_ab_dia > 0 ? abNecesarios / p.desglose_f2p_ab_dia : 0;
-      const diasEC = p.desglose_ec_ab_dia > 0 ? abNecesarios / p.desglose_ec_ab_dia : diasF2P;
-      partes.push(`<p>💰 Necesitas ~<strong>${abNecesarios.toLocaleString()} AB</strong> para llegar. `);
+      const primerSalto = p.saltos_tier && p.saltos_tier.length > 0 ? p.saltos_tier[0] : null;
+      const abNecesarios = primerSalto ? primerSalto.ab_necesarios : p.faltantes_tier * 100;
+      const abNetos = primerSalto ? primerSalto.ab_netos : abNecesarios;
+      const diasF2P = primerSalto ? primerSalto.dias_f2p : (p.desglose_f2p_ab_dia > 0 ? abNecesarios / p.desglose_f2p_ab_dia : 0);
+      const diasEC = primerSalto ? primerSalto.dias_ec : (p.desglose_ec_ab_dia > 0 ? abNecesarios / p.desglose_ec_ab_dia : diasF2P);
+      const multSalto = primerSalto ? `${primerSalto.mult_antes}x → ${primerSalto.mult_despues}x` : "";
+      partes.push(`<p>💰 Necesitas ~<strong>${abNecesarios.toLocaleString()} AB</strong> (netos ${abNetos.toLocaleString()} AB descontando ahorrados) para llegar. `);
+      if (multSalto) partes.push(`📈 Multiplicador: <strong>${multSalto}</strong>. `);
       partes.push(`⏱️ ~<strong>${diasF2P.toFixed(0)} días F2P</strong>`);
       if (p.tipo_pase === "Ninguno (F2P)") {
         partes.push(` (${diasF2P > 0 ? `≈${(diasF2P / 30).toFixed(1)} meses` : "N/A"}). Considera Explorer Club para acelerar ×2.</p>`);
@@ -587,6 +649,10 @@ ESTRATEGIA COMPUTADA:
 - ${payload.colapso_tier ? "🚨 ZONA DE COLAPSO ACTIVA" : "Tier estable"}
 - ${payload.nivel_pasaporte_actual < 5 ? `Pasaporte: faltan ${payload.insignias_faltantes} insignias` : "Pasaporte Máximo"}
 ${payload.ec_optimo_dia_inicio > 0 ? `- EC Óptimo: Día ${payload.ec_optimo_dia_inicio} (+${payload.ec_optimo_ab_netos.toLocaleString()} AB netos)` : ""}
+${payload.saltos_tier && payload.saltos_tier.length > 0 ? `
+TABLA DE SALTOS DE TIER (costo escalonado real, cada 10 parcelas +100 AB):
+${payload.saltos_tier.map(s => `- ${s.tramo} parcelas: mult ${s.mult_antes}x→${s.mult_despues}x | faltan ${s.faltan_parcelas} | ${s.ab_necesarios.toLocaleString()} AB (netos ${s.ab_netos.toLocaleString()}) | ${Math.round(s.dias_f2p)} días F2P / ${Math.round(s.dias_ec)} días EC | renta est $${s.renta_estimada.toFixed(5)}/día`).join("\n")}
+` : ""}
 
 INSTRUCCIONES ESTRICTAS (SIGUE AL PIE DE LA LETRA):
 1. Eres el mayor experto mundial en Atlas Earth — conoces Tiers, composición, pasaportes, EC, ROI
@@ -600,7 +666,8 @@ INSTRUCCIONES ESTRICTAS (SIGUE AL PIE DE LA LETRA):
    Párrafo 4: FRASE MOTIVACIONAL ULTRA agresiva y corta (máximo 10 palabras)
 6. Si está en colapso de Tier, el tono debe ser DRAMÁTICO con mayúsculas
 7. NO repitas los datos que ya te pasé
-8. Máximo 4 párrafos cortos`;
+8. Máximo 4 párrafos cortos
+9. SIEMPRE menciona el costo REAL en AB del siguiente salto (de la tabla) y cuántos días le tomará con su AB/día actual`;
 
         const morphResponse = await fetch("https://api.morphllm.com/v1/chat/completions", {
           method: 'POST',

@@ -253,6 +253,149 @@ export class MotorAtlasEarth {
 }
 
 // ---------------------------------------------------------------------------
+// COSTO ESCALONADO DE PARCELAS — Atlas Earth real
+// ---------------------------------------------------------------------------
+// El precio de cada parcela sube 100 AB cada 10 parcelas:
+//   parcelas 0-9  → 100 AB cada una
+//   parcelas 10-19 → 200 AB
+//   parcelas 20-29 → 300 AB
+//   ...
+// Fórmula: costo_parcela(n) = 100 × (⌊n/10⌋ + 1)   (n = número ordinal, 1-based)
+export const AB_INICIAL_PARCELA = 100;
+export const INCREMENTO_AB_CADA = 10;
+
+/** Costo en AB de la parcela número `n` (1-based: la primera cuesta 100 AB). */
+export function costoParcela(n: number): number {
+  if (n <= 0) return 0;
+  return AB_INICIAL_PARCELA * (Math.floor((n - 1) / INCREMENTO_AB_CADA) + 1);
+}
+
+/**
+ * Costo TOTAL en AB para pasar de `parcelasActuales` a `parcelasObjetivo`
+ * (excluye las ya compradas; suma el costo de las parcelas nuevas).
+ * Cada 10 parcelas el precio unitario sube 100 AB.
+ */
+export function costoTramoParcelas(parcelasActuales: number, parcelasObjetivo: number): number {
+  if (parcelasObjetivo <= parcelasActuales) return 0;
+  let total = 0;
+  for (let n = parcelasActuales + 1; n <= parcelasObjetivo; n++) {
+    total += costoParcela(n);
+  }
+  return total;
+}
+
+/** Costo restante real para la meta, descontando AB ahorrados. */
+export function costoMetaAbReal(
+  parcelasActuales: number,
+  parcelasObjetivo: number,
+  abAhorrados: number,
+): number {
+  return Math.max(0, costoTramoParcelas(parcelasActuales, parcelasObjetivo) - abAhorrados);
+}
+
+// ---------------------------------------------------------------------------
+// TABLA DE SALTOS DE TIER — análisis detallado hasta la meta
+// ---------------------------------------------------------------------------
+export interface SaltoTier {
+  /** Límite de parcelas del salto (el tramo al que se llega) */
+  tramo: number;
+  /** Multiplicador ANTES del salto (el actual del tramo previo) */
+  mult_antes: number;
+  /** Multiplicador DESPUÉS del salto */
+  mult_despues: number;
+  /** Parcelas que faltan desde la posición actual */
+  faltan_parcelas: number;
+  /** AB necesarios (costo escalonado real) para llegar */
+  ab_necesarios: number;
+  /** AB necesarios netos (descontando ahorrados) */
+  ab_netos: number;
+  /** Días F2P con el AB/día actual */
+  dias_f2p: number;
+  /** Días con Explorer Club */
+  dias_ec: number;
+  /** Incremento de renta estimado al saltar */
+  renta_estimada: number;
+}
+
+/**
+ * Genera TODOS los saltos de Tier desde la posición actual hasta la meta,
+ * con el costo escalonado real y los días estimados por AB/día.
+ */
+export function generarSaltosTier(
+  parcelasActuales: number,
+  pais: string,
+  tiers: TiersDict,
+  abAhorrados: number,
+  abDiaF2p: number,
+  abDiaEc: number,
+  horasBoost: number,
+  eficiencia: number,
+  horasSrb: number,
+  pasaporte: number,
+  rentaBaseSec: number,
+  parcelasObjetivo: number,
+): SaltoTier[] {
+  const tabla = tiers[pais] || tiers["Estados Unidos"];
+  const limites = tabla.limites;
+  const muls = tabla.multiplicadores;
+
+  const saltos: SaltoTier[] = [];
+  let prevMult = muls[0];
+
+  // Multiplicador actual
+  for (let i = 0; i < limites.length; i++) {
+    if (parcelasActuales <= limites[i]) { prevMult = muls[i]; break; }
+    prevMult = muls[i];
+  }
+
+  // Recorrer límites por encima del actual
+  let parcelasPrevias = parcelasActuales;
+
+  for (let i = 0; i < limites.length; i++) {
+    const limite = limites[i];
+    if (limite <= parcelasActuales) continue;
+    if (parcelasObjetivo > 0 && limite > parcelasObjetivo) break;
+
+    const mult_antes = prevMult;
+    const mult_despues = muls[Math.min(i, muls.length - 1)] ?? prevMult;
+    const faltan_parcelas = limite - parcelasActuales;
+    const ab_tramo = costoTramoParcelas(parcelasPrevias, limite);
+    const ab_netos = Math.max(0, ab_tramo - abAhorrados);
+    const dias_f2p = abDiaF2p > 0 ? ab_netos / abDiaF2p : 0;
+    const dias_ec = abDiaEc > 0 ? ab_netos / abDiaEc : dias_f2p;
+
+    // Renta estimada con la composición actual promedio
+    const baseRent = rentaBaseSec * limite;
+    const horasMes = 720;
+    const horasNormales = horasMes - horasSrb;
+    const pctBoost = horasBoost / 24;
+    const horasConBoost = horasNormales * pctBoost * (eficiencia / 100);
+    const horasSinBoost = horasNormales - horasConBoost;
+    const ingSrb = baseRent * 3600 * horasSrb * 50;
+    const ingBoost = baseRent * 3600 * horasConBoost * mult_despues;
+    const ingSin = baseRent * 3600 * horasSinBoost * 1;
+    const rentaEstimada = ((ingSrb + ingBoost + ingSin) * (1 + pasaporte * 0.05)) / 30;
+
+    saltos.push({
+      tramo: limite,
+      mult_antes,
+      mult_despues,
+      faltan_parcelas,
+      ab_necesarios: ab_tramo,
+      ab_netos,
+      dias_f2p,
+      dias_ec,
+      renta_estimada: rentaEstimada,
+    });
+
+    prevMult = mult_despues;
+    parcelasPrevias = limite;
+  }
+
+  return saltos;
+}
+
+// ---------------------------------------------------------------------------
 // CALENDARIO DE ATLAS EARTH
 // ---------------------------------------------------------------------------
 export function generarCalendarioAE(): { f2p: number[]; ec: number[] } {

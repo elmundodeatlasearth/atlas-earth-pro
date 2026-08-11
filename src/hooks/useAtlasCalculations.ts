@@ -12,6 +12,9 @@ import {
   AB_POR_ANUNCIO,
   AB_POR_ANUNCIO_DEFAULT,
   NIVELES_INSIGNIAS,
+  costoMetaAbReal,
+  generarSaltosTier,
+  type SaltoTier,
   type OptimizadorECResult,
   type DesgloseMensual,
 } from "@/utils/atlasMath";
@@ -51,6 +54,8 @@ export interface AtlasCalculations {
   costoAbPasaporte: number; aumentoPasaporte: number;
   parcelasEq: number; aumentoParcelas: number; colapso: boolean;
   veredictoEstrategia: string;
+  /** Tabla de todos los saltos de Tier hasta la meta (costo real escalonado) */
+  saltosTier: SaltoTier[];
 }
 
 function parseTime(hora: string): number {
@@ -101,7 +106,8 @@ export function useAtlasCalculations(
     [motor, metaUsdDia, pais, horasSrb]
   );
   const faltantesMeta = Math.max(0, parcelasMeta - motor.total_parcelas);
-  const costoMetaAb = Math.max(0, faltantesMeta * 100 - abAhorrados);
+  // Costo REAL escalonado: cada 10 parcelas el precio sube 100 AB
+  const costoMetaAb = costoMetaAbReal(motor.total_parcelas, parcelasMeta, abAhorrados);
   const costoTiendaUsd = (costoMetaAb / 2400) * 99.99;
 
   // === CÁLCULO DE MAX ANUNCIOS (ventana de horas activas) ===
@@ -166,9 +172,31 @@ export function useAtlasCalculations(
   const tiempoFree = motor.formato_tiempo(costoMetaAb, abPorDia);
   const tiempoEc = motor.formato_tiempo(costoMetaAb, abEcDiarios);
 
+  // === TABLA DE SALTOS DE TIER (todos hasta la meta) ===
+  const saltosTier = useMemo(
+    () => generarSaltosTier(
+      motor.total_parcelas,
+      pais,
+      TIERS,
+      abAhorrados,
+      abPorDia,
+      abEcDiarios,
+      horasBoost,
+      eficiencia,
+      horasSrb,
+      pasaporte,
+      motor.renta_promedio_sec,
+      parcelasMeta,
+    ),
+    [motor, pais, abAhorrados, abPorDia, abEcDiarios, horasBoost, eficiencia, horasSrb, pasaporte, parcelasMeta]
+  );
+
   const balanceAlcanza = Math.floor(abAhorrados / 100);
-  const faltanNetosAb = Math.max(0, faltantesTier * 100 - abAhorrados);
-  const porcentajeEsc = faltantesTier > 0 ? Math.min(100, (abAhorrados / (faltantesTier * 100)) * 100) : 100;
+  // Costo REAL escalonado del siguiente salto (fallback: faltantes*100)
+  const primerSalto = saltosTier && saltosTier.length > 0 ? saltosTier[0] : null;
+  const abMetaTier = primerSalto ? primerSalto.ab_necesarios : faltantesTier * 100;
+  const faltanNetosAb = Math.max(0, abMetaTier - abAhorrados);
+  const porcentajeEsc = abMetaTier > 0 ? Math.min(100, (abAhorrados / abMetaTier) * 100) : 100;
 
   // ROI
   const rentaAdicional = metaRenta - rentaDia;
@@ -227,5 +255,6 @@ export function useAtlasCalculations(
     nivelActualPasaporte, nivelSiguientePasaporte,
     insigniasRequeridas, insigniasFaltantes, costoAbPasaporte, aumentoPasaporte,
     parcelasEq, aumentoParcelas, colapso, veredictoEstrategia,
+    saltosTier,
   };
 }

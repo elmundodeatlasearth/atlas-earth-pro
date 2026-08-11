@@ -38,7 +38,7 @@ export const CAMPOS_STRING_IA = [
 export const CAMPOS_BOOL_IA = ["colapso_tier"] as const;
 
 /** Campos opcionales (arrays/objetos) */
-export const CAMPOS_OPCIONALES_IA = ["historial_progreso"] as const;
+export const CAMPOS_OPCIONALES_IA = ["historial_progreso", "saltos_tier"] as const;
 
 /** Todos los campos del contrato */
 export const TODOS_CAMPOS_IA = [

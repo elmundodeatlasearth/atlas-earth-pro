@@ -43,6 +43,18 @@ function payloadEjemplo(): Record<string, unknown> {
     nivel_pasaporte_actual: 3, nivel_pasaporte_siguiente: 4,
     insignias_faltantes: 7, costo_ab_pasaporte: 2000,
     historial_progreso: [{ fecha: "2026-08-01", usd_generado: 0.05, ab_generado: 150 }],
+    saltos_tier: [
+      {
+        tramo: 220, mult_antes: 16, mult_despues: 15,
+        faltan_parcelas: 70, ab_necesarios: 37500, ab_netos: 37000,
+        dias_f2p: 234, dias_ec: 142, renta_estimada: 0.058,
+      },
+      {
+        tramo: 290, mult_antes: 15, mult_despues: 14,
+        faltan_parcelas: 140, ab_necesarios: 91500, ab_netos: 91000,
+        dias_f2p: 572, dias_ec: 350, renta_estimada: 0.066,
+      },
+    ],
   };
 }
 
