@@ -102,8 +102,8 @@ export function useAtlasCalculations(
   }, [meta, metaPeriodo]);
 
   const { p_test: parcelasMeta, renta_test: metaRenta } = useMemo(
-    () => motor.calcular_meta_automatica(metaUsdDia, pais, TIERS, horasSrb),
-    [motor, metaUsdDia, pais, horasSrb]
+    () => motor.calcular_meta_automatica(metaUsdDia, pais, TIERS, 0),
+    [motor, metaUsdDia, pais]
   );
   const faltantesMeta = Math.max(0, parcelasMeta - motor.total_parcelas);
   // Costo REAL escalonado: cada 10 parcelas el precio sube 100 AB
