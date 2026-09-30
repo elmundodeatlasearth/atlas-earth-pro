@@ -213,7 +213,13 @@ export class MotorAtlasEarth {
 
   calcular_renta_generica(num_parcelas: number, pais: string, tiers_dict: TiersDict, horas_srb_mes = 0): number {
     const boost_tier = this._get_tier_mult(num_parcelas, pais, tiers_dict);
-    const base_rent = num_parcelas * this.renta_promedio_sec;
+    let base_rent = this.renta_base;
+    if (num_parcelas > this.total_parcelas) {
+      const parcelas_nuevas = num_parcelas - this.total_parcelas;
+      base_rent += parcelas_nuevas * 0.00000000158;
+    } else if (num_parcelas < this.total_parcelas) {
+      base_rent = num_parcelas * this.renta_promedio_sec;
+    }
     if (horas_srb_mes === 0) {
       const horas_con_boost = this.horas_boost * this.eficiencia;
       const horas_sin_boost = Math.max(0, 24 - horas_con_boost);
