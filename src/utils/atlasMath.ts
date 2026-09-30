@@ -264,14 +264,19 @@ export class MotorAtlasEarth {
     let low = this.total_parcelas;
     let high = 500000;
 
-    if (this.calcular_renta_generica(low, pais, tiers_dict, horas_srb_mes) >= meta_usd_dia) {
-      return { p_test: low, renta_test: this.calcular_renta_generica(low, pais, tiers_dict, horas_srb_mes) };
+    const get_renta_dia = (p: number) => {
+      const r = this.calcular_renta_generica(p, pais, tiers_dict, horas_srb_mes);
+      return horas_srb_mes > 0 ? r / (365/12) : r;
+    };
+
+    if (get_renta_dia(low) >= meta_usd_dia) {
+      return { p_test: low, renta_test: get_renta_dia(low) };
     }
 
     let ans = high;
     while (low <= high) {
       const mid = Math.floor((low + high) / 2);
-      const renta_mid = this.calcular_renta_generica(mid, pais, tiers_dict, horas_srb_mes);
+      const renta_mid = get_renta_dia(mid);
       if (renta_mid >= meta_usd_dia) {
         ans = mid;
         high = mid - 1;
@@ -279,8 +284,7 @@ export class MotorAtlasEarth {
         low = mid + 1;
       }
     }
-    const renta_test = this.calcular_renta_generica(ans, pais, tiers_dict, horas_srb_mes);
-    return { p_test: ans, renta_test };
+    return { p_test: ans, renta_test: get_renta_dia(ans) };
   }
 
   formato_tiempo_exacto(dias_totales: number): string {
