@@ -25,7 +25,6 @@ interface SimuladorTabProps {
   parcelasEq: number;
   aumentoParcelas: number;
   aumentoPasaporte: number;
-  optData: { mes1: VentanaEC; mes2: VentanaEC; mes3: VentanaEC; optimo: VentanaEC };
   roiGlobalDias: number;
   roiMarginalDias: number;
   rentaAdicional: number;
@@ -155,22 +154,6 @@ export default function SimuladorTab(props: SimuladorTabProps) {
           <div className="text-sm text-gray-400">Ya tienes Pasaporte Nivel 5 (Máximo). Concéntrate en saltos de Tier.</div>
         )}
       </GlowCard>
-
-      {/* Explorer Club Optimizer */}
-      <GlowCard>
-        <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">📆 Optimizador Explorer Club</div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-          <MetricBox label="Mes 1 (Día 1-30)" value={`${props.optData.mes1.neto_ab.toLocaleString()} AB`} color="text-gray-400" />
-          <MetricBox label="Mes 2 (Día 31-60)" value={`${props.optData.mes2.neto_ab.toLocaleString()} AB`} color="text-gray-400" />
-          <MetricBox label="Mes 3 (Día 61-90)" value={`${props.optData.mes3.neto_ab.toLocaleString()} AB`} color="text-gray-400" />
-          <MetricBox label={`🌟 Óptimo (Día ${props.optData.optimo.dia_inicio})`} value={`${props.optData.optimo.neto_ab.toLocaleString()} AB`} color="text-amber-400" />
-        </div>
-        <div className="p-4 bg-gradient-to-br from-blue-900/20 to-indigo-900/10 border border-blue-500/20 rounded-xl text-sm text-gray-300">
-          🧠 <strong>Recomendación:</strong> Compra Explorer Club el <strong className="text-amber-400">Día {props.optData.optimo.dia_inicio}</strong> ({props.optData.optimo.fecha_compra}).<br />
-          Capturarás <strong className="text-green-400">{props.optData.optimo.ab_pase.toLocaleString()} AB totales</strong> vs {props.optData.optimo.ab_gratis.toLocaleString()} AB gratis = <strong className="text-amber-400">+{props.optData.optimo.neto_ab.toLocaleString()} AB netos</strong> 🚀
-        </div>
-      </GlowCard>
-
       {/* ROI Analysis */}
       <GlowCard>
         <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">📈 Análisis de ROI</div>
