@@ -101,3 +101,21 @@ describe("computePermissions — plan PRO+ULTRA (combo)", () => {
     expect(p.aiCreditsPerMonth).toBe(50); // ULTRA manda
   });
 });
+
+describe("computePermissions — rol ADMIN", () => {
+  const p = computePermissions(false, false, true);
+
+  it("tiene acceso total a PRO y ULTRA", () => {
+    expect(p.canViewRentDaily).toBe(true);
+    expect(p.canViewFullRent).toBe(true);
+    expect(p.canUseSimulator).toBe(true);
+    expect(p.canViewFullAudit).toBe(true);
+    expect(p.canCompareTiers).toBe(true);
+    expect(p.canMultiCountry).toBe(true);
+    expect(p.canUseECOptimizerUltra).toBe(true);
+    expect(p.canMultiCountryUltra).toBe(true);
+    expect(p.canCloudProfiles).toBe(true);
+    expect(p.canUseAI).toBe(true);
+    expect(p.aiCreditsPerMonth).toBe(999);
+  });
+});

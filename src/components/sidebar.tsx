@@ -34,10 +34,11 @@ interface SidebarProps {
   authEmail: string; setAuthEmail: (v: string) => void;
   authPass: string; setAuthPass: (v: string) => void;
   authLoading: boolean; authMsg: string;
-  isPro: boolean; isUltra: boolean; aiCredits: number;
+  isPro: boolean; isUltra: boolean; isAdmin?: boolean; aiCredits: number;
   permissions: Permissions;
   handleAuth: (mode: "login" | "signup") => Promise<void>;
   handleLogout: () => Promise<void>;
+  activarAdminLocal?: () => void;
 
   // Profiles
   profileName: string; setProfileName: (v: string) => void;
@@ -101,10 +102,26 @@ export default function Sidebar(props: SidebarProps) {
           user={props.user}
           authEmail={props.authEmail} authPass={props.authPass}
           authLoading={props.authLoading} authMsg={props.authMsg}
-          isPro={props.isPro} isUltra={props.isUltra} aiCredits={props.aiCredits}
+          isPro={props.isPro} isUltra={props.isUltra} isAdmin={props.isAdmin} aiCredits={props.aiCredits}
           setAuthEmail={props.setAuthEmail} setAuthPass={props.setAuthPass}
           handleAuth={props.handleAuth} handleLogout={props.handleLogout}
+          activarAdminLocal={props.activarAdminLocal}
         />
+
+        {props.isAdmin && (
+          <div className="mt-3 p-2.5 bg-gradient-to-r from-red-950/60 to-purple-950/60 border border-red-500/30 rounded-xl space-y-1.5 animate-fade-in">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="font-bold text-red-300 flex items-center gap-1">🛡️ Admin Activo</span>
+              <span className="text-[9px] bg-red-500/20 text-red-300 px-1.5 py-0.5 rounded border border-red-500/30">Owner</span>
+            </div>
+            <a
+              href="./admin"
+              className="block w-full text-center py-1.5 text-xs font-bold bg-red-600 hover:bg-red-500 text-white rounded-lg transition-all shadow-sm shadow-red-900/40"
+            >
+              ⚙️ Abrir Panel CRM Admin →
+            </a>
+          </div>
+        )}
       </div>
 
       <div className="px-5 py-4 space-y-5 flex-1">

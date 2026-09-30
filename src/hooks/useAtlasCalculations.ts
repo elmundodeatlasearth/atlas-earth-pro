@@ -86,10 +86,10 @@ export function useAtlasCalculations(
   );
 
   const multTier = useMemo(() => motor._get_tier_mult(motor.total_parcelas, pais, TIERS), [motor, pais]);
-  const rentaDia = useMemo(() => motor.calcular_renta(multTier, horasSrb), [motor, multTier, horasSrb]);
+  const rentaDia = useMemo(() => motor.calcular_renta_diaria_normal(multTier), [motor, multTier]);
   const rentaSem = rentaDia * 7;
-  const rentaMes = rentaDia * 30;
-  const rentaAnio = rentaDia * 365;
+  const rentaMes = useMemo(() => motor.calcular_renta_mensual(multTier, horasSrb), [motor, multTier, horasSrb]);
+  const rentaAnio = rentaMes * 12;
 
   const { tramo_actual, siguiente_tramo, faltantes: faltantesTier } = useMemo(
     () => motor.calcular_escalera(pais, TIERS), [motor, pais]
@@ -159,10 +159,10 @@ export function useAtlasCalculations(
     ),
     [parcelasC, parcelasR, parcelasE, parcelasL, simExtra, pasaporte, horasBoost, eficiencia]
   );
-  const simDia = simMotor.calcular_renta(simMult, horasSrb);
+  const simDia = simMotor.calcular_renta_diaria_normal(simMult);
   const simSem = simDia * 7;
-  const simMes = simDia * 30;
-  const simAnio = simDia * 365;
+  const simMes = simMotor.calcular_renta_mensual(simMult, horasSrb);
+  const simAnio = simMes * 12;
 
   const optData = useMemo(() => optimizadorExplorerClub(diaAsistencia), [diaAsistencia]);
 

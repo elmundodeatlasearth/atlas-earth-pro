@@ -89,9 +89,11 @@ serve(async (req) => {
       });
     }
 
-    // Verificar rol admin
+    // Verificar rol admin o whitelist de propietario
+    const OWNER_EMAILS = ["elmundodeatlasearth@gmail.com"];
+    const isOwner = OWNER_EMAILS.includes((user.email || "").toLowerCase().trim());
     const role = user.user_metadata?.role || user.app_metadata?.role || "";
-    if (role !== "admin") {
+    if (role !== "admin" && !isOwner) {
       return new Response(JSON.stringify({ error: 'No tienes permisos de administrador' }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403,
       });

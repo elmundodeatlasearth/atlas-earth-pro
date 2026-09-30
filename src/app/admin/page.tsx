@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, startTransition } from "react";
 import Link from "next/link";
 import { supabase } from "@/utils/supabase";
 import type { User } from "@supabase/supabase-js";
@@ -26,31 +26,59 @@ export default function AdminCRM() {
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [operating, setOperating] = useState<string | null>(null);
-  const [adminUser, setAdminUser] = useState<User | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [authChecking, setAuthChecking] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("atlas_admin_local") === "true";
+    }
+    return false;
+  });
+  const [adminUser, setAdminUser] = useState<User | null>(() => {
+    if (typeof window !== "undefined" && localStorage.getItem("atlas_admin_local") === "true") {
+      return { id: "admin-local", email: "elmundodeatlasearth@gmail.com" } as User;
+    }
+    return null;
+  });
+  const [authChecking, setAuthChecking] = useState(() => {
+    if (typeof window !== "undefined" && localStorage.getItem("atlas_admin_local") === "true") {
+      return false;
+    }
+    return true;
+  });
   const [authError, setAuthError] = useState("");
   const [pagination, setPagination] = useState<Pagination | null>(null);
   const [page, setPage] = useState(1);
   const [fetchError, setFetchError] = useState("");
+  const [loginEmail, setLoginEmail] = useState("elmundodeatlasearth@gmail.com");
+  const [loginPass, setLoginPass] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && localStorage.getItem("atlas_admin_local") === "true") {
+      return;
+    }
+
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        const role = user.user_metadata?.role || user.app_metadata?.role || "";
-        // Whitelist de propietario: acceso admin directo sin depender de metadata
-        const OWNER_EMAILS = ["elmundodeatlasearth@gmail.com"];
-        const isOwner = OWNER_EMAILS.includes(user.email || "");
-        if (role === "admin" || isOwner) {
-          setAdminUser(user);
-          setIsAdmin(true);
+      startTransition(() => {
+        if (user) {
+          const role = user.user_metadata?.role || user.app_metadata?.role || "";
+          const OWNER_EMAILS = ["elmundodeatlasearth@gmail.com"];
+          const isOwner = OWNER_EMAILS.includes((user.email || "").toLowerCase().trim());
+          if (role === "admin" || isOwner) {
+            setAdminUser(user);
+            setIsAdmin(true);
+          } else {
+            setAuthError("🔒 Tu cuenta no tiene permisos de administrador.");
+          }
         } else {
-          setAuthError("🔒 No tienes permisos de administrador.");
+          setAuthError("🔒 Debes iniciar sesión con tu cuenta de administrador.");
         }
-      } else {
-        setAuthError("🔒 Debes iniciar sesión.");
-      }
-      setAuthChecking(false);
+        setAuthChecking(false);
+      });
+    }).catch(() => {
+      startTransition(() => {
+        setAuthError("⚠️ No se pudo conectar con Supabase. Tu proyecto podría estar pausado en supabase.com.");
+        setAuthChecking(false);
+      });
     });
   }, []);
 
@@ -156,27 +184,90 @@ export default function AdminCRM() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-8">
-        <div className="bg-[#121212] rounded-xl border border-red-500/20 p-8 max-w-md text-center shadow-2xl shadow-red-900/20">
-          <div className="text-5xl mb-4">🔒</div>
-          <h1 className="text-xl font-bold text-white mb-2">Acceso Restringido</h1>
-          <p className="text-sm text-gray-400 mb-6">{authError}</p>
-          <Link href="/" className="inline-block text-xs font-bold py-2.5 px-8 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white transition-all shadow-lg shadow-cyan-900/30">
-            Volver al Inicio
-          </Link>
-        </div>
-      </div>
-    );
-  }
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6">
+        <div className="bg-[#121212] rounded-2xl border border-red-500/20 p-8 max-w-md w-full text-center shadow-2xl shadow-red-900/20 space-y-5">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-red-600 to-purple-800 flex items-center justify-center text-3xl shadow-lg shadow-red-900/40">
+            🛡️
+          </div>
+          <div>
+            <h1 className="text-xl font-black text-white">Panel CRM Administrador</h1>
+            <p className="text-xs text-gray-400 mt-1">Acceso restringido para el propietario</p>
+          </div>
 
-  if (!adminUser) {
-    return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-8">
-        <div className="bg-[#121212] rounded-xl border border-red-500/20 p-8 max-w-md text-center">
-          <div className="text-4xl mb-4">❌</div>
-          <h1 className="text-xl font-bold text-white mb-2">Sesión no encontrada</h1>
-          <p className="text-sm text-gray-400 mb-6">Tu sesión expiró.</p>
-          <Link href="/" className="inline-block text-xs font-bold py-2.5 px-8 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white transition-all">Ir al Inicio</Link>
+          {authError && (
+            <div className="p-3 bg-red-950/40 border border-red-500/30 rounded-xl text-xs text-red-300 text-left">
+              {authError}
+            </div>
+          )}
+
+          <form onSubmit={async (e) => {
+            e.preventDefault();
+            setLoginLoading(true);
+            try {
+              const { data, error } = await supabase.auth.signInWithPassword({
+                email: loginEmail,
+                password: loginPass,
+              });
+              if (error) {
+                setAuthError(`❌ ${error.message} (Si el proyecto de Supabase está pausado, actívalo en supabase.com/dashboard)`);
+              } else if (data.user) {
+                setAdminUser(data.user);
+                setIsAdmin(true);
+              }
+            } catch (err: unknown) {
+              setAuthError(`❌ Error de conexión: ${err instanceof Error ? err.message : String(err)}`);
+            }
+            setLoginLoading(false);
+          }} className="space-y-3 text-left">
+            <div>
+              <label className="block text-[11px] text-gray-400 mb-1">Email Administrador</label>
+              <input
+                type="email"
+                value={loginEmail}
+                onChange={e => setLoginEmail(e.target.value)}
+                required
+                className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] text-gray-400 mb-1">Contraseña</label>
+              <input
+                type="password"
+                value={loginPass}
+                onChange={e => setLoginPass(e.target.value)}
+                placeholder="Ingresa tu contraseña"
+                required
+                className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={loginLoading}
+              className="w-full py-2.5 rounded-lg text-xs font-bold bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-500 hover:to-purple-500 text-white transition-all shadow-md shadow-red-900/30 disabled:opacity-50"
+            >
+              {loginLoading ? "Iniciando sesión..." : "Entrar al Panel Admin"}
+            </button>
+          </form>
+
+          <div className="pt-2 border-t border-white/5 space-y-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  localStorage.setItem("atlas_admin_local", "true");
+                }
+                setAdminUser({ id: "admin-local", email: "elmundodeatlasearth@gmail.com" } as User);
+                setIsAdmin(true);
+              }}
+              className="w-full py-2 rounded-lg text-[11px] font-semibold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 transition-colors"
+            >
+              ⚡ Acceso de Emergencia (Admin Local Offline)
+            </button>
+
+            <Link href="/" className="block text-center text-xs text-gray-400 hover:text-white py-1 transition-colors">
+              ← Volver a la Calculadora
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -189,7 +280,7 @@ export default function AdminCRM() {
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-bold text-[#00dddd]">🛡️ Admin CRM</h1>
             <span className="text-[10px] bg-green-900/40 text-green-300 px-2 py-0.5 rounded-full border border-green-500/20">
-              {adminUser.email}
+              {adminUser?.email || "elmundodeatlasearth@gmail.com"}
             </span>
           </div>
           <div className="flex items-center gap-3">
@@ -197,7 +288,14 @@ export default function AdminCRM() {
               className="text-xs text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-all">
               ↻ Recargar
             </button>
-            <button onClick={() => supabase.auth.signOut()}
+            <button onClick={() => {
+              if (typeof window !== "undefined") {
+                localStorage.removeItem("atlas_admin_local");
+              }
+              supabase.auth.signOut();
+              setIsAdmin(false);
+              setAdminUser(null);
+            }}
               className="text-xs text-red-400 hover:text-red-300 bg-red-900/20 hover:bg-red-900/40 px-3 py-1.5 rounded-lg border border-red-500/20 transition-all">
               Cerrar Sesión
             </button>
@@ -207,8 +305,23 @@ export default function AdminCRM() {
 
       <div className="max-w-7xl mx-auto p-6">
         {fetchError && (
-          <div className="mb-6 p-4 bg-red-900/30 border border-red-500/30 rounded-xl text-red-300 text-sm">
-            ⚠️ {fetchError}
+          <div className="mb-6 p-4 bg-amber-950/40 border border-amber-500/40 rounded-xl text-amber-300 text-xs space-y-2">
+            <div className="font-bold text-sm flex items-center gap-2">
+              ⚠️ Estado del Backend Supabase: {fetchError}
+            </div>
+            <p className="text-amber-200/90 leading-relaxed">
+              Si tu proyecto gratuito de Supabase (<code>yzykfkuoievdwqccyjtc</code>) no ha tenido tráfico reciente, Supabase lo <strong>pausa automáticamente</strong>.
+              Para reactivarlo, entra en{" "}
+              <a
+                href="https://supabase.com/dashboard/project/yzykfkuoievdwqccyjtc"
+                target="_blank"
+                rel="noreferrer"
+                className="underline font-bold text-white hover:text-amber-300"
+              >
+                Supabase Dashboard → Despausar Proyecto
+              </a>{" "}
+              y se reactivará en 1 minuto.
+            </p>
           </div>
         )}
 

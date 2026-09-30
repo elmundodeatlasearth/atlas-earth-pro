@@ -75,40 +75,64 @@ export interface DesgloseMensual {
 // ---------------------------------------------------------------------------
 export const TIERS_COMPLETOS: TiersDict = {
   "Estados Unidos": {
-    limites: [40, 60, 80, 100, 120, 150, 220, 290, 370, 470, 600, 770, 1000, 1300, 1700, 2200],
-    multiplicadores: [20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 5],
+    limites: [150, 220, 290, 365, 435, 545, 625, 730, 875, 1100, 1500],
+    multiplicadores: [30, 20, 15, 12, 10, 8, 7, 6, 5, 4, 3, 2],
   },
   "Canadá": {
-    limites: [30, 50, 70, 90, 110, 140, 180, 230, 290, 360, 450, 560, 700, 870, 1100, 1400, 1800, 2300],
-    multiplicadores: [20, 16, 13, 11, 9, 8, 7, 6, 5, 4.5, 4, 3.5, 3, 2.5, 2, 2, 2, 2],
+    limites: [60, 100, 150, 180, 220, 250, 300, 350, 450, 800],
+    multiplicadores: [20, 15, 10, 8, 7, 6, 5, 4, 3, 2, 2],
   },
   "Reino Unido": {
-    limites: [30, 55, 80, 105, 140, 180, 230, 290, 370, 470, 600, 760, 960, 1200, 1500],
-    multiplicadores: [20, 17, 14, 12, 10, 8, 7, 6, 5, 4, 3.5, 3, 2.5, 2, 2, 2],
+    limites: [60, 100, 150, 180, 220, 250, 300, 350, 450, 800],
+    multiplicadores: [20, 15, 10, 8, 7, 6, 5, 4, 3, 2, 2],
   },
   "Australia": {
-    limites: [30, 55, 80, 105, 140, 180, 230, 290, 370, 470, 600, 760, 960, 1200, 1500],
-    multiplicadores: [20, 17, 14, 12, 10, 8, 7, 6, 5, 4, 3.5, 3, 2.5, 2, 2, 2],
+    limites: [60, 100, 150, 180, 220, 250, 300, 350, 450, 800],
+    multiplicadores: [20, 15, 10, 8, 7, 6, 5, 4, 3, 2, 2],
   },
   "Nueva Zelanda": {
-    limites: [30, 55, 80, 105, 140, 180, 230, 290, 370, 470, 600, 760, 960, 1200, 1500],
-    multiplicadores: [20, 17, 14, 12, 10, 8, 7, 6, 5, 4, 3.5, 3, 2.5, 2, 2, 2],
+    limites: [60, 100, 150, 180, 220, 250, 300, 350, 450, 800],
+    multiplicadores: [20, 15, 10, 8, 7, 6, 5, 4, 3, 2, 2],
   },
   "Sudáfrica": {
-    limites: [30, 55, 80, 105, 140, 180, 230, 290, 370, 470, 600, 760, 960, 1200, 1500],
-    multiplicadores: [20, 17, 14, 12, 10, 8, 7, 6, 5, 4, 3.5, 3, 2.5, 2, 2, 2],
+    limites: [60, 100, 150, 180, 220, 250, 300, 350, 450, 800],
+    multiplicadores: [20, 15, 10, 8, 7, 6, 5, 4, 3, 2, 2],
   },
   "Irlanda": {
-    limites: [30, 55, 80, 105, 140, 180, 230, 290, 370, 470, 600, 760, 960, 1200, 1500],
-    multiplicadores: [20, 17, 14, 12, 10, 8, 7, 6, 5, 4, 3.5, 3, 2.5, 2, 2, 2],
+    limites: [60, 100, 150, 180, 220, 250, 300, 350, 450, 800],
+    multiplicadores: [20, 15, 10, 8, 7, 6, 5, 4, 3, 2, 2],
   },
   "México": {
-    limites: [30, 55, 80, 105, 140, 180, 230, 290, 370, 470, 600, 760, 960, 1200, 1500],
-    multiplicadores: [20, 15, 12, 10, 8, 6, 4, 3, 2, 2, 2],
+    limites: [50, 85, 100, 140, 175, 225, 300, 400, 800],
+    multiplicadores: [20, 15, 12, 8, 7, 5, 4, 3, 2, 2],
+  },
+  "Alemania": {
+    limites: [70, 100, 135, 170, 200, 250, 300, 350, 400, 800],
+    multiplicadores: [20, 15, 10, 8, 7, 6, 5, 4, 3, 2, 2],
+  },
+  "Francia": {
+    limites: [70, 100, 135, 170, 200, 250, 300, 350, 400, 800],
+    multiplicadores: [20, 15, 10, 8, 7, 6, 5, 4, 3, 2, 2],
+  },
+  "España": {
+    limites: [70, 100, 135, 170, 200, 250, 300, 350, 400, 800],
+    multiplicadores: [20, 15, 10, 8, 7, 6, 5, 4, 3, 2, 2],
+  },
+  "Italia": {
+    limites: [70, 100, 135, 170, 200, 250, 300, 350, 400, 800],
+    multiplicadores: [20, 15, 10, 8, 7, 6, 5, 4, 3, 2, 2],
+  },
+  "Japón": {
+    limites: [50, 70, 105, 130, 150, 175, 200, 225, 300, 800],
+    multiplicadores: [20, 15, 12, 8, 7, 6, 5, 4, 3, 2, 2],
+  },
+  "Brasil": {
+    limites: [60, 75, 100, 120, 150, 200, 250, 300, 400, 800],
+    multiplicadores: [20, 15, 12, 10, 8, 6, 5, 4, 3, 2, 2],
   },
   "Internacional (Resto del Mundo)": {
-    limites: [30, 55, 80, 105, 140, 200, 300, 450, 650, 900, 1500],
-    multiplicadores: [20, 15, 12, 10, 8, 6, 4, 3, 2, 2, 2],
+    limites: [60, 100, 150, 180, 220, 250, 300, 350, 450, 800],
+    multiplicadores: [20, 15, 10, 8, 7, 6, 5, 4, 3, 2, 2],
   },
 };
 
@@ -128,6 +152,12 @@ export const MAP_MONEDAS: Record<string, string> = {
   "Sudáfrica": "ZAR",
   "Irlanda": "EUR",
   "México": "MXN",
+  "Alemania": "EUR",
+  "Francia": "EUR",
+  "España": "EUR",
+  "Italia": "EUR",
+  "Japón": "USD",
+  "Brasil": "BRL",
   "Internacional (Resto del Mundo)": "USD",
 };
 
@@ -164,27 +194,63 @@ export class MotorAtlasEarth {
     return tabla.multiplicadores[tabla.multiplicadores.length - 1];
   }
 
-  calcular_renta(boost_tier: number, horas_srb_mes = 0): number {
+  /** Renta generada en un día normal (24h) sin evento SRB */
+  calcular_renta_diaria_normal(boost_tier: number): number {
+    const horas_con_boost = this.horas_boost * this.eficiencia;
+    const horas_sin_boost = Math.max(0, 24 - horas_con_boost);
+    const ingreso_boost = this.renta_base * 3600 * horas_con_boost * boost_tier;
+    const ingreso_sin_boost = this.renta_base * 3600 * horas_sin_boost * 1;
+    return (ingreso_boost + ingreso_sin_boost) * this.pasaporte_mult;
+  }
+
+  /** Renta generada en un día completo durante evento SRB (50x boost todo el día) */
+  calcular_renta_srb_diaria(): number {
+    const horas_con_boost = this.horas_boost * this.eficiencia;
+    const horas_sin_boost = Math.max(0, 24 - horas_con_boost);
+    const ingreso_srb = this.renta_base * 3600 * horas_con_boost * 50;
+    const ingreso_sin_boost = this.renta_base * 3600 * horas_sin_boost * 1;
+    return (ingreso_srb + ingreso_sin_boost) * this.pasaporte_mult;
+  }
+
+  /** Renta mensual realista (720h) combinando horas normales con horas de evento SRB */
+  calcular_renta_mensual(boost_tier: number, horas_srb_mes = 64): number {
     const horas_mes = 720;
-    const horas_normales_mes = horas_mes - horas_srb_mes;
-    const porcentaje_boost = this.horas_boost / 24;
-    const horas_con_boost = horas_normales_mes * porcentaje_boost * this.eficiencia;
-    const horas_sin_boost = horas_normales_mes - horas_con_boost;
+    const horas_normales_mes = Math.max(0, horas_mes - horas_srb_mes);
+    const pct_boost = (this.horas_boost / 24) * this.eficiencia;
+    const horas_con_boost = horas_normales_mes * pct_boost;
+    const horas_sin_boost = Math.max(0, horas_normales_mes - horas_con_boost);
     const ingreso_srb = this.renta_base * 3600 * horas_srb_mes * 50;
     const ingreso_boost = this.renta_base * 3600 * horas_con_boost * boost_tier;
     const ingreso_sin_boost = this.renta_base * 3600 * horas_sin_boost * 1;
-    const renta_mensual = (ingreso_srb + ingreso_boost + ingreso_sin_boost) * this.pasaporte_mult;
-    return renta_mensual / 30;
+    return (ingreso_srb + ingreso_boost + ingreso_sin_boost) * this.pasaporte_mult;
+  }
+
+  /**
+   * Cálculo de renta. Si horas_srb_mes == 0, devuelve la renta diaria habitual normal.
+   * Si horas_srb_mes > 0, devuelve el promedio diario mensual ponderado con SRB.
+   */
+  calcular_renta(boost_tier: number, horas_srb_mes = 0): number {
+    if (horas_srb_mes === 0) {
+      return this.calcular_renta_diaria_normal(boost_tier);
+    }
+    return this.calcular_renta_mensual(boost_tier, horas_srb_mes) / 30;
   }
 
   calcular_renta_generica(num_parcelas: number, pais: string, tiers_dict: TiersDict, horas_srb_mes = 0): number {
     const boost_tier = this._get_tier_mult(num_parcelas, pais, tiers_dict);
     const base_rent = num_parcelas * this.renta_promedio_sec;
+    if (horas_srb_mes === 0) {
+      const horas_con_boost = this.horas_boost * this.eficiencia;
+      const horas_sin_boost = Math.max(0, 24 - horas_con_boost);
+      const ingreso_boost = base_rent * 3600 * horas_con_boost * boost_tier;
+      const ingreso_sin_boost = base_rent * 3600 * horas_sin_boost * 1;
+      return (ingreso_boost + ingreso_sin_boost) * this.pasaporte_mult;
+    }
     const horas_mes = 720;
-    const horas_normales_mes = horas_mes - horas_srb_mes;
-    const porcentaje_boost = this.horas_boost / 24;
-    const horas_con_boost = horas_normales_mes * porcentaje_boost * this.eficiencia;
-    const horas_sin_boost = horas_normales_mes - horas_con_boost;
+    const horas_normales_mes = Math.max(0, horas_mes - horas_srb_mes);
+    const porcentaje_boost = (this.horas_boost / 24) * this.eficiencia;
+    const horas_con_boost = horas_normales_mes * porcentaje_boost;
+    const horas_sin_boost = Math.max(0, horas_normales_mes - horas_con_boost);
     const ingreso_srb = base_rent * 3600 * horas_srb_mes * 50;
     const ingreso_boost = base_rent * 3600 * horas_con_boost * boost_tier;
     const ingreso_sin_boost = base_rent * 3600 * horas_sin_boost * 1;
@@ -214,14 +280,26 @@ export class MotorAtlasEarth {
 
   calcular_meta_automatica(meta_usd_dia: number, pais: string, tiers_dict: TiersDict, horas_srb_mes: number): MetaResult {
     if (meta_usd_dia <= 0) return { p_test: this.total_parcelas, renta_test: 0 };
-    let p_test = this.total_parcelas;
-    while (p_test < 500000) {
-      const renta_test = this.calcular_renta_generica(p_test, pais, tiers_dict, horas_srb_mes);
-      if (renta_test >= meta_usd_dia) break;
-      p_test += 1;
+    let low = this.total_parcelas;
+    let high = 500000;
+
+    if (this.calcular_renta_generica(low, pais, tiers_dict, horas_srb_mes) >= meta_usd_dia) {
+      return { p_test: low, renta_test: this.calcular_renta_generica(low, pais, tiers_dict, horas_srb_mes) };
     }
-    const renta_test = this.calcular_renta_generica(p_test, pais, tiers_dict, horas_srb_mes);
-    return { p_test, renta_test };
+
+    let ans = high;
+    while (low <= high) {
+      const mid = Math.floor((low + high) / 2);
+      const renta_mid = this.calcular_renta_generica(mid, pais, tiers_dict, horas_srb_mes);
+      if (renta_mid >= meta_usd_dia) {
+        ans = mid;
+        high = mid - 1;
+      } else {
+        low = mid + 1;
+      }
+    }
+    const renta_test = this.calcular_renta_generica(ans, pais, tiers_dict, horas_srb_mes);
+    return { p_test: ans, renta_test };
   }
 
   formato_tiempo_exacto(dias_totales: number): string {
@@ -253,35 +331,22 @@ export class MotorAtlasEarth {
 }
 
 // ---------------------------------------------------------------------------
-// COSTO ESCALONADO DE PARCELAS — Atlas Earth real
+// COSTO DE PARCELAS — Atlas Earth Real (100 AB constantes por parcela)
 // ---------------------------------------------------------------------------
-// El precio de cada parcela sube 100 AB cada 10 parcelas:
-//   parcelas 0-9  → 100 AB cada una
-//   parcelas 10-19 → 200 AB
-//   parcelas 20-29 → 300 AB
-//   ...
-// Fórmula: costo_parcela(n) = 100 × (⌊n/10⌋ + 1)   (n = número ordinal, 1-based)
+export const AB_POR_PARCELA = 100;
 export const AB_INICIAL_PARCELA = 100;
-export const INCREMENTO_AB_CADA = 10;
+export const INCREMENTO_AB_CADA = 0; // En Atlas Earth real no hay incremento
 
-/** Costo en AB de la parcela número `n` (1-based: la primera cuesta 100 AB). */
-export function costoParcela(n: number): number {
-  if (n <= 0) return 0;
-  return AB_INICIAL_PARCELA * (Math.floor((n - 1) / INCREMENTO_AB_CADA) + 1);
+/** Costo en AB de cualquier parcela de tierra estándar en Atlas Earth (siempre 100 AB). */
+export function costoParcela(_n?: number): number {
+  void _n;
+  return AB_POR_PARCELA;
 }
 
-/**
- * Costo TOTAL en AB para pasar de `parcelasActuales` a `parcelasObjetivo`
- * (excluye las ya compradas; suma el costo de las parcelas nuevas).
- * Cada 10 parcelas el precio unitario sube 100 AB.
- */
+/** Costo TOTAL en AB para comprar las parcelas entre parcelasActuales y parcelasObjetivo. */
 export function costoTramoParcelas(parcelasActuales: number, parcelasObjetivo: number): number {
   if (parcelasObjetivo <= parcelasActuales) return 0;
-  let total = 0;
-  for (let n = parcelasActuales + 1; n <= parcelasObjetivo; n++) {
-    total += costoParcela(n);
-  }
-  return total;
+  return (parcelasObjetivo - parcelasActuales) * AB_POR_PARCELA;
 }
 
 /** Costo restante real para la meta, descontando AB ahorrados. */
@@ -305,7 +370,7 @@ export interface SaltoTier {
   mult_despues: number;
   /** Parcelas que faltan desde la posición actual */
   faltan_parcelas: number;
-  /** AB necesarios (costo escalonado real) para llegar */
+  /** AB necesarios para llegar desde la posición actual */
   ab_necesarios: number;
   /** AB necesarios netos (descontando ahorrados) */
   ab_netos: number;
@@ -319,7 +384,7 @@ export interface SaltoTier {
 
 /**
  * Genera TODOS los saltos de Tier desde la posición actual hasta la meta,
- * con el costo escalonado real y los días estimados por AB/día.
+ * con el costo oficial (100 AB/parcela) y los días estimados por AB/día.
  */
 export function generarSaltosTier(
   parcelasActuales: number,
@@ -342,14 +407,10 @@ export function generarSaltosTier(
   const saltos: SaltoTier[] = [];
   let prevMult = muls[0];
 
-  // Multiplicador actual
   for (let i = 0; i < limites.length; i++) {
     if (parcelasActuales <= limites[i]) { prevMult = muls[i]; break; }
     prevMult = muls[i];
   }
-
-  // Recorrer límites por encima del actual
-  let parcelasPrevias = parcelasActuales;
 
   for (let i = 0; i < limites.length; i++) {
     const limite = limites[i];
@@ -359,18 +420,17 @@ export function generarSaltosTier(
     const mult_antes = prevMult;
     const mult_despues = muls[Math.min(i, muls.length - 1)] ?? prevMult;
     const faltan_parcelas = limite - parcelasActuales;
-    const ab_tramo = costoTramoParcelas(parcelasPrevias, limite);
-    const ab_netos = Math.max(0, ab_tramo - abAhorrados);
+    const ab_necesarios = faltan_parcelas * AB_POR_PARCELA;
+    const ab_netos = Math.max(0, ab_necesarios - abAhorrados);
     const dias_f2p = abDiaF2p > 0 ? ab_netos / abDiaF2p : 0;
     const dias_ec = abDiaEc > 0 ? ab_netos / abDiaEc : dias_f2p;
 
-    // Renta estimada con la composición actual promedio
     const baseRent = rentaBaseSec * limite;
     const horasMes = 720;
-    const horasNormales = horasMes - horasSrb;
-    const pctBoost = horasBoost / 24;
-    const horasConBoost = horasNormales * pctBoost * (eficiencia / 100);
-    const horasSinBoost = horasNormales - horasConBoost;
+    const horasNormales = Math.max(0, horasMes - horasSrb);
+    const pctBoost = (horasBoost / 24) * (eficiencia / 100);
+    const horasConBoost = horasNormales * pctBoost;
+    const horasSinBoost = Math.max(0, horasNormales - horasConBoost);
     const ingSrb = baseRent * 3600 * horasSrb * 50;
     const ingBoost = baseRent * 3600 * horasConBoost * mult_despues;
     const ingSin = baseRent * 3600 * horasSinBoost * 1;
@@ -381,7 +441,7 @@ export function generarSaltosTier(
       mult_antes,
       mult_despues,
       faltan_parcelas,
-      ab_necesarios: ab_tramo,
+      ab_necesarios,
       ab_netos,
       dias_f2p,
       dias_ec,
@@ -389,7 +449,6 @@ export function generarSaltosTier(
     });
 
     prevMult = mult_despues;
-    parcelasPrevias = limite;
   }
 
   return saltos;

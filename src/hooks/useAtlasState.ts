@@ -21,6 +21,7 @@ export interface AtlasState extends AtlasInputs, AtlasCalculations {
   authMsg: string;
   isPro: boolean;
   isUltra: boolean;
+  isAdmin: boolean;
   aiCredits: number;
 
   // Permissions
@@ -73,7 +74,7 @@ export function useAtlasState(): AtlasState {
     return () => { activo = false; };
   }, []);
   const C = useAtlasCalculations(I, tasasEnVivo);
-  const P = usePermissions(A.isPro, A.isUltra);
+  const P = usePermissions(A.isPro, A.isUltra, A.isAdmin);
 
   // ===== AI State =====
   const [aiLoading, setAiLoading] = useState(false);
@@ -494,7 +495,7 @@ export function useAtlasState(): AtlasState {
     user: A.user, authEmail: A.authEmail, setAuthEmail: A.setAuthEmail,
     authPass: A.authPass, setAuthPass: A.setAuthPass,
     authLoading: A.authLoading, authMsg: A.authMsg,
-    isPro: A.isPro, isUltra: A.isUltra, aiCredits: A.aiCredits,
+    isPro: A.isPro, isUltra: A.isUltra, isAdmin: A.isAdmin, aiCredits: A.aiCredits,
     // Permissions
     permissions: P,
     handleAuth: A.handleAuth, handleLogout: A.handleLogout,

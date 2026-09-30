@@ -11,17 +11,14 @@ import TabTransition from "@/components/tab-transition";
 import { exportHistorialCSV } from "@/utils/export-csv";
 import ThemeToggle from "@/components/theme-toggle";
 
-function getTabs(isPro: boolean, isUltra: boolean) {
-  const allTabs = [
+function getTabs(isPro: boolean, isUltra: boolean, isAdmin = false) {
+  return [
     { id: "dashboard", label: "📊 Dashboard" },
     { id: "simulador", label: "🧮 Simulador" },
     { id: "auditoria", label: "📋 Auditoría" },
-    { id: "ia", label: "🤖 IA PRO" },
+    { id: "ia", label: isAdmin ? "🤖 IA (Admin)" : isUltra ? "👑 IA ULTRA" : isPro ? "🤖 IA PRO" : "🤖 IA" },
     { id: "historial", label: "📈 Historial" },
   ];
-  // FREE: solo Dashboard
-  if (!isPro && !isUltra) return [allTabs[0]];
-  return allTabs;
 }
 
 export default function Home() {
@@ -87,7 +84,7 @@ export default function Home() {
           authEmail={S.authEmail} setAuthEmail={S.setAuthEmail}
           authPass={S.authPass} setAuthPass={S.setAuthPass}
           authLoading={S.authLoading} authMsg={S.authMsg}
-          isPro={S.isPro} isUltra={S.isUltra} aiCredits={S.aiCredits} permissions={S.permissions}
+          isPro={S.isPro} isUltra={S.isUltra} isAdmin={S.isAdmin} aiCredits={S.aiCredits} permissions={S.permissions}
           handleAuth={S.handleAuth} handleLogout={S.handleLogout}
           profileName={S.profileName} setProfileName={S.setProfileName}
           profileList={S.profileList} setProfileList={S.setProfileList} showSaveMsg={S.showSaveMsg}
@@ -114,14 +111,22 @@ export default function Home() {
                 <path d="M3 12h18M3 6h18M3 18h18" />
               </svg>
             </button>
-            <h1 className="text-base lg:text-lg font-black text-white truncate">
-              {S.isPro || S.isUltra ? "\ud83d\udcca Atlas Earth PRO" : "\ud83d\udcca Atlas Earth"}
+            <h1 className="text-base lg:text-lg font-black text-white truncate flex items-center gap-2">
+              {S.isAdmin ? "🛡️ Atlas Earth ADMIN" : S.isUltra ? "👑 Atlas Earth ULTRA" : S.isPro ? "📊 Atlas Earth PRO" : "📊 Atlas Earth"}
             </h1>
+            {S.isAdmin && (
+              <a
+                href="./admin"
+                className="hidden sm:inline-flex items-center gap-1 text-[11px] font-bold bg-red-600/80 hover:bg-red-500 text-white px-2.5 py-1 rounded-lg transition-colors border border-red-500/40"
+              >
+                ⚙️ CRM Admin
+              </a>
+            )}
             <ThemeToggle />
           </div>
           {/* Tabs - scrollable en mobile */}
           <div className="flex items-center gap-1 overflow-x-auto scrollbar-none -mr-3 pr-3 lg:mr-0 lg:pr-0">
-            {getTabs(S.isPro, S.isUltra).map(t => (
+            {getTabs(S.isPro, S.isUltra, S.isAdmin).map(t => (
               <button key={t.id} onClick={() => S.setActiveTab(t.id)}
                 className={`px-3 lg:px-4 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                   S.activeTab === t.id

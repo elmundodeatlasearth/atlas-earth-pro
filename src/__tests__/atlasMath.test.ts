@@ -23,10 +23,11 @@ describe("MotorAtlasEarth", () => {
     expect(siguiente_tramo).toBe(220);
   });
 
-  it("debe calcular multTier correcto", () => {
+  it("debe calcular multTier oficial correcto para Estados Unidos", () => {
     const m = new MotorAtlasEarth(40, 0, 0, 0, 0, 18, 95);
-    const mult = m._get_tier_mult(40, "Estados Unidos", TIERS_COMPLETOS);
-    expect(mult).toBeGreaterThanOrEqual(1);
+    expect(m._get_tier_mult(40, "Estados Unidos", TIERS_COMPLETOS)).toBe(30);
+    expect(m._get_tier_mult(150, "Estados Unidos", TIERS_COMPLETOS)).toBe(30);
+    expect(m._get_tier_mult(151, "Estados Unidos", TIERS_COMPLETOS)).toBe(20);
   });
 
   it("debe calcular renta diaria > 0", () => {

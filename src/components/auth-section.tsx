@@ -12,19 +12,21 @@ interface AuthSectionProps {
   authMsg: string;
   isPro: boolean;
   isUltra: boolean;
+  isAdmin?: boolean;
   aiCredits: number;
   setAuthEmail: (v: string) => void;
   setAuthPass: (v: string) => void;
   handleAuth: (mode: "login" | "signup") => Promise<void>;
   handleLogout: () => Promise<void>;
+  activarAdminLocal?: () => void;
 }
 
 export default function AuthSection({
   user, authEmail, authPass, authLoading, authMsg,
-  isPro, isUltra, aiCredits,
-  setAuthEmail, setAuthPass, handleAuth, handleLogout,
+  isPro, isUltra, isAdmin, aiCredits,
+  setAuthEmail, setAuthPass, handleAuth, handleLogout, activarAdminLocal,
 }: AuthSectionProps) {
-  if (!user) {
+  if (!user && !isAdmin) {
     return (
       <div className="space-y-2">
         <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">🔑 Iniciar Sesión</div>
@@ -55,6 +57,15 @@ export default function AuthSection({
           </button>
         </div>
         {authMsg && <div className={`text-[10px] mt-1 ${authMsg.includes("❌") ? "text-red-400" : "text-green-400"}`}>{authMsg}</div>}
+        {activarAdminLocal && (
+          <button
+            onClick={activarAdminLocal}
+            type="button"
+            className="w-full text-center text-[10px] text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 py-1 rounded transition-colors"
+          >
+            ⚡ Desbloquear Admin Local (Offline)
+          </button>
+        )}
       </div>
     );
   }
@@ -63,22 +74,28 @@ export default function AuthSection({
     <div>
       <div className="flex items-center justify-between bg-gradient-to-r from-white/5 to-white/[0.02] rounded-lg px-3 py-2 border border-white/5">
         <div className="text-xs text-gray-300 truncate flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
-          {user.email}
+          <span className={`w-1.5 h-1.5 rounded-full ${isAdmin ? "bg-red-500" : "bg-green-400"} animate-pulse`} />
+          {user?.email || "elmundodeatlasearth@gmail.com (Local Admin)"}
         </div>
         <button onClick={handleLogout} className="text-[10px] text-red-400 hover:text-red-300 ml-2 shrink-0 transition-colors">
           Salir
         </button>
       </div>
-      <div className="flex gap-1 mt-2">
-        {isUltra ? (
+      <div className="flex flex-wrap gap-1 mt-2">
+        {isAdmin ? (
+          <span className="text-[10px] font-black text-red-400 bg-red-950/50 px-2 py-1 rounded border border-red-500/40 animate-pulse">
+            🛡️ ADMIN (Owner)
+          </span>
+        ) : isUltra ? (
           <span className="text-[10px] font-bold text-purple-400 bg-purple-900/30 px-2 py-1 rounded border border-purple-500/20 animate-pulse-glow">👑 ULTRA</span>
         ) : isPro ? (
           <span className="text-[10px] font-bold text-cyan-400 bg-cyan-900/30 px-2 py-1 rounded border border-cyan-500/20">✅ PRO</span>
         ) : (
           <span className="text-[10px] text-gray-500 bg-white/5 px-2 py-1 rounded">🔒 Free</span>
         )}
-        <span className="text-[10px] text-gray-500 bg-white/5 px-2 py-1 rounded">💎 {isUltra ? `${aiCredits}/50 IA` : isPro ? `${aiCredits}/5 IA` : `0 IA`}</span>
+        <span className="text-[10px] text-gray-400 bg-white/5 px-2 py-1 rounded">
+          💎 {isAdmin ? "IA Ilimitada" : isUltra ? `${aiCredits}/50 IA` : isPro ? `${aiCredits}/5 IA` : `0 IA`}
+        </span>
       </div>
     </div>
   );

@@ -1,41 +1,28 @@
 // src/__tests__/costoEscalonado.test.ts
-// Tests del costo escalonado real de parcelas de Atlas Earth
+// Tests del costo oficial de parcelas de Atlas Earth (100 AB por parcela) y saltos de Tier
 import {
   costoParcela,
   costoTramoParcelas,
   costoMetaAbReal,
   generarSaltosTier,
   TIERS_COMPLETOS,
+  AB_POR_PARCELA,
   AB_INICIAL_PARCELA,
-  INCREMENTO_AB_CADA,
 } from "@/utils/atlasMath";
 
-describe("costoParcela — precio escalonado cada 10 parcelas", () => {
-  it("las primeras 10 parcelas cuestan 100 AB cada una", () => {
-    for (let n = 1; n <= 10; n++) {
+describe("costoParcela — precio oficial de Atlas Earth", () => {
+  it("todas las parcelas cuestan 100 AB constantes", () => {
+    for (let n = 1; n <= 100; n += 10) {
       expect(costoParcela(n)).toBe(100);
     }
   });
 
-  it("las parcelas 11-20 cuestan 200 AB cada una", () => {
-    for (let n = 11; n <= 20; n++) {
-      expect(costoParcela(n)).toBe(200);
-    }
-  });
-
-  it("las parcelas 21-30 cuestan 300 AB cada una", () => {
-    for (let n = 21; n <= 30; n++) {
-      expect(costoParcela(n)).toBe(300);
-    }
-  });
-
   it("constantes coherentes", () => {
+    expect(AB_POR_PARCELA).toBe(100);
     expect(AB_INICIAL_PARCELA).toBe(100);
-    expect(INCREMENTO_AB_CADA).toBe(10);
-    expect(costoParcela(31)).toBe(400);
-    expect(costoParcela(100)).toBe(1000);
-    expect(costoParcela(0)).toBe(0);
-    expect(costoParcela(-5)).toBe(0);
+    expect(costoParcela(1)).toBe(100);
+    expect(costoParcela(150)).toBe(100);
+    expect(costoParcela(220)).toBe(100);
   });
 });
 
@@ -44,12 +31,16 @@ describe("costoTramoParcelas — costo total entre dos puntos", () => {
     expect(costoTramoParcelas(0, 10)).toBe(1000);
   });
 
-  it("de 0 a 20 cuesta 3000 AB (10×100 + 10×200)", () => {
-    expect(costoTramoParcelas(0, 20)).toBe(3000);
+  it("de 0 a 20 cuesta 2000 AB (20 × 100)", () => {
+    expect(costoTramoParcelas(0, 20)).toBe(2000);
   });
 
-  it("de 10 a 20 cuesta 2000 AB (10×200)", () => {
-    expect(costoTramoParcelas(10, 20)).toBe(2000);
+  it("de 10 a 20 cuesta 1000 AB (10 × 100)", () => {
+    expect(costoTramoParcelas(10, 20)).toBe(1000);
+  });
+
+  it("de 150 a 220 cuesta 7000 AB (70 × 100)", () => {
+    expect(costoTramoParcelas(150, 220)).toBe(7000);
   });
 
   it("si objetivo <= actuales devuelve 0", () => {
@@ -69,37 +60,36 @@ describe("costoMetaAbReal — descuenta AB ahorrados", () => {
 });
 
 describe("generarSaltosTier — tabla de saltos hasta la meta", () => {
-  it("genera saltos con costo escalonado real (EEUU desde 40)", () => {
+  it("genera saltos oficiales (EEUU desde 150 parcelas hasta 290)", () => {
     const saltos = generarSaltosTier(
-      40, "Estados Unidos", TIERS_COMPLETOS,
-      0, 100, 200, 20, 100, 0, 1, 0.00000000158, 100,
+      150, "Estados Unidos", TIERS_COMPLETOS,
+      0, 100, 200, 20, 100, 0, 1, 0.00000000158, 290,
     );
     expect(saltos.length).toBeGreaterThan(0);
-    // Primer salto debe ser 60 (siguiente límite tras 40)
-    expect(saltos[0].tramo).toBe(60);
-    // 20 parcelas de 41 a 60: (10×500) + (10×600) = 5000 + 6000 = 11000
-    expect(saltos[0].ab_necesarios).toBe(11000);
-    // Multiplicador: 40 está en 20x, 60 en 19x
-    expect(saltos[0].mult_antes).toBe(20);
-    expect(saltos[0].mult_despues).toBe(19);
-    // Días F2P = 11000 / 100 = 110
-    expect(saltos[0].dias_f2p).toBeCloseTo(110, 1);
-    // Días EC = 11000 / 200 = 55
-    expect(saltos[0].dias_ec).toBeCloseTo(55, 1);
+    // Primer salto debe ser a 220 parcelas (70 parcelas de salto)
+    expect(saltos[0].tramo).toBe(220);
+    expect(saltos[0].faltan_parcelas).toBe(70);
+    expect(saltos[0].ab_necesarios).toBe(7000);
+    expect(saltos[0].mult_antes).toBe(30);
+    expect(saltos[0].mult_despues).toBe(20);
+    // Días F2P = 7000 / 100 = 70 días
+    expect(saltos[0].dias_f2p).toBeCloseTo(70, 1);
+    // Días EC = 7000 / 200 = 35 días
+    expect(saltos[0].dias_ec).toBeCloseTo(35, 1);
   });
 
   it("respeta el límite de la meta", () => {
     const saltos = generarSaltosTier(
-      40, "Estados Unidos", TIERS_COMPLETOS,
-      0, 100, 200, 20, 100, 0, 1, 0.00000000158, 80,
+      150, "Estados Unidos", TIERS_COMPLETOS,
+      0, 100, 200, 20, 100, 0, 1, 0.00000000158, 290,
     );
-    expect(saltos.map(s => s.tramo)).toEqual([60, 80]);
+    expect(saltos.map(s => s.tramo)).toEqual([220, 290]);
   });
 
   it("si ya está en la meta, no genera saltos", () => {
     const saltos = generarSaltosTier(
-      100, "Estados Unidos", TIERS_COMPLETOS,
-      0, 100, 200, 20, 100, 0, 1, 0.00000000158, 100,
+      150, "Estados Unidos", TIERS_COMPLETOS,
+      0, 100, 200, 20, 100, 0, 1, 0.00000000158, 150,
     );
     expect(saltos).toHaveLength(0);
   });

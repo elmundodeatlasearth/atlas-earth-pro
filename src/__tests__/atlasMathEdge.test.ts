@@ -166,8 +166,9 @@ describe("Tiers por país", () => {
     }
   });
 
-  it("Estados Unidos arranca en 40 parcelas", () => {
-    expect(TIERS_COMPLETOS["Estados Unidos"].limites[0]).toBe(40);
+  it("Estados Unidos arranca en 150 parcelas con 30x", () => {
+    expect(TIERS_COMPLETOS["Estados Unidos"].limites[0]).toBe(150);
+    expect(TIERS_COMPLETOS["Estados Unidos"].multiplicadores[0]).toBe(30);
   });
 });
 

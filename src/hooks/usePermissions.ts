@@ -37,37 +37,41 @@ export interface Permissions {
 /**
  * Función pura de cálculo de permisos — extraída para poder testearla.
  * Regla de negocio central: qué puede ver/hacer cada plan.
+ * Los administradores obtienen acceso total ilimitado a todas las herramientas.
  */
-export function computePermissions(isPro: boolean, isUltra: boolean): Permissions {
+export function computePermissions(isPro: boolean, isUltra: boolean, isAdmin = false): Permissions {
+  const isProOrAdmin = isAdmin || isPro;
+  const isUltraOrAdmin = isAdmin || isUltra;
+
   return {
-    // FREE — SOLO renta diaria
+    // FREE — renta diaria
     canViewRentDaily: true,
 
-    // PRO+ (PRO o Ultra)
-    canViewFullRent: isPro || isUltra,
-    canViewMetaProgreso: isPro || isUltra,
-    canUseSimulator: isPro || isUltra,
-    canUseECOptimizer: isPro || isUltra,
-    canUseROIAnalysis: isPro || isUltra,
-    canViewFullAudit: isPro || isUltra,
-    canCompareTiers: isPro || isUltra,
-    canMultiCountry: isUltra,
-    canHistoryChart: isPro || isUltra,
-    canSaveHistory: isPro || isUltra,
-    canCloudProfiles: isPro || isUltra,
-    canViewEstrategia: isPro || isUltra,
-    canExportCSV: isPro || isUltra,
+    // PRO+ (PRO, Ultra o Admin)
+    canViewFullRent: isProOrAdmin || isUltraOrAdmin,
+    canViewMetaProgreso: isProOrAdmin || isUltraOrAdmin,
+    canUseSimulator: isProOrAdmin || isUltraOrAdmin,
+    canUseECOptimizer: isProOrAdmin || isUltraOrAdmin,
+    canUseROIAnalysis: isProOrAdmin || isUltraOrAdmin,
+    canViewFullAudit: isProOrAdmin || isUltraOrAdmin,
+    canCompareTiers: isProOrAdmin || isUltraOrAdmin,
+    canMultiCountry: isUltraOrAdmin,
+    canHistoryChart: isProOrAdmin || isUltraOrAdmin,
+    canSaveHistory: isProOrAdmin || isUltraOrAdmin,
+    canCloudProfiles: isProOrAdmin || isUltraOrAdmin,
+    canViewEstrategia: isProOrAdmin || isUltraOrAdmin,
+    canExportCSV: isProOrAdmin || isUltraOrAdmin,
 
     // ULTRA-exclusivo
-    canUseECOptimizerUltra: isUltra,
-    canMultiCountryUltra: isUltra,
+    canUseECOptimizerUltra: isUltraOrAdmin,
+    canMultiCountryUltra: isUltraOrAdmin,
 
     // IA
-    canUseAI: isPro || isUltra,
-    aiCreditsPerMonth: isUltra ? 50 : isPro ? 5 : 0,
+    canUseAI: isProOrAdmin || isUltraOrAdmin,
+    aiCreditsPerMonth: isAdmin ? 999 : isUltra ? 50 : isPro ? 5 : 0,
   };
 }
 
-export function usePermissions(isPro: boolean, isUltra: boolean): Permissions {
-  return useMemo(() => computePermissions(isPro, isUltra), [isPro, isUltra]);
+export function usePermissions(isPro: boolean, isUltra: boolean, isAdmin = false): Permissions {
+  return useMemo(() => computePermissions(isPro, isUltra, isAdmin), [isPro, isUltra, isAdmin]);
 }
