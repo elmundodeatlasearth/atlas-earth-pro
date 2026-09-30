@@ -29,17 +29,22 @@ function buildTierRows(motor: MotorAtlasEarth, pais: string, totalParcelas: numb
   if (!info) return [];
 
   const rows: TierRow[] = [];
-  let desde = 0;
+  let desde = 1;
 
   for (let i = 0; i < info.limites.length; i++) {
     const hasta = info.limites[i];
     const mult = info.multiplicadores[i];
-    const activo = totalParcelas >= desde && totalParcelas < hasta;
-    const progreso = activo && hasta > desde ? ((totalParcelas - desde) / (hasta - desde)) * 100 : activo ? 100 : 0;
+    const minTier = desde === 1 ? 0 : desde;
+    const activo = totalParcelas >= minTier && totalParcelas <= hasta;
+    let progreso = 0;
+    if (activo) {
+        progreso = ((totalParcelas - minTier) / Math.max(1, hasta - minTier)) * 100;
+        if (progreso > 100) progreso = 100;
+    }
     const rentaTope = motor.calcular_renta_generica(hasta, pais, TIERS_COMPLETOS, 0);
 
-    rows.push({ num: i + 1, desde, hasta, rango: `${desde.toLocaleString()} — ${hasta.toLocaleString()}`, mult, rentaTope, activo, progreso });
-    desde = hasta;
+    rows.push({ num: i + 1, desde, hasta, rango: \ — \, mult, rentaTope, activo, progreso });
+    desde = hasta + 1;
   }
 
   const lastMult = info.multiplicadores[info.multiplicadores.length - 1];
@@ -51,11 +56,11 @@ function buildTierRows(motor: MotorAtlasEarth, pais: string, totalParcelas: numb
     num: info.limites.length + 1,
     desde,
     hasta: null,
-    rango: `${desde.toLocaleString()} +`,
+    rango: \+\,
     mult: lastMult,
     rentaTope: rentaFin,
     activo: activoFinal,
-    progreso: 100,
+    progreso: activoFinal ? 100 : 0,
   });
 
   return rows;
