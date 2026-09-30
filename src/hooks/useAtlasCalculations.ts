@@ -209,8 +209,8 @@ export function useAtlasCalculations(
   const insigniasRequeridas = NIVELES_INSIGNIAS[nivelSiguientePasaporte] || 101;
   const insigniasFaltantes = Math.max(0, insigniasRequeridas - insignias);
   const costoAbPasaporte = insigniasFaltantes * 200;
-  const rentaDiariaBruta = rentaDia / motor.pasaporte_mult;
-  const aumentoPasaporte = rentaDiariaBruta * 0.05;
+  const rentaDiariaBrutaSrb = (rentaMes / 30) / motor.pasaporte_mult;
+  const aumentoPasaporte = rentaDiariaBrutaSrb * 0.05;
   const parcelasEq = insigniasFaltantes * 2;
   const multParcelasTest = motor._get_tier_mult(motor.total_parcelas + parcelasEq, pais, TIERS);
   const baseRentParcelas = motor.renta_base + parcelasEq * motor.renta_promedio_sec;
@@ -223,7 +223,7 @@ export function useAtlasCalculations(
   const ingBoostP = baseRentParcelas * 3600 * horasConBoost * multParcelasTest;
   const ingSinP = baseRentParcelas * 3600 * horasSinBoost * 1;
   const rentaFuturaParcelas = ((ingSrbP + ingBoostP + ingSinP) * motor.pasaporte_mult) / 30;
-  const aumentoParcelas = rentaFuturaParcelas - rentaDia;
+  const aumentoParcelas = rentaFuturaParcelas - (rentaMes / 30);
   const colapso = motor.total_parcelas + balanceAlcanza > tramo_actual && faltanNetosAb > 0;
 
   const veredictoEstrategia = useMemo(() => {
