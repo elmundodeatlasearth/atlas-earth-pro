@@ -203,7 +203,7 @@ export default function Sidebar(props: SidebarProps) {
             <InputRow label="🎯 Eficiencia %" value={props.eficiencia} set={props.setEficiencia} max={100} />
             <div className="flex items-center justify-between gap-3">
               <label className="text-xs text-gray-400 shrink-0">🚚 SRB hrs/mes</label>
-              <input type="text" value="64" disabled
+              <input type="number" value={props.horasSrb} onChange={(e) => props.setHorasSrb(Number(e.target.value))} max={100} min={0}
                 className="w-20 bg-[#121212] border border-cyan-500/30 rounded px-3 py-1.5 text-xs text-cyan-400 font-bold text-center" />
             </div>
           </div>
