@@ -173,7 +173,6 @@ export default function Home() {
               nivelActualPasaporte={S.nivelActualPasaporte} nivelSiguientePasaporte={S.nivelSiguientePasaporte}
               insigniasFaltantes={S.insigniasFaltantes} costoAbPasaporte={S.costoAbPasaporte}
               parcelasEq={S.parcelasEq} aumentoParcelas={S.aumentoParcelas} aumentoPasaporte={S.aumentoPasaporte}
-              optData={S.optData}
               roiGlobalDias={S.roiGlobalDias} roiMarginalDias={S.roiMarginalDias}
               rentaAdicional={S.rentaAdicional} costoMetaAb={S.costoMetaAb} costoTiendaUsd={S.costoTiendaUsd}
               metaRenta={S.metaRenta}
