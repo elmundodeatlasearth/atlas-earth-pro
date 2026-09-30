@@ -43,7 +43,7 @@ function buildTierRows(motor: MotorAtlasEarth, pais: string, totalParcelas: numb
     }
     const rentaTope = motor.calcular_renta_generica(hasta, pais, TIERS_COMPLETOS, 0);
 
-    rows.push({ num: i + 1, desde, hasta, rango: \ — \, mult, rentaTope, activo, progreso });
+    rows.push({ num: i + 1, desde, hasta, rango: `${desde.toLocaleString()} - ${hasta.toLocaleString()}`, mult, rentaTope, activo, progreso });
     desde = hasta + 1;
   }
 
@@ -56,7 +56,7 @@ function buildTierRows(motor: MotorAtlasEarth, pais: string, totalParcelas: numb
     num: info.limites.length + 1,
     desde,
     hasta: null,
-    rango: \+\,
+    rango: `${desde.toLocaleString()}+`,
     mult: lastMult,
     rentaTope: rentaFin,
     activo: activoFinal,
