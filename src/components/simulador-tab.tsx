@@ -6,8 +6,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import { MetricBox, GlowCard } from "./stat-card";
-import { fmt, TIERS_COMPLETOS, type VentanaEC } from "@/utils/atlasMath";
-import type { MotorAtlasEarth } from "@/utils/atlasMath";
+import { fmt, TIERS_COMPLETOS, MotorAtlasEarth, type VentanaEC } from "@/utils/atlasMath";
 import LockedFeature from "./LockedFeature";
 import type { Permissions } from "@/hooks/usePermissions";
 
@@ -111,10 +110,34 @@ export default function SimuladorTab(props: SimuladorTabProps) {
   const extraMes = props.simMes - props.rentaMes;
   const extraAnio = props.simAnio - props.rentaAnio;
 
-  // --- Cálculo dinámico de Meta en USD/día ---
+  // --- Modos de cálculo de la meta en USD al día ---
+  const [metaModoPase, setMetaModoPase] = useState<"sin_pase" | "con_pase">("sin_pase");
+  const [metaTipoDia, setMetaTipoDia] = useState<"normal_24h" | "promedio_srb">("normal_24h");
+
+  // Motor y Renta Base para la Meta según las condiciones elegidas
+  const { motorObjetivo, rentaBaseMeta, srbHorasMeta } = useMemo(() => {
+    const horasBoost = metaModoPase === "sin_pase" ? 22 : 24;
+    const m = new MotorAtlasEarth(
+      props.motor.parcelas.c,
+      props.motor.parcelas.r,
+      props.motor.parcelas.e,
+      props.motor.parcelas.l,
+      props.nivelActualPasaporte,
+      horasBoost,
+      100
+    );
+    const srbHoras = metaTipoDia === "normal_24h" ? 0 : props.horasSrb;
+    const multActualLocal = m._get_tier_mult(totalActual, props.pais, TIERS_COMPLETOS);
+    const rentaBase = metaTipoDia === "normal_24h"
+      ? m.calcular_renta_diaria_normal(multActualLocal)
+      : m.calcular_renta_mensual(multActualLocal, srbHoras) / 30;
+    return { motorObjetivo: m, rentaBaseMeta: rentaBase, srbHorasMeta: srbHoras };
+  }, [props.motor, props.nivelActualPasaporte, totalActual, props.pais, props.horasSrb, metaModoPase, metaTipoDia]);
+
+  // Cálculo dinámico de Meta en USD/día bajo las condiciones seleccionadas
   const metaCalc = useMemo(() => {
-    return props.motor.calcular_meta_automatica(metaDolarSim, props.pais, TIERS_COMPLETOS, props.horasSrb);
-  }, [props.motor, metaDolarSim, props.pais, props.horasSrb]);
+    return motorObjetivo.calcular_meta_automatica(metaDolarSim, props.pais, TIERS_COMPLETOS, srbHorasMeta);
+  }, [motorObjetivo, metaDolarSim, props.pais, srbHorasMeta]);
 
   const parcelasMetaSim = metaCalc.p_test;
   const rentaAlcanzadaSim = metaCalc.renta_test;
@@ -122,7 +145,7 @@ export default function SimuladorTab(props: SimuladorTabProps) {
   const multMetaSim = props.motor._get_tier_mult(parcelasMetaSim, props.pais, TIERS_COMPLETOS);
   const costoAbMetaSim = faltanMetaSim * 100;
   const abNetosMetaSim = Math.max(0, costoAbMetaSim - props.abAhorrados);
-  const pctMetaAlcanzada = metaDolarSim > 0 ? Math.min(100, (props.rentaDia / metaDolarSim) * 100) : 100;
+  const pctMetaAlcanzada = metaDolarSim > 0 ? Math.min(100, (rentaBaseMeta / metaDolarSim) * 100) : 100;
   const diasF2pMeta = abNetosMetaSim > 0 ? abNetosMetaSim / abDiaF2p : 0;
   const diasEcMeta = abNetosMetaSim > 0 ? abNetosMetaSim / abDiaEc : 0;
 
@@ -450,6 +473,86 @@ export default function SimuladorTab(props: SimuladorTabProps) {
           Introduce la cantidad en dólares que deseas generar cada día. El sistema calculará automáticamente la cantidad exacta de parcelas necesarias teniendo en cuenta las caídas de multiplicador por tramos.
         </p>
 
+        {/* Selector de Modo de Boost y Medición de Renta */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-black/40 rounded-xl border border-white/5 mb-4">
+          <div>
+            <label className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold block mb-1.5">
+              Modo de Juego (Horas Boost):
+            </label>
+            <div className="grid grid-cols-2 gap-1.5 bg-[#0d1420] p-1 rounded-lg border border-white/5">
+              <button
+                type="button"
+                onClick={() => setMetaModoPase("sin_pase")}
+                className={`py-1.5 px-2 rounded-md text-xs font-semibold transition-all ${
+                  metaModoPase === "sin_pase"
+                    ? "bg-purple-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)]"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                🛡️ Sin Pase (22h/d)
+              </button>
+              <button
+                type="button"
+                onClick={() => setMetaModoPase("con_pase")}
+                className={`py-1.5 px-2 rounded-md text-xs font-semibold transition-all ${
+                  metaModoPase === "con_pase"
+                    ? "bg-purple-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)]"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                ⚡ Con Pase (24/7)
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] text-gray-400 uppercase tracking-wider font-semibold block mb-1.5">
+              Medición del Objetivo Diario:
+            </label>
+            <div className="grid grid-cols-2 gap-1.5 bg-[#0d1420] p-1 rounded-lg border border-white/5">
+              <button
+                type="button"
+                onClick={() => setMetaTipoDia("normal_24h")}
+                className={`py-1.5 px-2 rounded-md text-xs font-semibold transition-all ${
+                  metaTipoDia === "normal_24h"
+                    ? "bg-purple-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)]"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                📅 Cada 24h (Sin SRB)
+              </button>
+              <button
+                type="button"
+                onClick={() => setMetaTipoDia("promedio_srb")}
+                className={`py-1.5 px-2 rounded-md text-xs font-semibold transition-all ${
+                  metaTipoDia === "promedio_srb"
+                    ? "bg-purple-600 text-white shadow-[0_0_10px_rgba(168,85,247,0.4)]"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                🚀 Promedio SRB
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Badge explicativo del modo activo */}
+        <div className="mb-4 text-xs p-2.5 bg-purple-950/20 border border-purple-500/20 rounded-lg flex flex-wrap items-center justify-between gap-2 text-gray-300">
+          <div>
+            <span>Calculando meta para: </span>
+            <strong className="text-white">
+              {metaModoPase === "sin_pase" ? "Sin Pase (22h boost al día)" : "Con Explorer Club (24h boost 24/7)"}
+            </strong>
+            <span className="text-gray-500 mx-1">•</span>
+            <strong className="text-purple-300">
+              {metaTipoDia === "normal_24h" ? "Día normal cada 24 horas (sin SRB)" : `Promedio mensual con SRB (${props.horasSrb}h)`}
+            </strong>
+          </div>
+          <div className="font-mono text-xs">
+            Renta actual: <strong className="text-emerald-400">${fmt(rentaBaseMeta, 4)}/d</strong>
+          </div>
+        </div>
+
         {/* Selector de presets y entrada libre de USD/día */}
         <div className="mb-5 space-y-3">
           <div className="flex flex-wrap items-center gap-1.5">
@@ -519,7 +622,7 @@ export default function SimuladorTab(props: SimuladorTabProps) {
         <div className="p-4 bg-[#0d091a] rounded-xl border border-purple-900/30 space-y-3 mb-4">
           <div className="flex items-center justify-between text-xs">
             <span className="text-gray-300 font-medium">
-              Progreso actual: Generas <strong className="text-white font-mono">${fmt(props.rentaDia, 4)}/d</strong> de tu meta de <strong className="text-purple-300 font-mono">${metaDolarSim.toFixed(2)}/d</strong>
+              Progreso actual: Generas <strong className="text-white font-mono">${fmt(rentaBaseMeta, 4)}/d</strong> de tu meta de <strong className="text-purple-300 font-mono">${metaDolarSim.toFixed(2)}/d</strong>
             </span>
             <span className="font-mono font-bold text-purple-400">{pctMetaAlcanzada.toFixed(1)}%</span>
           </div>
@@ -530,6 +633,22 @@ export default function SimuladorTab(props: SimuladorTabProps) {
               style={{ width: `${Math.min(100, Math.max(0, pctMetaAlcanzada))}%` }}
             />
           </div>
+
+          {/* Nota táctica de por qué se requieren más parcelas en día normal */}
+          {metaTipoDia === "normal_24h" && parcelasMetaSim >= 1500 && faltanMetaSim > 0 && (
+            <div className="p-3 bg-purple-950/30 border border-purple-500/30 rounded-xl text-xs text-purple-200 flex items-start gap-2.5">
+              <span className="text-base shrink-0 mt-0.5">💡</span>
+              <div className="leading-relaxed">
+                <strong className="text-white">
+                  ¿Por qué se requieren {parcelasMetaSim.toLocaleString()} parcelas para ${metaDolarSim.toFixed(2)}/día cada 24h?
+                </strong>
+                <div className="text-gray-300 mt-1">
+                  En Atlas Earth, entre 435 y 1,500 parcelas el multiplicador va cayendo progresivamente (10x → 8x → 7x → 6x → 5x → 4x → 3x), lo que mantiene congelada tu ganancia de 24 horas alrededor de ~$0.84 – $0.87 USD/día.
+                  Al superar las 1,500 parcelas, tu multiplicador se fija en <strong className="text-purple-300">2x permanentemente</strong>. A partir de ese punto, cada parcela comprada vuelve a sumar de forma lineal hasta alcanzar los <strong className="text-white">${metaDolarSim.toFixed(2)} USD cada 24 horas garantizados</strong> en las {parcelasMetaSim.toLocaleString()} parcelas.
+                </div>
+              </div>
+            </div>
+          )}
 
           {faltanMetaSim > 0 ? (
             <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs text-gray-400">
@@ -543,7 +662,7 @@ export default function SimuladorTab(props: SimuladorTabProps) {
             </div>
           ) : (
             <div className="text-xs text-emerald-400 font-semibold">
-              🎉 ¡Felicidades! Ya estás generando esta meta o la superas con tu portafolio actual de {totalActual.toLocaleString()} parcelas.
+              🎉 ¡Felicidades! Ya estás generando esta meta o la superas bajo estas condiciones con tu portafolio actual de {totalActual.toLocaleString()} parcelas (${fmt(rentaBaseMeta, 4)} USD/día).
             </div>
           )}
         </div>

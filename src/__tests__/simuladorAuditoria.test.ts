@@ -97,6 +97,37 @@ describe("Auditoría Detallada del Simulador — Perfil Real 435 Parcelas", () =
     expect(metaBaja.p_test).toBe(435);
   });
 
+  it("debe calcular cuantas parcelas faltan para 1 USD/dia SIN EL PASE (dia normal 24h)", () => {
+    // Sin pase: 22h boost al día, día normal cada 24 horas (sin SRB: horas_srb = 0)
+    const motorSinPase = new MotorAtlasEarth(C, R, E, L, PASAPORTE_NV5, 22, 100);
+    
+    // Renta actual sin pase en día normal (10x):
+    const rentaActualSinPase = motorSinPase.calcular_renta_diaria_normal(10);
+    expect(rentaActualSinPase).toBeCloseTo(0.8421, 3);
+
+    // Meta: 1.0 USD diario cada 24 horas (sin SRB, horas_srb = 0)
+    const meta1SinPaseDiaNormal = motorSinPase.calcular_meta_automatica(
+      1.0,
+      "Estados Unidos",
+      TIERS_COMPLETOS,
+      0 // Día normal de 24 horas, sin SRB
+    );
+    expect(meta1SinPaseDiaNormal.p_test).toBe(2960);
+    expect(meta1SinPaseDiaNormal.renta_test).toBeGreaterThanOrEqual(1.0);
+    expect(meta1SinPaseDiaNormal.p_test - 435).toBe(2525);
+
+    // Con pase (24h boost):
+    const motorConPase = new MotorAtlasEarth(C, R, E, L, PASAPORTE_NV5, 24, 100);
+    const meta1ConPaseDiaNormal = motorConPase.calcular_meta_automatica(
+      1.0,
+      "Estados Unidos",
+      TIERS_COMPLETOS,
+      0
+    );
+    expect(meta1ConPaseDiaNormal.p_test).toBe(2832);
+    expect(meta1ConPaseDiaNormal.p_test - 435).toBe(2397);
+  });
+
   it("debe verificar que la renta diaria normal y promedio mensual son exactas", () => {
     // Renta con 435 parcelas en Explorer Club (24h boost)
     const rentaDiaNormal = motorEC.calcular_renta_diaria_normal(10);
