@@ -89,7 +89,19 @@ export function useAtlasCalculations(
   const rentaDia = useMemo(() => motor.calcular_renta_diaria_normal(multTier), [motor, multTier]);
   const rentaSem = rentaDia * 7;
   const rentaMes = useMemo(() => motor.calcular_renta_mensual(multTier, horasSrb), [motor, multTier, horasSrb]);
-  const rentaAnio = rentaMes * 12;
+  // Renta Anual exacta: 365 días (8760h) con (horasSrb * 12) horas de SRB al año
+  const rentaAnio = useMemo(() => {
+    const horasAnio = 8760;
+    const srbAnio = horasSrb * 12;
+    const horasNormalesAnio = Math.max(0, horasAnio - srbAnio);
+    const pctBoost = (horasBoost / 24) * (eficiencia / 100);
+    const horasConBoost = horasNormalesAnio * pctBoost;
+    const horasSinBoost = Math.max(0, horasNormalesAnio - horasConBoost);
+    const ingSrb = motor.renta_base * 3600 * srbAnio * 50;
+    const ingBoost = motor.renta_base * 3600 * horasConBoost * multTier;
+    const ingSin = motor.renta_base * 3600 * horasSinBoost * 1;
+    return (ingSrb + ingBoost + ingSin) * motor.pasaporte_mult;
+  }, [motor, multTier, horasSrb, horasBoost, eficiencia]);
 
   const { tramo_actual, siguiente_tramo, faltantes: faltantesTier } = useMemo(
     () => motor.calcular_escalera(pais, TIERS), [motor, pais]
@@ -143,7 +155,8 @@ export function useAtlasCalculations(
   );
 
   // === AB POR DÍA — UNIFICADO del desglose ===
-  const abPorDia = desgloseF2p.promedio_diario;
+  const esEC = tipoPase.includes("Explorer Club");
+  const abPorDia = esEC ? desgloseEc.promedio_diario : desgloseF2p.promedio_diario;
   const abEcDiarios = desgloseEc.promedio_diario;
 
   // === SIMULADOR DE CRECIMIENTO (parcelas extra) ===
@@ -166,11 +179,11 @@ export function useAtlasCalculations(
 
   const optData = useMemo(() => optimizadorExplorerClub(diaAsistencia), [diaAsistencia]);
 
-  // Tiempos para la meta — usando AB/día del desglose (fuente de verdad)
-  const diasFree = abPorDia > 0 ? costoMetaAb / abPorDia : 0;
-  const diasEc2 = abEcDiarios > 0 ? costoMetaAb / abEcDiarios : 0;
-  const tiempoFree = motor.formato_tiempo(costoMetaAb, abPorDia);
-  const tiempoEc = motor.formato_tiempo(costoMetaAb, abEcDiarios);
+  // Tiempos para la meta — F2P vs Explorer Club
+  const diasFree = desgloseF2p.promedio_diario > 0 ? costoMetaAb / desgloseF2p.promedio_diario : 0;
+  const diasEc2 = desgloseEc.promedio_diario > 0 ? costoMetaAb / desgloseEc.promedio_diario : 0;
+  const tiempoFree = motor.formato_tiempo(costoMetaAb, desgloseF2p.promedio_diario);
+  const tiempoEc = motor.formato_tiempo(costoMetaAb, desgloseEc.promedio_diario);
 
   // === TABLA DE SALTOS DE TIER (todos hasta la meta) ===
   const saltosTier = useMemo(
@@ -179,8 +192,8 @@ export function useAtlasCalculations(
       pais,
       TIERS,
       abAhorrados,
-      abPorDia,
-      abEcDiarios,
+      desgloseF2p.promedio_diario,
+      desgloseEc.promedio_diario,
       horasBoost,
       eficiencia,
       horasSrb,
@@ -188,7 +201,7 @@ export function useAtlasCalculations(
       motor.renta_promedio_sec,
       parcelasMeta,
     ),
-    [motor, pais, abAhorrados, abPorDia, abEcDiarios, horasBoost, eficiencia, horasSrb, pasaporte, parcelasMeta]
+    [motor, pais, abAhorrados, desgloseF2p.promedio_diario, desgloseEc.promedio_diario, horasBoost, eficiencia, horasSrb, pasaporte, parcelasMeta]
   );
 
   const balanceAlcanza = Math.floor(abAhorrados / 100);

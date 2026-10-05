@@ -200,6 +200,32 @@ export default function Sidebar(props: SidebarProps) {
             <InputRow label="🏅 Insignias" value={props.insignias} set={props.setInsignias} />
             <InputRow label="💰 AB" value={props.abAhorrados} set={props.setAbAhorrados} />
             <InputRow label="⏰ Boost/día" value={props.horasBoost} set={props.setHorasBoost} max={24} />
+            <div className="flex gap-1.5 pt-0.5 pb-1">
+              <button
+                type="button"
+                onClick={() => { props.setHorasBoost(24); props.setEficiencia(100); }}
+                className={`flex-1 py-1 px-1.5 rounded text-[10px] font-bold border transition-colors flex items-center justify-center gap-1 ${
+                  props.horasBoost === 24
+                    ? "bg-amber-500/20 text-amber-300 border-amber-500/50"
+                    : "bg-white/5 text-gray-400 border-white/5 hover:bg-white/10"
+                }`}
+                title="Modo Explorer Club: 24 horas activas (24/7)"
+              >
+                ⚡ 24/7 (24h)
+              </button>
+              <button
+                type="button"
+                onClick={() => { props.setHorasBoost(22); }}
+                className={`flex-1 py-1 px-1.5 rounded text-[10px] font-bold border transition-colors flex items-center justify-center gap-1 ${
+                  props.horasBoost === 22
+                    ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/50"
+                    : "bg-white/5 text-gray-400 border-white/5 hover:bg-white/10"
+                }`}
+                title="Modo Normal: 22 horas los 7 días"
+              >
+                🌙 Normal (22h)
+              </button>
+            </div>
             <InputRow label="🎯 Eficiencia %" value={props.eficiencia} set={props.setEficiencia} max={100} />
             <div className="flex items-center justify-between gap-3">
               <label className="text-xs text-gray-400 shrink-0">🚚 SRB hrs/mes</label>
@@ -213,13 +239,31 @@ export default function Sidebar(props: SidebarProps) {
 
         {/* Pase */}
         <Section title="💎 Pase Mensual">
-          <select value={props.tipoPase} onChange={e => props.setTipoPase(e.target.value)}
-            className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:border-cyan-500 focus:outline-none">
+          <select
+            value={props.tipoPase}
+            onChange={e => {
+              const val = e.target.value;
+              props.setTipoPase(val);
+              if (val.includes("Explorer Club")) {
+                props.setHorasBoost(24);
+                props.setEficiencia(100);
+              } else if (val.includes("Ninguno")) {
+                props.setHorasBoost(22);
+              }
+            }}
+            className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:border-cyan-500 focus:outline-none"
+          >
             <option>Ninguno (F2P)</option>
             <option>Escalera Anticipada ($9.99)</option>
             <option>Escalera Tardía ($14.99)</option>
             <option>Explorer Club ($50.00)</option>
           </select>
+          {props.tipoPase.includes("Explorer Club") && (
+            <div className="text-[10px] text-amber-400/90 mt-1.5 flex items-center gap-1 font-medium bg-amber-500/10 px-2 py-1 rounded border border-amber-500/20">
+              <span>👑</span>
+              <span>Ciclo de 90 días activo (+10,550 AB en calendario) · ⚡ 24/7</span>
+            </div>
+          )}
         </Section>
 
         <Divider />

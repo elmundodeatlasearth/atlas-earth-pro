@@ -160,16 +160,23 @@ export default function Home() {
               veredictoEstrategia={S.veredictoEstrategia}
               totalParcelas={S.motor.total_parcelas}
               horasSrb={S.horasSrb} eficiencia={S.eficiencia} horasBoost={S.horasBoost}
+              tipoPase={S.tipoPase}
               permissions={S.permissions}
             />
           )}
           {S.activeTab === "simulador" && (
-            <SimuladorTab
+          <SimuladorTab
               abAhorrados={S.abAhorrados} simExtra={S.simExtra} setSimExtra={S.setSimExtra}
+              simTotal={S.simTotal} simMult={S.simMult}
               simDia={S.simDia} simSem={S.simSem} simMes={S.simMes} simAnio={S.simAnio}
               tasa={S.tasa} moneda={S.moneda}
               rentaDia={S.rentaDia} rentaSem={S.rentaSem} rentaMes={S.rentaMes} rentaAnio={S.rentaAnio}
               motor={S.motor} pais={S.pais}
+              horasSrb={S.horasSrb}
+              metaUsdDia={S.metaUsdDia}
+              abPorDia={S.abPorDia}
+              abEcDiarios={S.abEcDiarios}
+              tipoPase={S.tipoPase}
               nivelActualPasaporte={S.nivelActualPasaporte} nivelSiguientePasaporte={S.nivelSiguientePasaporte}
               insigniasFaltantes={S.insigniasFaltantes} costoAbPasaporte={S.costoAbPasaporte}
               parcelasEq={S.parcelasEq} aumentoParcelas={S.aumentoParcelas} aumentoPasaporte={S.aumentoPasaporte}

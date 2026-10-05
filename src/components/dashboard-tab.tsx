@@ -6,7 +6,7 @@
 
 "use client";
 import { StatCard, MetricBox, GlowCard } from "./stat-card";
-import type { MotorAtlasEarth } from "@/utils/atlasMath";
+import { fmt, type MotorAtlasEarth, type DesgloseMensual } from "@/utils/atlasMath";
 import { sanitizeHTML } from "@/utils/sanitize";
 import TierComparativa from "./tier-comparativa";
 import LockedFeature from "./LockedFeature";
@@ -28,13 +28,14 @@ interface DashboardTabProps {
   tramo_actual: number;
   siguiente_tramo: number;
   faltantesTier: number;
-  desgloseF2p: { total_mes: number; promedio_diario: number; ruleta_diaria: number; anuncios_diarios: number; ab20min_diario: number; ab20min_mes: number; asistencia_mes: number; pase_mes: number; minijuegos_mes: number };
-  desgloseEc: { total_mes: number; promedio_diario: number; ruleta_diaria: number; anuncios_diarios: number; ab20min_diario: number; ab20min_mes: number; asistencia_mes: number; pase_mes: number; minijuegos_mes: number };
+  desgloseF2p: DesgloseMensual;
+  desgloseEc: DesgloseMensual;
   veredictoEstrategia: string;
   totalParcelas: number;
   horasSrb: number;
   eficiencia: number;
   horasBoost: number;
+  tipoPase?: string;
   permissions: Permissions;
 }
 
@@ -92,18 +93,59 @@ export default function DashboardTab(props: DashboardTabProps) {
   }
 
   // ===== PRO / ULTRA: dashboard completo =====
+  const baseSec = props.motor.renta_base;
+  const passMult = props.motor.pasaporte_mult;
+  const mult = props.multTier;
+  const srbH = props.horasSrb;
+
+  // 24/7 Boost (24 horas con boost xMult, 0 horas sin boost)
+  const rentaDia24 = baseSec * 3600 * 24 * mult * passMult;
+  const horasNorm24 = Math.max(0, 720 - srbH);
+  const rentaMes24 = (baseSec * 3600 * srbH * 50 + baseSec * 3600 * horasNorm24 * mult) * passMult;
+  const rentaMesDia24 = rentaMes24 / 30;
+
+  // 22h/7d Boost (22 horas con boost xMult, 2 horas sin boost x1)
+  const rentaDia22 = (baseSec * 3600 * 22 * mult + baseSec * 3600 * 2 * 1) * passMult;
+  const horasNorm22 = Math.max(0, 720 - srbH);
+  const hBoost22 = horasNorm22 * (22 / 24);
+  const hSin22 = horasNorm22 - hBoost22;
+  const rentaMes22 = (baseSec * 3600 * srbH * 50 + baseSec * 3600 * hBoost22 * mult + baseSec * 3600 * hSin22 * 1) * passMult;
+  const rentaMesDia22 = rentaMes22 / 30;
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* ≡≡≡ MÉTRICAS PRINCIPALES ≡≡≡ */}
       <div>
-        <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">
-          💎 Rendimiento Actual — {props.totalParcelas} Parcelas · {props.multTier}x Multiplicador
+        <div className="text-xs text-gray-500 uppercase tracking-widest mb-4 flex flex-wrap items-center justify-between gap-2">
+          <span>💎 Rendimiento Actual — {props.totalParcelas} Parcelas · {props.multTier}x Multiplicador</span>
+          <span className="text-[11px] text-gray-400 font-mono normal-case">
+            Boost actual: <strong className="text-cyan-400">{props.horasBoost}h/día</strong> {props.horasBoost === 24 ? "(⚡ 24/7)" : props.horasBoost === 22 ? "(🌙 22h/7d)" : ""}
+          </span>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard label="Por Día" usd={props.rentaDia} local={props.rentaDia * props.tasa} moneda={props.moneda} />
           <StatCard label="Por Semana" usd={props.rentaSem} local={props.rentaSem * props.tasa} moneda={props.moneda} />
           <StatCard label="Por Mes" usd={props.rentaMes} local={props.rentaMes * props.tasa} moneda={props.moneda} />
           <StatCard label="Por Año" usd={props.rentaAnio} local={props.rentaAnio * props.tasa} moneda={props.moneda} />
+        </div>
+
+        {/* Comparativa rápida de ritmos de Boost (24/7 vs 22h/7d) */}
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 p-3 bg-[#0c0c12] border border-white/5 rounded-xl text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-400 font-bold flex items-center gap-1">
+              <span>⚡</span> Con Explorer Club (Boost 24/7):
+            </span>
+            <span className="text-white font-mono font-bold">${fmt(rentaDia24, 4)} USD/día</span>
+            <span className="text-gray-500 text-[11px]">(${fmt(rentaMesDia24, 4)}/d prom. con {props.horasSrb}h SRB)</span>
+          </div>
+          <div className="hidden sm:block text-gray-700">|</div>
+          <div className="flex items-center gap-2">
+            <span className="text-cyan-400 font-bold flex items-center gap-1">
+              <span>🌙</span> Modo Normal (Boost 22h/7d):
+            </span>
+            <span className="text-white font-mono font-bold">${fmt(rentaDia22, 4)} USD/día</span>
+            <span className="text-gray-500 text-[11px]">(${fmt(rentaMesDia22, 4)}/d prom. con {props.horasSrb}h SRB)</span>
+          </div>
         </div>
       </div>
 
@@ -167,33 +209,111 @@ export default function DashboardTab(props: DashboardTabProps) {
       {/* ≡≡≡ AB PROYECTADOS — F2P (PRO+) / EC (ULTRA) ≡≡≡ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <GlowCard>
-          <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">🌱 AB Proyectados (F2P)</div>
-          <div className="text-3xl font-black bg-gradient-to-r from-green-400 to-emerald-300 bg-clip-text text-transparent">+{props.desgloseF2p.total_mes.toLocaleString()} AB/mes</div>
-          <div className="text-sm text-gray-400 mt-1">≈ {props.desgloseF2p.promedio_diario.toFixed(1)} AB/día</div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
-            <MetricBox label="Ruleta" value={`${props.desgloseF2p.ruleta_diaria.toFixed(1)}/d`} color="text-cyan-400" />
+          <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">🌱 AB Proyectados (F2P Gratuito)</div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 p-3 bg-emerald-500/[0.04] rounded-xl border border-emerald-500/10">
+            <div>
+              <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">📅 Por Mes (30 Días)</div>
+              <div className="text-2xl font-black bg-gradient-to-r from-green-400 to-emerald-300 bg-clip-text text-transparent">
+                +{props.desgloseF2p.total_mes.toLocaleString()} AB/mes
+              </div>
+              <div className="text-xs text-gray-400 mt-0.5">≈ {props.desgloseF2p.promedio_diario.toFixed(1)} AB/día</div>
+              <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-bold text-xs border border-emerald-500/20">
+                🏞️ +{Math.floor(props.desgloseF2p.total_mes / 100)} parcelas / mes
+              </div>
+            </div>
+            <div>
+              <div className="text-[10px] text-emerald-400 uppercase tracking-wider mb-0.5 font-bold">🏆 Ciclo 90 Días</div>
+              <div className="text-2xl font-black text-emerald-300">
+                +{props.desgloseF2p.total_90d.toLocaleString()} AB
+              </div>
+              <div className="text-xs text-gray-400 mt-0.5">≈ {props.desgloseF2p.promedio_diario_90d.toFixed(1)} AB/día</div>
+              <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-bold text-xs border border-emerald-500/20">
+                🏞️ +{Math.floor(props.desgloseF2p.total_90d / 100)} parcelas en total
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <MetricBox label="Ruleta (5/d)" value={`${props.desgloseF2p.ruleta_diaria.toFixed(1)}/d`} color="text-cyan-400" />
             <MetricBox label="Anuncios" value={`${props.desgloseF2p.anuncios_diarios}/d`} color="text-blue-400" />
-            <MetricBox label="⏱️ 20min" value={`${props.desgloseF2p.ab20min_diario.toFixed(0)}/d`} color="text-green-400" />
             <MetricBox label="Asistencia" value={`${props.desgloseF2p.asistencia_mes}/mes`} color="text-purple-400" />
+            <MetricBox label="Asist. 90d" value={`${props.desgloseF2p.asistencia_90d} AB`} color="text-emerald-400" />
+          </div>
+
+          <div className="mt-3 p-2 rounded-lg bg-black/40 border border-white/5 text-[11px] text-gray-300 flex items-center justify-between">
+            <span className="text-cyan-400 font-semibold flex items-center gap-1">
+              <span>🌙</span> Renta a 22h/7d:
+            </span>
+            <span className="font-mono text-white font-bold">
+              ${fmt(rentaDia22, 4)} USD/día <span className="text-gray-500 font-normal">(${fmt(rentaMesDia22, 4)} con SRB)</span>
+            </span>
           </div>
         </GlowCard>
 
         {props.permissions.canUseECOptimizer ? (
-          <GlowCard className="border-amber-500/20">
-            <div className="text-xs text-amber-400 uppercase tracking-widest mb-3">🔥 AB Proyectados (Explorer Club)</div>
-            <div className="text-3xl font-black bg-gradient-to-r from-amber-400 to-orange-300 bg-clip-text text-transparent">+{props.desgloseEc.total_mes.toLocaleString()} AB/mes</div>
-            <div className="text-sm text-gray-400 mt-1">≈ {props.desgloseEc.promedio_diario.toFixed(1)} AB/día</div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
-              <MetricBox label="Ruleta" value={`${props.desgloseEc.ruleta_diaria.toFixed(1)}/d`} color="text-cyan-400" />
+          <GlowCard className={`border-amber-500/20 ${props.tipoPase?.includes("Explorer Club") ? "ring-1 ring-amber-500/40 shadow-lg shadow-amber-900/10" : ""}`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="text-xs text-amber-400 uppercase tracking-widest font-bold">
+                🔥 AB Proyectados (Explorer Club)
+              </div>
+              {props.tipoPase?.includes("Explorer Club") && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
+                  👑 TU PASE ACTIVO
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 p-3 bg-amber-500/[0.05] rounded-xl border border-amber-500/20">
+              <div>
+                <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">📅 Por Mes (30 Días)</div>
+                <div className="text-2xl font-black bg-gradient-to-r from-amber-400 to-orange-300 bg-clip-text text-transparent">
+                  +{props.desgloseEc.total_mes.toLocaleString()} AB/mes
+                </div>
+                <div className="text-xs text-gray-400 mt-0.5">≈ {props.desgloseEc.promedio_diario.toFixed(1)} AB/día</div>
+                <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-xs border border-amber-500/30">
+                  🏞️ +{Math.floor(props.desgloseEc.total_mes / 100)} parcelas / mes
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] text-amber-400 uppercase tracking-wider mb-0.5 font-bold">🏆 Ciclo Completo (90 Días)</div>
+                <div className="text-2xl font-black text-amber-300">
+                  +{props.desgloseEc.total_90d.toLocaleString()} AB
+                </div>
+                <div className="text-xs text-gray-400 mt-0.5">≈ {props.desgloseEc.promedio_diario_90d.toFixed(1)} AB/día</div>
+                <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-xs border border-amber-500/30">
+                  🏞️ +{Math.floor(props.desgloseEc.total_90d / 100)} parcelas en total
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <MetricBox label="Ruleta (7/d)" value={`${props.desgloseEc.ruleta_diaria.toFixed(1)}/d`} color="text-cyan-400" />
               <MetricBox label="Anuncios" value={`${props.desgloseEc.anuncios_diarios}/d`} color="text-blue-400" />
-              <MetricBox label="⏱️ 20min" value={`${props.desgloseEc.ab20min_diario.toFixed(0)}/d`} color="text-green-400" />
-              <MetricBox label="Asistencia" value={`${props.desgloseEc.asistencia_mes}/mes`} color="text-purple-400" />
+              <MetricBox label="Asistencia F2P" value={`${props.desgloseEc.asistencia_mes}/mes`} color="text-purple-400" />
+              <MetricBox label="👑 Bonus Club" value={`+${props.desgloseEc.pase_mes.toLocaleString()}/mes`} color="text-amber-400" />
+            </div>
+
+            <div className="mt-3 p-2 rounded-lg bg-black/40 border border-amber-500/20 text-[11px] text-gray-300 flex items-center justify-between">
+              <span className="text-amber-400 font-semibold flex items-center gap-1">
+                <span>⚡</span> Renta a 24/7 (EC):
+              </span>
+              <span className="font-mono text-white font-bold">
+                ${fmt(rentaDia24, 4)} USD/día <span className="text-amber-300/80 font-normal">(${fmt(rentaMesDia24, 4)} con SRB)</span>
+              </span>
+            </div>
+
+            <div className="mt-3 p-2.5 bg-black/40 rounded-lg border border-amber-500/15 text-[11px] text-gray-300 flex items-start gap-2">
+              <span className="text-amber-400 text-sm shrink-0">💡</span>
+              <div>
+                <strong className="text-amber-300">Duración del Ciclo de 90 Días:</strong> El calendario completo otorga <strong className="text-white">+10,550 AB</strong> de bonus de Explorer Club (+448 AB gratuitos), alcanzando hitos masivos en los días 7 (100 AB), 14 (300 AB), 30 (500 AB), 60 (800 AB) y 90 (1,200 AB).
+              </div>
             </div>
           </GlowCard>
         ) : (
           <LockedFeature
             title="AB Proyectados (Explorer Club)"
-            description="Compara cuánto más ganarías con Explorer Club vs F2P. Datos exactos mes a mes."
+            description="Compara cuánto más ganarías con Explorer Club vs F2P. Datos exactos mes a mes y a 90 días."
             compact
             requiredPlan="ULTRA"
           />

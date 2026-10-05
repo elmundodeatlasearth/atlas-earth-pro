@@ -82,7 +82,7 @@ export default function AuditoriaTab(props: AuditoriaTabProps) {
             Tienes un portafolio de <strong className="text-cyan-400">{props.motor.total_parcelas} parcelas</strong> ({props.parcelasC}C · {props.parcelasR}R · {props.parcelasE}E · {props.parcelasL}L).
             Tu Pasaporte es <strong className="text-yellow-400">Nivel {props.pasaporte}</strong> (+{props.pasaporte * 5}% en rentas).
             Generas aproximadamente <strong className="text-green-400">{props.abPorDia.toFixed(1)} AB/día</strong> en modo{" "}
-            {props.tipoPase === "Ninguno (F2P)" ? "F2P" : "con pase activo"}.
+            {props.tipoPase === "Ninguno (F2P)" ? "F2P" : `con ${props.tipoPase}`}.
           </p>
         </div>
 
@@ -97,13 +97,18 @@ export default function AuditoriaTab(props: AuditoriaTabProps) {
               : <strong className="text-green-400"> ¡Meta ya alcanzada! 🎉</strong>}
           </p>
           <div className="mt-2 grid grid-cols-2 gap-3">
-            <div className="bg-[#0e0e0e] rounded-lg p-3 border border-white/5">
+            <div className={`rounded-lg p-3 border ${!props.tipoPase.includes("Explorer Club") ? "bg-[#0e0e0e] border-white/10" : "bg-[#0e0e0e] border-white/5 opacity-80"}`}>
               <div className="text-[10px] text-gray-500">⏱️ Tiempo F2P</div>
               <div className="text-base font-bold text-green-400">{props.tiempoFree}</div>
               <div className="text-[10px] text-gray-500">{props.diasFree.toFixed(1)} días</div>
             </div>
-            <div className="bg-[#0e0e0e] rounded-lg p-3 border border-amber-500/20">
-              <div className="text-[10px] text-gray-500">⏱️ Con Explorer Club</div>
+            <div className={`rounded-lg p-3 border ${props.tipoPase.includes("Explorer Club") ? "bg-amber-950/20 border-amber-500/40 ring-1 ring-amber-500/30" : "bg-[#0e0e0e] border-amber-500/20"}`}>
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] text-gray-500">⏱️ Con Explorer Club (90d)</div>
+                {props.tipoPase.includes("Explorer Club") && (
+                  <span className="text-[8px] font-bold text-amber-300 bg-amber-500/20 px-1.5 py-0.5 rounded">TU RITMO</span>
+                )}
+              </div>
               <div className="text-base font-bold text-amber-400">{props.tiempoEc}</div>
               <div className="text-[10px] text-gray-500">{props.diasEc2.toFixed(1)} días</div>
             </div>

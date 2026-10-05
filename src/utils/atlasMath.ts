@@ -44,16 +44,23 @@ export interface DesgloseMensual {
   /** AB por día en promedio */
   promedio_diario: number;
 
+  /** Total AB en ciclo completo de 90 días */
+  total_90d: number;
+  /** AB por día en promedio durante los 90 días */
+  promedio_diario_90d: number;
+
   // === FUENTES DE INGRESO ===
 
   /** Ruleta: F2P=5 tiros/día, EC=7 tiros/día. ~1.7 AB/tiro promedio */
   ruleta_diaria: number;
   ruleta_mes: number;
+  ruleta_90d: number;
 
   /** Anuncios/20min: AB/día = maxAnuncios × ab_por_ad × eficiencia
    *  USA = 2 AB/20min, Resto del Mundo = 1 AB/20min */
   anuncios_diarios: number;
   anuncios_mes: number;
+  anuncios_90d: number;
 
   /** AB pasivo cada 20 min (mismo que anuncios). Solo display.
    *  USA = 2, otros = 1. Codificado en ab_por_ad. */
@@ -62,12 +69,15 @@ export interface DesgloseMensual {
 
   /** Asistencia diaria (calendario F2P) */
   asistencia_mes: number;
+  asistencia_90d: number;
 
   /** AB extra del pase (calendario EC) */
   pase_mes: number;
+  pase_90d: number;
 
   /** AB de minijuegos/pase escalera */
   minijuegos_mes: number;
+  minijuegos_90d: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -261,31 +271,60 @@ export class MotorAtlasEarth {
 
   calcular_meta_automatica(meta_usd_dia: number, pais: string, tiers_dict: TiersDict, horas_srb_mes: number): MetaResult {
     if (meta_usd_dia <= 0) return { p_test: this.total_parcelas, renta_test: 0 };
-    let low = this.total_parcelas;
-    let high = 500000;
 
     const get_renta_dia = (p: number) => {
-      const r = this.calcular_renta_generica(p, pais, tiers_dict, horas_srb_mes);
-      return horas_srb_mes > 0 ? r / (365/12) : r;
+      return this.calcular_renta_generica(p, pais, tiers_dict, horas_srb_mes);
     };
 
-    if (get_renta_dia(low) >= meta_usd_dia) {
-      return { p_test: low, renta_test: get_renta_dia(low) };
+    // Check if already hitting goal
+    if (get_renta_dia(this.total_parcelas) >= meta_usd_dia) {
+      return { p_test: this.total_parcelas, renta_test: get_renta_dia(this.total_parcelas) };
     }
 
-    let ans = high;
-    while (low <= high) {
-      const mid = Math.floor((low + high) / 2);
-      const renta_mid = get_renta_dia(mid);
-      if (renta_mid >= meta_usd_dia) {
-        ans = mid;
-        high = mid - 1;
-      } else {
-        low = mid + 1;
+    // Because rent is NOT monotonically increasing (it drops at every tier boundary),
+    // a binary search CANNOT be used. We must scan each tier segment individually.
+    // Strategy: for each tier segment [start, end], find the minimum parcels in that
+    // segment where rent >= goal. Take the overall minimum across all segments.
+    const tabla = tiers_dict[pais] || tiers_dict["Estados Unidos"];
+    const limites = tabla.limites;
+
+    // Build segments: [currentParcelas..limites[0]], [limites[0]+1..limites[1]], etc.
+    let bestP = 500000;
+    let segments: Array<[number, number]> = [];
+
+    let segStart = this.total_parcelas;
+    for (const lim of limites) {
+      if (lim >= segStart) {
+        segments.push([segStart, lim]);
+        segStart = lim + 1;
       }
     }
-    return { p_test: ans, renta_test: get_renta_dia(ans) };
+    segments.push([segStart, 500000]);
+
+    for (const [segLo, segHi] of segments) {
+      // Within a single tier segment rent IS monotonically increasing,
+      // so binary search is valid within that segment.
+      const rentAtEnd = get_renta_dia(segHi);
+      if (rentAtEnd < meta_usd_dia) continue; // Goal not reachable in this segment
+
+      // Binary search within this segment
+      let lo = segLo, hi = segHi, ans = segHi;
+      while (lo <= hi) {
+        const mid = Math.floor((lo + hi) / 2);
+        if (get_renta_dia(mid) >= meta_usd_dia) {
+          ans = mid;
+          hi = mid - 1;
+        } else {
+          lo = mid + 1;
+        }
+      }
+      if (ans < bestP) bestP = ans;
+      break; // Found the earliest segment that can hit the goal — no need to check further
+    }
+
+    return { p_test: bestP, renta_test: get_renta_dia(bestP) };
   }
+
 
   formato_tiempo_exacto(dias_totales: number): string {
     if (dias_totales <= 0) return "Meta alcanzada";
@@ -563,6 +602,7 @@ export class SimuladorDiario {
     const tiros_dia = modo_ec ? 7 : 5;
     const ruleta_diaria = tiros_dia * 1.7;     // ~1.7 AB/tiro promedio
     const ruleta_mes = ruleta_diaria * 30;
+    const ruleta_90d = ruleta_diaria * 90;
 
     // === ANUNCIOS CADA 20 MIN ===
     // Esta es la fuente principal: cada 20 min ves un anuncio.
@@ -570,8 +610,10 @@ export class SimuladorDiario {
     // Ajustado por eficiencia (anuncios fallidos, etc.)
     const anuncios_diarios = this.max_anuncios * this.abPorAdEfectivo;
     const anuncios_mes = anuncios_diarios * 30;
+    const anuncios_90d = anuncios_diarios * 90;
 
     // === ASISTENCIA (calendario daily login) ===
+    // Próximos 30 días a partir de dia_actual
     let asistencia_mes = 0;
     let pase_mes = 0;
     for (let i = 0; i < 30; i++) {
@@ -582,21 +624,41 @@ export class SimuladorDiario {
       }
     }
 
-    // === TOTAL ===
+    // Ciclo completo de 90 días (los 90 días del calendario)
+    let asistencia_90d = 0;
+    let pase_90d = 0;
+    for (let i = 0; i < 90; i++) {
+      asistencia_90d += this.f2p_cal[i];
+      if (modo_ec) {
+        pase_90d += this.ec_cal[i];
+      }
+    }
+
+    const minijuegos_90d = ab_minijuegos_mes * 3;
+
+    // === TOTALES ===
     const gran_total = ruleta_mes + anuncios_mes + asistencia_mes + pase_mes + ab_minijuegos_mes;
+    const gran_total_90d = ruleta_90d + anuncios_90d + asistencia_90d + pase_90d + minijuegos_90d;
 
     return {
       total_mes: gran_total,
       promedio_diario: gran_total / 30,
+      total_90d: gran_total_90d,
+      promedio_diario_90d: gran_total_90d / 90,
       ruleta_diaria,
       ruleta_mes,
+      ruleta_90d,
       anuncios_diarios,
       anuncios_mes,
+      anuncios_90d,
       ab20min_diario: anuncios_diarios, // mismo valor: el AB20min ES el anuncio
       ab20min_mes: anuncios_mes,        // mismo valor
       asistencia_mes,
+      asistencia_90d,
       pase_mes,
+      pase_90d,
       minijuegos_mes: ab_minijuegos_mes,
+      minijuegos_90d,
     };
   }
 }
