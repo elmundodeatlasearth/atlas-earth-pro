@@ -166,6 +166,7 @@ export default function Home() {
           )}
           {S.activeTab === "simulador" && (
           <SimuladorTab
+              insignias={S.insignias}
               abAhorrados={S.abAhorrados} simExtra={S.simExtra} setSimExtra={S.setSimExtra}
               simTotal={S.simTotal} simMult={S.simMult}
               simDia={S.simDia} simSem={S.simSem} simMes={S.simMes} simAnio={S.simAnio}

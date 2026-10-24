@@ -127,57 +127,100 @@ export default function DashboardTab(props: DashboardTabProps) {
     : 0;
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* ≡≡≡ MÉTRICAS PRINCIPALES ≡≡≡ */}
-      <div>
-        <div className="text-xs text-gray-500 uppercase tracking-widest mb-4 flex flex-wrap items-center justify-between gap-2">
-          <span>💎 Rendimiento Actual — {props.totalParcelas} Parcelas · {props.multTier}x Multiplicador</span>
-          <span className="text-[11px] text-gray-400 font-mono normal-case">
-            Boost actual: <strong className="text-cyan-400">{props.horasBoost}h/día</strong> {props.horasBoost === 24 ? "(⚡ 24/7)" : props.horasBoost === 22 ? "(🌙 22h/7d)" : ""}
+    <div className="space-y-8 animate-fade-in">
+      {/* ≡≡≡ SECCIÓN 1: 💎 RENDIMIENTO DIARIO EN 24 HORAS & PROYECCIONES ≡≡≡ */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
+            SECCIÓN 1
+          </span>
+          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+            Rendimiento Exacto en 24 Horas & Proyecciones Financieras
           </span>
         </div>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard label="Por Día" usd={props.rentaDia} local={props.rentaDia * props.tasa} moneda={props.moneda} />
-          <StatCard label="Por Semana" usd={props.rentaSem} local={props.rentaSem * props.tasa} moneda={props.moneda} />
-          <StatCard label="Por Mes" usd={props.rentaMes} local={props.rentaMes * props.tasa} moneda={props.moneda} />
-          <StatCard label="Por Año" usd={props.rentaAnio} local={props.rentaAnio * props.tasa} moneda={props.moneda} />
-        </div>
 
-        {/* Comparativa rápida de ritmos de Boost (24/7 vs 22h/7d) */}
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-3 p-3 bg-[#0c0c12] border border-white/5 rounded-xl text-xs">
-          <div className="flex items-center gap-2">
-            <span className="text-amber-400 font-bold flex items-center gap-1">
-              <span>⚡</span> Con Explorer Club (Boost 24/7):
+        <div>
+          <div className="text-xs text-gray-500 uppercase tracking-widest mb-4 flex flex-wrap items-center justify-between gap-2">
+            <span>💎 Rendimiento Actual — {props.totalParcelas} Parcelas · {props.multTier}x Multiplicador</span>
+            <span className="text-[11px] text-gray-400 font-mono normal-case">
+              Boost actual: <strong className="text-cyan-400">{props.horasBoost}h/día</strong> {props.horasBoost === 24 ? "(⚡ 24/7)" : props.horasBoost === 22 ? "(🌙 22h/7d)" : ""}
             </span>
-            <span className="text-white font-mono font-bold">${fmt(rentaDia24, 4)} USD/día</span>
-            <span className="text-gray-500 text-[11px]">(${fmt(rentaMesDia24, 4)}/d prom. con {props.horasSrb}h SRB)</span>
           </div>
-          <div className="hidden sm:block text-gray-700">|</div>
-          <div className="flex items-center gap-2">
-            <span className="text-cyan-400 font-bold flex items-center gap-1">
-              <span>🌙</span> Modo Normal (Boost 22h/7d):
-            </span>
-            <span className="text-white font-mono font-bold">${fmt(rentaDia22, 4)} USD/día</span>
-            <span className="text-gray-500 text-[11px]">(${fmt(rentaMesDia22, 4)}/d prom. con {props.horasSrb}h SRB)</span>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard label="Por Día" usd={props.rentaDia} local={props.rentaDia * props.tasa} moneda={props.moneda} />
+            <StatCard label="Por Semana" usd={props.rentaSem} local={props.rentaSem * props.tasa} moneda={props.moneda} />
+            <StatCard label="Por Mes" usd={props.rentaMes} local={props.rentaMes * props.tasa} moneda={props.moneda} />
+            <StatCard label="Por Año" usd={props.rentaAnio} local={props.rentaAnio * props.tasa} moneda={props.moneda} />
+          </div>
+
+          {/* Comparativa rápida de ritmos de Boost (24/7 vs 22h/7d) */}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 p-3 bg-[#0c0c12] border border-white/5 rounded-xl text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-amber-400 font-bold flex items-center gap-1">
+                <span>⚡</span> Con Explorer Club (Boost 24/7):
+              </span>
+              <span className="text-white font-mono font-bold">${fmt(rentaDia24, 4)} USD/día</span>
+              <span className="text-gray-500 text-[11px]">(${fmt(rentaMesDia24, 4)}/d prom. con {props.horasSrb}h SRB)</span>
+            </div>
+            <div className="hidden sm:block text-gray-700">|</div>
+            <div className="flex items-center gap-2">
+              <span className="text-cyan-400 font-bold flex items-center gap-1">
+                <span>🌙</span> Modo Normal (Boost 22h/7d):
+              </span>
+              <span className="text-white font-mono font-bold">${fmt(rentaDia22, 4)} USD/día</span>
+              <span className="text-gray-500 text-[11px]">(${fmt(rentaMesDia22, 4)}/d prom. con {props.horasSrb}h SRB)</span>
+            </div>
+          </div>
+
+          {/* Desglose Matemático Exacto de 24 Horas */}
+          <div className="mt-3 p-3 bg-gradient-to-r from-[#0d1624] to-[#090e18] border border-cyan-500/20 rounded-xl text-xs space-y-1.5 text-gray-300">
+            <div className="font-bold text-cyan-300 flex items-center gap-1.5">
+              <span>📐</span> Auditoría Matemática de tu Ganancia de 24 Horas:
+            </div>
+            <div className="text-[11px] font-mono text-gray-400 leading-relaxed">
+              • Renta base segundo: <span className="text-white">${fmt(baseSec, 9)} USD/seg</span> ({props.motor.parcelas.c}C · {props.motor.parcelas.r}R · {props.motor.parcelas.e}E · {props.motor.parcelas.l}L)<br />
+              • Multiplicador de Tier ({props.pais}): <span className="text-yellow-400 font-bold">{mult}x</span> | Pasaporte: <span className="text-amber-400 font-bold">{passMult}x (+{((passMult - 1) * 100).toFixed(0)}%)</span><br />
+              • Fórmula 24/7 (EC): <span className="text-emerald-400 font-bold">${fmt(baseSec, 9)} × 86,400s × {mult} × {passMult} = ${fmt(rentaDia24, 6)} USD/24h</span><br />
+              • Fórmula Normal (22h): <span className="text-cyan-400 font-bold">[(${fmt(baseSec, 9)} × 79,200s × {mult}) + (${fmt(baseSec, 9)} × 7,200s × 1)] × {passMult} = ${fmt(rentaDia22, 6)} USD/24h</span>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* ≡≡≡ ÍNDICE DE SUERTE & DISTRIBUCIÓN DE RAREZAS ≡≡≡ */}
-      <RarityDonutChart
-        parcelasC={props.motor.parcelas.c}
-        parcelasR={props.motor.parcelas.r}
-        parcelasE={props.motor.parcelas.e}
-        parcelasL={props.motor.parcelas.l}
-        pasaporteMult={props.motor.pasaporte_mult}
-        horasBoost={props.horasBoost}
-        eficiencia={props.eficiencia}
-        tierMult={props.multTier}
-        horasSrb={props.horasSrb}
-      />
+      {/* ≡≡≡ SECCIÓN 2: 🍀 ÍNDICE DE SUERTE & ANÁLISIS DE PORTAFOLIO ≡≡≡ */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+            SECCIÓN 2
+          </span>
+          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+            Índice de Suerte de Rareza & Análisis de Portafolio
+          </span>
+        </div>
+        <RarityDonutChart
+          parcelasC={props.motor.parcelas.c}
+          parcelasR={props.motor.parcelas.r}
+          parcelasE={props.motor.parcelas.e}
+          parcelasL={props.motor.parcelas.l}
+          pasaporteMult={props.motor.pasaporte_mult}
+          horasBoost={props.horasBoost}
+          eficiencia={props.eficiencia}
+          tierMult={props.multTier}
+          horasSrb={props.horasSrb}
+        />
+      </section>
 
-      {/* ≡≡≡ PROGRESO META + TIER ≡≡≡ */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* ≡≡≡ SECCIÓN 3: 🎯 OBJETIVOS DE INGRESOS & PROGRESO DE TIER ≡≡≡ */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-md border border-orange-500/20">
+            SECCIÓN 3
+          </span>
+          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+            Objetivos de Ingresos Diarios & Saltos de Tier
+          </span>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <GlowCard>
           <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">🎯 Estado de tu Meta</div>
           <div className="space-y-3">
@@ -244,8 +287,18 @@ export default function DashboardTab(props: DashboardTabProps) {
           </div>
         </GlowCard>
       </div>
+      </section>
 
-      {/* ≡≡≡ AB PROYECTADOS — F2P (PRO+) / EC (ULTRA) ≡≡≡ */}
+      {/* ≡≡≡ SECCIÓN 4: 🪙 PRODUCCIÓN & PROYECCIÓN DE ATLAS BUCKS ≡≡≡ */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-green-400 bg-green-500/10 px-2 py-0.5 rounded-md border border-green-500/20">
+            SECCIÓN 4
+          </span>
+          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+            Producción & Proyección de Atlas Bucks (F2P vs Explorer Club)
+          </span>
+        </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <GlowCard>
           <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">🌱 AB Proyectados (F2P Gratuito)</div>
@@ -358,8 +411,18 @@ export default function DashboardTab(props: DashboardTabProps) {
           />
         )}
       </div>
+      </section>
 
-      {/* ≡≡≡ COMPARATIVA TIERS — PRO/ULTRA con multi-país solo ULTRA ≡≡≡ */}
+      {/* ≡≡≡ SECCIÓN 5: 🌍 COMPARATIVA INTERNACIONAL DE TIERS ≡≡≡ */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
+            SECCIÓN 5
+          </span>
+          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+            Comparativa Internacional de Tiers de Renta
+          </span>
+        </div>
       {props.permissions.canCompareTiers ? (
         <TierComparativa
           motor={props.motor}
@@ -388,8 +451,18 @@ export default function DashboardTab(props: DashboardTabProps) {
           }
         />
       )}
+      </section>
 
-      {/* ≡≡≡ ESTRATEGIA — Solo PRO+ ≡≡≡ */}
+      {/* ≡≡≡ SECCIÓN 6: 🧠 ESTRATEGIA INTELIGENTE RECOMENDADA ≡≡≡ */}
+      <section className="space-y-3">
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
+            SECCIÓN 6
+          </span>
+          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+            Estrategia Inteligente & Plan de Acción Personalizado
+          </span>
+        </div>
       <GlowCard>
         <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">🧠 Estrategia Inteligente</div>
         <div className="text-sm text-gray-300 leading-relaxed prose prose-invert prose-sm
@@ -406,6 +479,7 @@ export default function DashboardTab(props: DashboardTabProps) {
           [&_.badge-gold]:bg-amber-900/40 [&_.badge-gold]:text-amber-300"
           dangerouslySetInnerHTML={{ __html: sanitizeHTML(props.veredictoEstrategia) }} />
       </GlowCard>
+      </section>
     </div>
   );
 }

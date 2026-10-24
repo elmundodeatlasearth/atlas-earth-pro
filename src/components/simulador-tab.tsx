@@ -10,9 +10,11 @@ import { fmt, TIERS_COMPLETOS, MotorAtlasEarth, proyectarFechaMeta, type Ventana
 import LockedFeature from "./LockedFeature";
 import ReinvestmentCalculator from "./reinvestment-calc";
 import MinigamesCalculator from "./minigames-calc";
+import InsigniasCalculator from "./insignias-calc";
 import type { Permissions } from "@/hooks/usePermissions";
 
 interface SimuladorTabProps {
+  insignias?: number;
   abAhorrados: number;
   simExtra: number; setSimExtra: (v: number) => void;
   simTotal: number;
@@ -151,13 +153,47 @@ export default function SimuladorTab(props: SimuladorTabProps) {
   const diasF2pMeta = abNetosMetaSim > 0 ? abNetosMetaSim / abDiaF2p : 0;
   const diasEcMeta = abNetosMetaSim > 0 ? abNetosMetaSim / abDiaEc : 0;
 
+  const insigniasActuales = props.insignias ?? (props.nivelActualPasaporte === 5 ? 101 : props.nivelActualPasaporte === 4 ? 61 : props.nivelActualPasaporte === 3 ? 31 : props.nivelActualPasaporte === 2 ? 11 : props.nivelActualPasaporte === 1 ? 1 : 0);
+
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* 🧮 Simulador de Compra de Parcelas & Capacidad de Inversión */}
+    <div className="space-y-8 animate-fade-in">
+      {/* ≡≡≡ SECCIÓN 1: 🏅 CALCULADORA DE INSIGNIAS (OBJETIVO 101) & PASAPORTE ≡≡≡ */}
+      <section className="space-y-2.5">
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+            SECCIÓN 1
+          </span>
+          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+            Insignias de Pasaporte (Objetivo 101 Insignias) & Comparativa AB
+          </span>
+        </div>
+        <InsigniasCalculator
+          insigniasActuales={insigniasActuales}
+          abAhorrados={props.abAhorrados}
+          motor={props.motor}
+          pais={props.pais}
+          multTier={multActual}
+          abPorDia={props.abPorDia}
+          abEcDiarios={props.abEcDiarios}
+          horasSrb={props.horasSrb}
+          horasBoost={metaModoPase === "sin_pase" ? 22 : 24}
+        />
+      </section>
+
+      {/* ≡≡≡ SECCIÓN 2: 🏞️ SIMULADOR DE COMPRA DE PARCELAS ≡≡≡ */}
+      <section className="space-y-2.5">
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
+            SECCIÓN 2
+          </span>
+          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+            Simulador de Compra de Parcelas & Capacidad de Inversión
+          </span>
+        </div>
       <GlowCard>
         <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
           <div className="text-xs text-gray-400 uppercase tracking-widest font-bold flex items-center gap-1.5">
-            <span>🧮</span> Simulador de Compra de Parcelas & Capacidad de Inversión
+            <span>🧮</span> Compra de Parcelas Adicionales & Ganancia Proyectada
           </div>
           <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-medium">
             Entrada Libre de Parcelas
@@ -466,8 +502,18 @@ export default function SimuladorTab(props: SimuladorTabProps) {
           </div>
         )}
       </GlowCard>
+      </section>
 
-      {/* 🎯 Simulador por Meta de Ingresos en USD al Día */}
+      {/* ≡≡≡ SECCIÓN 3: 🎯 SIMULADOR POR META DE INGRESOS EN USD AL DÍA ≡≡≡ */}
+      <section className="space-y-2.5">
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
+            SECCIÓN 3
+          </span>
+          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+            Simulador Inverso por Meta de Ingresos Diarios ($ USD/día)
+          </span>
+        </div>
       <GlowCard>
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
           <div className="text-xs text-gray-400 uppercase tracking-widest font-bold flex items-center gap-1.5">
@@ -696,79 +742,87 @@ export default function SimuladorTab(props: SimuladorTabProps) {
           </button>
         ) : null}
       </GlowCard>
+      </section>
 
-      {/* Calculadora Parcela vs Insignia */}
-      <GlowCard>
-        <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">⚖️ Calculadora: ¿Parcelas o Insignias?</div>
-        {props.nivelActualPasaporte < 5 ? (
-          <>
-            <div className="text-sm text-gray-400 mb-3">
-              Te faltan <strong className="text-white">{props.insigniasFaltantes} insignias</strong> para el Nivel {props.nivelSiguientePasaporte} (${props.costoAbPasaporte.toLocaleString()} AB).
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gradient-to-br from-[#0e1a0e] to-[#0a0f0a] rounded-xl p-4 border border-green-500/20 text-center">
-                <div className="text-xs text-gray-400 mb-1">🏞️ {props.parcelasEq} Parcelas</div>
-                <div className="text-lg font-bold text-green-400">+${props.aumentoParcelas.toFixed(5)}/día</div>
-              </div>
-              <div className="bg-gradient-to-br from-[#1a1a0e] to-[#0f0f0a] rounded-xl p-4 border border-yellow-500/20 text-center">
-                <div className="text-xs text-gray-400 mb-1">🛂 Pasaporte Nivel {props.nivelSiguientePasaporte}</div>
-                <div className="text-lg font-bold text-yellow-400">+${props.aumentoPasaporte.toFixed(5)}/día</div>
-              </div>
-            </div>
-            <div className={`mt-3 p-3 rounded-lg text-sm font-bold ${
-              props.aumentoParcelas > props.aumentoPasaporte
-                ? "bg-green-900/20 text-green-400 border border-green-500/20"
-                : "bg-yellow-900/20 text-yellow-400 border border-yellow-500/20"
-            }`}>
-              {props.aumentoParcelas > props.aumentoPasaporte
-                ? `✅ Compra ${props.parcelasEq} Parcelas — ganarás +$${(props.aumentoParcelas - props.aumentoPasaporte).toFixed(5)}/día más que con insignias.`
-                : `✅ Compra ${props.insigniasFaltantes} Insignias — ganarás +$${(props.aumentoPasaporte - props.aumentoParcelas).toFixed(5)}/día más que con parcelas.`}
-            </div>
-          </>
-        ) : (
-          <div className="text-sm text-gray-400">Ya tienes Pasaporte Nivel 5 (Máximo). Concéntrate en saltos de Tier.</div>
-        )}
-      </GlowCard>
-      {/* ROI Analysis */}
-      <GlowCard>
-        <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">📈 Análisis de ROI</div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-[#0e0e0e] rounded-xl p-4 border border-white/5">
-            <div className="text-xs text-gray-400 mb-1">🌍 ROI Global</div>
-            <div className="text-lg font-bold text-white">{props.roiGlobalDias > 0 ? props.motor.formato_tiempo_exacto(props.roiGlobalDias) : "N/A"}</div>
-            <div className="text-[10px] text-gray-500 mt-1">Tiempo en recuperar la inversión con TODAS tus ganancias.</div>
-          </div>
-          <div className="bg-[#0e0e0e] rounded-xl p-4 border border-white/5">
-            <div className="text-xs text-gray-400 mb-1">⚡ ROI Marginal</div>
-            <div className={`text-lg font-bold ${props.roiMarginalDias <= 365 ? "text-green-400" : props.roiMarginalDias <= 1095 ? "text-orange-400" : "text-red-400"}`}>
-              {props.roiMarginalDias > 0 ? props.motor.formato_tiempo_exacto(props.roiMarginalDias) : props.rentaAdicional <= 0 ? "Nunca (Pérdida)" : "N/A"}
-            </div>
-            <div className="text-[10px] text-gray-500 mt-1">Tiempo en recuperar con SOLO las ganancias extra del salto.</div>
-          </div>
+      {/* ≡≡≡ SECCIÓN 4: 🔄 REINVERSIÓN COMPUESTA ("EFECTO BOLA DE NIEVE") ≡≡≡ */}
+      <section className="space-y-2.5">
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+            SECCIÓN 4
+          </span>
+          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+            Reinversión Compuesta de Renta en Atlas Bucks (3 a 24 Meses)
+          </span>
         </div>
-        {props.costoTiendaUsd > 0 && (
-          <div className="mt-3 text-xs text-gray-500">
-            💰 Inversión total requerida: <strong className="text-white">${props.costoTiendaUsd.toFixed(2)} USD</strong> ({props.costoMetaAb.toLocaleString()} AB en tienda)
+        <ReinvestmentCalculator
+          motor={props.motor}
+          pais={props.pais}
+          abPorDia={
+            props.tipoPase?.includes("Explorer Club")
+              ? (props.abEcDiarios ?? 122.6)
+              : (props.abPorDia ?? 22)
+          }
+          horasSrb={props.horasSrb}
+        />
+      </section>
+
+      {/* ≡≡≡ SECCIÓN 5: 🎮 CALCULADORA DE MINIJUEGOS ≡≡≡ */}
+      <section className="space-y-2.5">
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
+            SECCIÓN 5
+          </span>
+          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+            Rendimiento & ROI de Minijuegos (Racer, Golf, Fishing, Warship)
+          </span>
+        </div>
+        <MinigamesCalculator />
+      </section>
+
+      {/* ≡≡≡ SECCIÓN 6: 📈 ANÁLISIS DE ROI & RECUPERACIÓN ≡≡≡ */}
+      <section className="space-y-2.5">
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-pink-400 bg-pink-500/10 px-2 py-0.5 rounded-md border border-pink-500/20">
+            SECCIÓN 6
+          </span>
+          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+            Análisis de Recuperación de Inversión (ROI Global & Marginal)
+          </span>
+        </div>
+        <GlowCard>
+          <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">📈 Análisis de ROI</div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="bg-[#0e0e0e] rounded-xl p-4 border border-white/5">
+              <div className="text-xs text-gray-400 mb-1">🌍 ROI Global</div>
+              <div className="text-lg font-bold text-white">{props.roiGlobalDias > 0 ? props.motor.formato_tiempo_exacto(props.roiGlobalDias) : "N/A"}</div>
+              <div className="text-[10px] text-gray-500 mt-1">Tiempo en recuperar la inversión con TODAS tus ganancias.</div>
+            </div>
+            <div className="bg-[#0e0e0e] rounded-xl p-4 border border-white/5">
+              <div className="text-xs text-gray-400 mb-1">⚡ ROI Marginal</div>
+              <div className={`text-lg font-bold ${props.roiMarginalDias <= 365 ? "text-green-400" : props.roiMarginalDias <= 1095 ? "text-orange-400" : "text-red-400"}`}>
+                {props.roiMarginalDias > 0 ? props.motor.formato_tiempo_exacto(props.roiMarginalDias) : props.rentaAdicional <= 0 ? "Nunca (Pérdida)" : "N/A"}
+              </div>
+              <div className="text-[10px] text-gray-500 mt-1">Tiempo en recuperar con SOLO las ganancias extra del salto.</div>
+            </div>
           </div>
-        )}
-      </GlowCard>
+          {props.costoTiendaUsd > 0 && (
+            <div className="mt-3 text-xs text-gray-500">
+              💰 Inversión total requerida: <strong className="text-white">${props.costoTiendaUsd.toFixed(2)} USD</strong> ({props.costoMetaAb.toLocaleString()} AB en tienda)
+            </div>
+          )}
+        </GlowCard>
+      </section>
 
-      {/* 🔄 Calculadora de Reinversión Compuesta ("Efecto Bola de Nieve") */}
-      <ReinvestmentCalculator
-        motor={props.motor}
-        pais={props.pais}
-        abPorDia={
-          props.tipoPase?.includes("Explorer Club")
-            ? (props.abEcDiarios ?? 122.6)
-            : (props.abPorDia ?? 22)
-        }
-        horasSrb={props.horasSrb}
-      />
-
-      {/* 🎮 Calculadora de Rendimiento y ROI de Minijuegos */}
-      <MinigamesCalculator />
-
-      {/* Mapa de Multiplicadores */}
+      {/* ≡≡≡ SECCIÓN 7: 🗺️ MAPA DE MULTIPLICADORES (TABLA INTACTA) ≡≡≡ */}
+      <section className="space-y-2.5">
+        <div className="flex items-center gap-2 px-1">
+          <span className="text-[11px] font-black uppercase tracking-wider text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded-md border border-yellow-500/20">
+            SECCIÓN 7
+          </span>
+          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+            Mapa de Multiplicadores — Tu Posición Actual & Tiers
+          </span>
+        </div>
       <GlowCard>
         <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">🗺️ Mapa de Multiplicadores — Tu Posición Actual</div>
         {(() => {
@@ -938,6 +992,7 @@ export default function SimuladorTab(props: SimuladorTabProps) {
           );
         })()}
       </GlowCard>
+      </section>
     </div>
   );
 }

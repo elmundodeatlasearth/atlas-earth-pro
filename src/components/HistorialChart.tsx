@@ -47,12 +47,12 @@ export default function HistorialChart({ data }: Props) {
     if (!ctx) return;
 
     const fechas = data.map((d) => {
-      const parts = d.fecha.split("-");
-      return parts.length === 3 ? `${parts[2]}/${parts[1]}` : d.fecha;
+      const parts = String(d?.fecha || "").split("-");
+      return parts.length === 3 ? `${parts[2]}/${parts[1]}` : String(d?.fecha || "");
     });
 
     // Check if we have meaningful AB data (not all zero)
-    const hasAb = data.some(d => d.ab_generado > 0);
+    const hasAb = data.some(d => Number(d?.ab_generado || 0) > 0);
 
     const config: ChartConfiguration = {
       type: "line",
@@ -61,7 +61,7 @@ export default function HistorialChart({ data }: Props) {
         datasets: [
           {
             label: "USD Generados",
-            data: data.map(d => Number(d.usd_generado.toFixed(6))),
+            data: data.map(d => Number(Number(d?.usd_generado || 0).toFixed(6))),
             borderColor: "#10b981",
             backgroundColor: "rgba(16, 185, 129, 0.08)",
             fill: true,
@@ -76,7 +76,7 @@ export default function HistorialChart({ data }: Props) {
           },
           ...(hasAb ? [{
             label: "AB Generados",
-            data: data.map(d => d.ab_generado),
+            data: data.map(d => Number(d?.ab_generado || 0)),
             borderColor: "#8b5cf6",
             backgroundColor: "rgba(139, 92, 246, 0.08)",
             fill: true,
@@ -154,7 +154,11 @@ export default function HistorialChart({ data }: Props) {
       },
     };
 
-    chartRef.current = new ChartJS(ctx, config);
+    try {
+      chartRef.current = new ChartJS(ctx, config);
+    } catch (e) {
+      console.error("HistorialChart init error:", e);
+    }
 
     return () => {
       if (chartRef.current) {

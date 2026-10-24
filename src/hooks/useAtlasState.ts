@@ -448,42 +448,121 @@ export function useAtlasState(): AtlasState {
       I.meta, I.metaPeriodo, C.motor, C.multTier, C.pasaporte, C.rentaDia, A.user, historialData, A.setAiCredits]);
 
   const guardarHistorial = async () => {
-    if (!A.user) { setHistMsg("Debes iniciar sesión"); return; }
-    const { error } = await supabase.from("historial_atlas").upsert({
-      user_id: A.user.id,
+    const entryNueva = {
+      id: Date.now(),
       fecha: histFecha,
-      ab_generado: histAb,
-      usd_generado: histUsd,
-      diamantes_obtenidos: histDiam,
-    }, { onConflict: "user_id,fecha" });
-    if (error) {
-      console.error("guardarHistorial error:", error);
-      setHistMsg(`❌ Error al guardar: ${error.message}`);
-    } else setHistMsg("✅ Progreso guardado");
+      ab_generado: Number(histAb || 0),
+      usd_generado: Number(histUsd || 0),
+      diamantes_obtenidos: Number(histDiam || 0),
+    };
+
+    // 1. Guardar siempre en estado y en localStorage de inmediato
+    setHistorialData(prev => {
+      const filtrado = prev.filter(h => h.fecha !== histFecha);
+      const ordenado = [...filtrado, entryNueva].sort((a, b) => a.fecha.localeCompare(b.fecha));
+      try {
+        localStorage.setItem("ae_historial_local", JSON.stringify(ordenado));
+      } catch (e) {
+        console.warn("Error guardando en localStorage:", e);
+      }
+      return ordenado;
+    });
+
+    // 2. Si hay sesión iniciada, sincronizar con Supabase
+    if (A.user) {
+      try {
+        const { error } = await supabase.from("historial_atlas").upsert({
+          user_id: A.user.id,
+          fecha: histFecha,
+          ab_generado: histAb,
+          usd_generado: histUsd,
+          diamantes_obtenidos: histDiam,
+        }, { onConflict: "user_id,fecha" });
+        if (error) {
+          console.warn("Error upsert Supabase:", error);
+          setHistMsg("✅ Guardado en modo local (sin conexión a nube)");
+        } else {
+          setHistMsg("✅ Progreso guardado y sincronizado en la nube");
+        }
+      } catch {
+        setHistMsg("✅ Guardado en modo local");
+      }
+    } else {
+      setHistMsg("✅ Progreso guardado en este dispositivo (Modo Local)");
+    }
     setTimeout(() => setHistMsg(""), 4000);
   };
 
   const borrarHistorial = useCallback(async (id: number) => {
-    if (!A.user) return;
-    const { error } = await supabase.rpc("borrar_historial", { p_id: id });
-    if (!error) {
-      setHistorialData(prev => prev.filter(h => h.id !== id));
-      setHistMsg("🗑️ Registro eliminado");
-    } else {
-      console.error("borrarHistorial error:", error);
-      setHistMsg(`❌ Error al borrar: ${error.message}`);
+    // 1. Borrar de estado y localStorage
+    setHistorialData(prev => {
+      const nuevo = prev.filter(h => h.id !== id);
+      try {
+        localStorage.setItem("ae_historial_local", JSON.stringify(nuevo));
+      } catch (e) {
+        console.warn("Error actualizando localStorage:", e);
+      }
+      return nuevo;
+    });
+    setHistMsg("🗑️ Registro eliminado");
+
+    // 2. Si hay sesión, intentar borrar en Supabase
+    if (A.user) {
+      try {
+        const { error: errDirecto } = await supabase
+          .from("historial_atlas")
+          .delete()
+          .eq("id", id)
+          .eq("user_id", A.user.id);
+        if (errDirecto) {
+          await supabase.rpc("borrar_historial", { p_id: id });
+        }
+      } catch (e) {
+        console.warn("Error borrando en Supabase:", e);
+      }
     }
     setTimeout(() => setHistMsg(""), 4000);
   }, [A.user]);
 
   const cargarHistorial = useCallback(async () => {
+    // 1. Cargar primero de localStorage para disponibilidad inmediata y soporte offline/local
+    try {
+      const local = localStorage.getItem("ae_historial_local");
+      if (local) {
+        const parsed = JSON.parse(local);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setHistorialData(parsed);
+        }
+      }
+    } catch (e) {
+      console.warn("Error leyendo historial local:", e);
+    }
+
+    // 2. Si el usuario está autenticado, sincronizar con Supabase
     if (!A.user) return;
-    const { data } = await supabase
-      .from("historial_atlas")
-      .select("*")
-      .eq("user_id", A.user.id)
-      .order("fecha", { ascending: true });
-    if (data) setHistorialData(data);
+    try {
+      const { data, error } = await supabase
+        .from("historial_atlas")
+        .select("*")
+        .eq("user_id", A.user.id)
+        .order("fecha", { ascending: true });
+      if (!error && data && data.length > 0) {
+        const sanitizados = data.map(item => ({
+          ...item,
+          ab_generado: Number(item.ab_generado || 0),
+          usd_generado: Number(item.usd_generado || 0),
+          diamantes_obtenidos: Number(item.diamantes_obtenidos || 0),
+        }));
+        setHistorialData(sanitizados);
+        try {
+          localStorage.setItem("ae_historial_local", JSON.stringify(sanitizados));
+        } catch {
+          // ignore
+        }
+      }
+    } catch (err) {
+      console.warn("Error sincronizando historial con Supabase:", err);
+    }
   }, [A.user]);
 
   useEffect(() => { startTransition(() => { cargarHistorial(); }); }, [A.user, cargarHistorial]);

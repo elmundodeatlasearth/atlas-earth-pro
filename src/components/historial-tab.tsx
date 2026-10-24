@@ -38,30 +38,35 @@ interface HistorialTabProps {
 export default function HistorialTab(props: HistorialTabProps) {
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Chart — solo PRO+ */}
-      {props.user && props.historialData.length > 0 && props.permissions.canHistoryChart ? (
+      {/* Chart interactivo */}
+      {props.historialData.length > 0 ? (
         <GlowCard>
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-xs text-gray-500 uppercase tracking-widest">📈 Progreso en el Tiempo</div>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <div className="text-xs text-gray-400 uppercase tracking-widest font-bold flex items-center gap-1.5">
+              <span>📈</span> Progreso en el Tiempo ({props.historialData.length} registros)
+            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-medium">
+              {props.user ? "☁️ Sincronizado con Supabase" : "💾 Almacenamiento Local Activo"}
+            </span>
           </div>
           <div className="h-64">
             <HistorialChart data={props.historialData} />
           </div>
           {/* Lista de entradas con botón borrar */}
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 space-y-2 max-h-60 overflow-y-auto pr-1">
             {props.historialData.slice().reverse().map(entry => (
-              <div key={entry.id} className="flex items-center justify-between bg-white/[0.03] border border-white/5 rounded-lg px-3 py-2">
-                <div className="flex gap-4 text-xs text-gray-300">
-                  <span className="font-mono">📅 {entry.fecha}</span>
-                  <span className="text-purple-300">💎 {entry.ab_generado} AB</span>
-                  <span className="text-green-400">💰 ${Number(entry.usd_generado || 0).toFixed(4)}</span>
-                  {entry.diamantes_obtenidos > 0 && <span className="text-cyan-300">💎 {entry.diamantes_obtenidos} diam</span>}
+              <div key={entry.id} className="flex items-center justify-between bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 rounded-lg px-3 py-2 transition-colors">
+                <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-xs text-gray-300">
+                  <span className="font-mono text-cyan-400 font-bold">📅 {entry.fecha}</span>
+                  <span className="text-purple-300 font-mono">🪙 {entry.ab_generado} AB</span>
+                  <span className="text-emerald-400 font-mono font-bold">💰 ${Number(entry.usd_generado || 0).toFixed(4)} USD</span>
+                  {entry.diamantes_obtenidos > 0 && <span className="text-blue-300 font-mono">💎 {entry.diamantes_obtenidos} diam</span>}
                 </div>
                 <button
                   onClick={() => {
                     if (window.confirm(`¿Eliminar el registro del ${entry.fecha}?`)) props.borrarHistorial(entry.id!);
                   }}
-                  className="text-gray-500 hover:text-red-400 bg-white/5 hover:bg-red-900/30 px-2 py-1 rounded transition-all text-[10px] font-bold"
+                  className="text-gray-500 hover:text-red-400 bg-white/5 hover:bg-red-900/30 px-2 py-1 rounded transition-all text-xs font-bold"
                   title="Eliminar registro"
                 >
                   🗑️
@@ -70,56 +75,49 @@ export default function HistorialTab(props: HistorialTabProps) {
             ))}
           </div>
         </GlowCard>
-      ) : props.user && props.historialData.length > 0 && !props.permissions.canHistoryChart ? (
-        <LockedFeature
-          title="📈 Gráfico de Progreso"
-          description="Visualiza tu evolución en el tiempo con gráficos interactivos de AB generados, USD y diamantes."
-          compact
-          requiredPlan="PRO"
-        />
       ) : null}
 
-      {/* Formulario — todos pueden verlo pero solo PRO+ guarda */}
+      {/* Formulario de registro diario */}
       <GlowCard>
-        <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">
-          📝 Registrar Progreso Diario
-          {!props.user && <span className="ml-2 text-red-400">(Inicia sesión para guardar)</span>}
-          {props.user && !props.permissions.canSaveHistory && (
-            <span className="ml-2 text-amber-400">(🔒 PRO+ para guardar historial)</span>
-          )}
+        <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+          <div className="text-xs text-gray-400 uppercase tracking-widest font-bold flex items-center gap-1.5">
+            <span>📝</span> Registrar Progreso Diario
+          </div>
+          <span className="text-[10px] text-gray-500">
+            {props.user ? "Sincronización en la nube + Respaldo local" : "Modo local (guardado seguro en este dispositivo)"}
+          </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
           <div>
-            <label className="text-[10px] text-gray-500 block mb-1">📅 Fecha</label>
+            <label className="text-[10px] text-gray-400 block mb-1">📅 Fecha</label>
             <input type="date" value={props.histFecha} onChange={e => props.setHistFecha(e.target.value)}
               className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none transition-all" />
           </div>
           <div>
-            <label className="text-[10px] text-gray-500 block mb-1">💰 AB Generados</label>
+            <label className="text-[10px] text-gray-400 block mb-1">🪙 AB Generados</label>
             <input type="number" value={props.histAb} onChange={e => props.setHistAb(Number(e.target.value))}
               className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none transition-all" />
           </div>
           <div>
-            <label className="text-[10px] text-gray-500 block mb-1">💵 USD Generados</label>
-            <input type="number" value={props.histUsd} onChange={e => props.setHistUsd(Number(e.target.value))}
+            <label className="text-[10px] text-gray-400 block mb-1">💵 USD Generados</label>
+            <input type="number" step="0.0001" value={props.histUsd} onChange={e => props.setHistUsd(Number(e.target.value))}
               className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none transition-all" />
           </div>
           <div>
-            <label className="text-[10px] text-gray-500 block mb-1">💎 Diamantes</label>
+            <label className="text-[10px] text-gray-400 block mb-1">💎 Diamantes</label>
             <input type="number" value={props.histDiam} onChange={e => props.setHistDiam(Number(e.target.value))}
               className="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-500 focus:outline-none transition-all" />
           </div>
           <div className="flex items-end">
             <button onClick={props.guardarHistorial}
-              disabled={!props.user || !props.permissions.canSaveHistory}
-              className="w-full py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-xs font-bold text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-cyan-900/30">
-              💾 Guardar
+              className="w-full py-2 rounded-lg bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-xs font-bold text-white transition-all shadow-md shadow-cyan-900/30">
+              💾 Guardar Registro
             </button>
           </div>
         </div>
         {props.histMsg && (
-          <div className={`text-xs text-center font-bold mt-2 ${props.histMsg.includes("Error") ? "text-red-400" : "text-green-400"}`}>
+          <div className={`text-xs text-center font-bold mt-2 ${props.histMsg.includes("Error") ? "text-red-400" : "text-emerald-400"}`}>
             {props.histMsg}
           </div>
         )}

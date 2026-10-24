@@ -188,4 +188,46 @@ describe("Auditoría Detallada del Simulador — Perfil Real 435 Parcelas", () =
     expect(roiNegativo.esRentable).toBe(false);
     expect(roiNegativo.gananciaNetaAb).toBe(-70);
   });
+
+  it("debe calcular exactamente los AB requeridos para el objetivo de 101 insignias (Nivel 5)", () => {
+    // Si el usuario tiene 31 insignias (Nivel 3, +15%)
+    const insigniasActuales = 31;
+    const objetivo = 101;
+    const faltantes = objetivo - insigniasActuales; // 70 insignias
+    expect(faltantes).toBe(70);
+
+    const costoTotalAB = faltantes * 200; // 14,000 AB
+    expect(costoTotalAB).toBe(14000);
+
+    // Equivalente en parcelas: 14,000 / 100 = 140 parcelas
+    const parcelasEquivalentes = costoTotalAB / 100;
+    expect(parcelasEquivalentes).toBe(140);
+
+    // Con 2,500 AB ahorrados:
+    const abAhorrados = 2500;
+    const abNetos = Math.max(0, costoTotalAB - abAhorrados);
+    expect(abNetos).toBe(11500);
+
+    // Tiempo con Explorer Club (122.6 AB/día):
+    const diasEC = abNetos / 122.6;
+    expect(diasEC).toBeCloseTo(93.8, 1);
+  });
+
+  it("debe verificar con precisión matemática la renta en 24 horas (24/7 vs 22h)", () => {
+    const baseSec = motorEC.renta_base; // 8.4290e-7
+    const mult = 10;
+    const pass = 1.25;
+
+    // 24/7: 24h a 10x
+    const renta24 = baseSec * 3600 * 24 * mult * pass;
+    expect(renta24).toBeCloseTo(0.9103, 3);
+
+    // 22h/7d: 22h a 10x + 2h a 1x
+    const renta22 = (baseSec * 3600 * 22 * mult + baseSec * 3600 * 2 * 1) * pass;
+    expect(renta22).toBeCloseTo(0.8421, 3);
+
+    // La renta 24/7 debe ser superior a 22h/7d por las 2 horas adicionales con multiplicador 10x
+    expect(renta24).toBeGreaterThan(renta22);
+    expect(renta24 - renta22).toBeCloseTo(0.0683, 3);
+  });
 });
