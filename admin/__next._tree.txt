@@ -1,3 +1,3 @@
-:HL["/atlas-earth-pro/_next/static/chunks/3kdnxcwcz84ut.css","style"]
+:HL["/atlas-earth-pro/_next/static/chunks/26u5lqbi7pr74.css","style"]
 :HL["https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"admin","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"lChmA6284n7yrTvTRmu20"}
+0:{"tree":{"name":"","param":null,"prefetchHints":16,"slots":{"children":{"name":"admin","param":null,"prefetchHints":0,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":0,"slots":null}}}}},"staleTime":300,"buildId":"qbsxO0lw4iGVpDpyXVUX5"}
