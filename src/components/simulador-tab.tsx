@@ -155,8 +155,74 @@ export default function SimuladorTab(props: SimuladorTabProps) {
 
   const insigniasActuales = props.insignias ?? (props.nivelActualPasaporte === 5 ? 101 : props.nivelActualPasaporte === 4 ? 61 : props.nivelActualPasaporte === 3 ? 31 : props.nivelActualPasaporte === 2 ? 11 : props.nivelActualPasaporte === 1 ? 1 : 0);
 
+  type NivelVistaSim = "basico" | "intermedio" | "avanzado";
+  const [nivelVistaSim, setNivelVistaSim] = useState<NivelVistaSim>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ae_vista_simulador");
+      if (saved === "basico" || saved === "intermedio" || saved === "avanzado") return saved;
+    }
+    return "basico";
+  });
+
+  const cambiarVistaSim = (modo: NivelVistaSim) => {
+    setNivelVistaSim(modo);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("ae_vista_simulador", modo);
+    }
+  };
+
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
+      {/* ≡≡≡ SELECTOR DE VISTA: BÁSICO / INTERMEDIO / AVANZADO ≡≡≡ */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 bg-[#0c121d] rounded-2xl border border-white/10 shadow-lg shadow-black/40">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] uppercase tracking-wider text-gray-400 font-bold pl-1.5 flex items-center gap-1.5">
+            <span>⚙️</span> Modo de Simulación:
+          </span>
+          <div className="flex bg-[#070b12] p-1 rounded-xl border border-white/5 gap-1">
+            <button
+              type="button"
+              onClick={() => cambiarVistaSim("basico")}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                nivelVistaSim === "basico"
+                  ? "bg-emerald-500 text-black shadow-[0_0_14px_rgba(16,185,129,0.5)] scale-105"
+                  : "text-gray-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              🟢 Básico (Insignias & Parcelas)
+            </button>
+            <button
+              type="button"
+              onClick={() => cambiarVistaSim("intermedio")}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                nivelVistaSim === "intermedio"
+                  ? "bg-amber-500 text-black shadow-[0_0_14px_rgba(245,158,11,0.5)] scale-105"
+                  : "text-gray-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              🟡 Intermedio (+Meta Diaria & Reinversión)
+            </button>
+            <button
+              type="button"
+              onClick={() => cambiarVistaSim("avanzado")}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                nivelVistaSim === "avanzado"
+                  ? "bg-purple-600 text-white shadow-[0_0_14px_rgba(168,85,247,0.5)] scale-105"
+                  : "text-gray-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              🟣 Avanzado (Minijuegos, ROI & Tiers)
+            </button>
+          </div>
+        </div>
+
+        <div className="text-[11px] text-gray-400 pr-2 hidden md:block">
+          {nivelVistaSim === "basico" && "Vista limpia: Calculadora de Insignias y Compra directa de Parcelas"}
+          {nivelVistaSim === "intermedio" && "Vista ampliada: Incluye Meta Diaria en USD y Reinversión Compuesta"}
+          {nivelVistaSim === "avanzado" && "Vista completa: Incluye Minijuegos, ROI y Mapa de Multiplicadores"}
+        </div>
+      </div>
+
       {/* ≡≡≡ SECCIÓN 1: 🏅 CALCULADORA DE INSIGNIAS (OBJETIVO 101) & PASAPORTE ≡≡≡ */}
       <section className="space-y-2.5">
         <div className="flex items-center gap-2 px-1">
@@ -504,16 +570,17 @@ export default function SimuladorTab(props: SimuladorTabProps) {
       </GlowCard>
       </section>
 
-      {/* ≡≡≡ SECCIÓN 3: 🎯 SIMULADOR POR META DE INGRESOS EN USD AL DÍA ≡≡≡ */}
-      <section className="space-y-2.5">
-        <div className="flex items-center gap-2 px-1">
-          <span className="text-[11px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
-            SECCIÓN 3
-          </span>
-          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
-            Simulador Inverso por Meta de Ingresos Diarios ($ USD/día)
-          </span>
-        </div>
+      {/* ≡≡≡ SECCIÓN 3: 🎯 SIMULADOR POR META DE INGRESOS EN USD AL DÍA (Intermedio / Avanzado) ≡≡≡ */}
+      {nivelVistaSim !== "basico" && (
+        <section className="space-y-2.5">
+          <div className="flex items-center gap-2 px-1">
+            <span className="text-[11px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
+              SECCIÓN 3
+            </span>
+            <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+              Simulador Inverso por Meta de Ingresos Diarios ($ USD/día)
+            </span>
+          </div>
       <GlowCard>
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
           <div className="text-xs text-gray-400 uppercase tracking-widest font-bold flex items-center gap-1.5">
@@ -743,87 +810,95 @@ export default function SimuladorTab(props: SimuladorTabProps) {
         ) : null}
       </GlowCard>
       </section>
+      )}
 
       {/* ≡≡≡ SECCIÓN 4: 🔄 REINVERSIÓN COMPUESTA ("EFECTO BOLA DE NIEVE") ≡≡≡ */}
-      <section className="space-y-2.5">
-        <div className="flex items-center gap-2 px-1">
-          <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-            SECCIÓN 4
-          </span>
-          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
-            Reinversión Compuesta de Renta en Atlas Bucks (3 a 24 Meses)
-          </span>
-        </div>
-        <ReinvestmentCalculator
-          motor={props.motor}
-          pais={props.pais}
-          abPorDia={
-            props.tipoPase?.includes("Explorer Club")
-              ? (props.abEcDiarios ?? 122.6)
-              : (props.abPorDia ?? 22)
-          }
-          horasSrb={props.horasSrb}
-        />
-      </section>
+      {nivelVistaSim !== "basico" && (
+        <section className="space-y-2.5">
+          <div className="flex items-center gap-2 px-1">
+            <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+              SECCIÓN 4
+            </span>
+            <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+              Reinversión Compuesta de Renta en Atlas Bucks (3 a 24 Meses)
+            </span>
+          </div>
+          <ReinvestmentCalculator
+            motor={props.motor}
+            pais={props.pais}
+            abPorDia={
+              props.tipoPase?.includes("Explorer Club")
+                ? (props.abEcDiarios ?? 122.6)
+                : (props.abPorDia ?? 22)
+            }
+            horasSrb={props.horasSrb}
+          />
+        </section>
+      )}
 
       {/* ≡≡≡ SECCIÓN 5: 🎮 CALCULADORA DE MINIJUEGOS ≡≡≡ */}
-      <section className="space-y-2.5">
-        <div className="flex items-center gap-2 px-1">
-          <span className="text-[11px] font-black uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
-            SECCIÓN 5
-          </span>
-          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
-            Rendimiento & ROI de Minijuegos (Racer, Golf, Fishing, Warship)
-          </span>
-        </div>
-        <MinigamesCalculator />
-      </section>
+      {nivelVistaSim === "avanzado" && (
+        <section className="space-y-2.5">
+          <div className="flex items-center gap-2 px-1">
+            <span className="text-[11px] font-black uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
+              SECCIÓN 5
+            </span>
+            <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+              Rendimiento & ROI de Minijuegos (Racer, Golf, Fishing, Warship)
+            </span>
+          </div>
+          <MinigamesCalculator />
+        </section>
+      )}
 
       {/* ≡≡≡ SECCIÓN 6: 📈 ANÁLISIS DE ROI & RECUPERACIÓN ≡≡≡ */}
-      <section className="space-y-2.5">
-        <div className="flex items-center gap-2 px-1">
-          <span className="text-[11px] font-black uppercase tracking-wider text-pink-400 bg-pink-500/10 px-2 py-0.5 rounded-md border border-pink-500/20">
-            SECCIÓN 6
-          </span>
-          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
-            Análisis de Recuperación de Inversión (ROI Global & Marginal)
-          </span>
-        </div>
-        <GlowCard>
-          <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">📈 Análisis de ROI</div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="bg-[#0e0e0e] rounded-xl p-4 border border-white/5">
-              <div className="text-xs text-gray-400 mb-1">🌍 ROI Global</div>
-              <div className="text-lg font-bold text-white">{props.roiGlobalDias > 0 ? props.motor.formato_tiempo_exacto(props.roiGlobalDias) : "N/A"}</div>
-              <div className="text-[10px] text-gray-500 mt-1">Tiempo en recuperar la inversión con TODAS tus ganancias.</div>
-            </div>
-            <div className="bg-[#0e0e0e] rounded-xl p-4 border border-white/5">
-              <div className="text-xs text-gray-400 mb-1">⚡ ROI Marginal</div>
-              <div className={`text-lg font-bold ${props.roiMarginalDias <= 365 ? "text-green-400" : props.roiMarginalDias <= 1095 ? "text-orange-400" : "text-red-400"}`}>
-                {props.roiMarginalDias > 0 ? props.motor.formato_tiempo_exacto(props.roiMarginalDias) : props.rentaAdicional <= 0 ? "Nunca (Pérdida)" : "N/A"}
-              </div>
-              <div className="text-[10px] text-gray-500 mt-1">Tiempo en recuperar con SOLO las ganancias extra del salto.</div>
-            </div>
+      {nivelVistaSim === "avanzado" && (
+        <section className="space-y-2.5">
+          <div className="flex items-center gap-2 px-1">
+            <span className="text-[11px] font-black uppercase tracking-wider text-pink-400 bg-pink-500/10 px-2 py-0.5 rounded-md border border-pink-500/20">
+              SECCIÓN 6
+            </span>
+            <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+              Análisis de Recuperación de Inversión (ROI Global & Marginal)
+            </span>
           </div>
-          {props.costoTiendaUsd > 0 && (
-            <div className="mt-3 text-xs text-gray-500">
-              💰 Inversión total requerida: <strong className="text-white">${props.costoTiendaUsd.toFixed(2)} USD</strong> ({props.costoMetaAb.toLocaleString()} AB en tienda)
+          <GlowCard>
+            <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">📈 Análisis de ROI</div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className="bg-[#0e0e0e] rounded-xl p-4 border border-white/5">
+                <div className="text-xs text-gray-400 mb-1">🌍 ROI Global</div>
+                <div className="text-lg font-bold text-white">{props.roiGlobalDias > 0 ? props.motor.formato_tiempo_exacto(props.roiGlobalDias) : "N/A"}</div>
+                <div className="text-[10px] text-gray-500 mt-1">Tiempo en recuperar la inversión con TODAS tus ganancias.</div>
+              </div>
+              <div className="bg-[#0e0e0e] rounded-xl p-4 border border-white/5">
+                <div className="text-xs text-gray-400 mb-1">⚡ ROI Marginal</div>
+                <div className={`text-lg font-bold ${props.roiMarginalDias <= 365 ? "text-green-400" : props.roiMarginalDias <= 1095 ? "text-orange-400" : "text-red-400"}`}>
+                  {props.roiMarginalDias > 0 ? props.motor.formato_tiempo_exacto(props.roiMarginalDias) : props.rentaAdicional <= 0 ? "Nunca (Pérdida)" : "N/A"}
+                </div>
+                <div className="text-[10px] text-gray-500 mt-1">Tiempo en recuperar con SOLO las ganancias extra del salto.</div>
+              </div>
             </div>
-          )}
-        </GlowCard>
-      </section>
+            {props.costoTiendaUsd > 0 && (
+              <div className="mt-3 text-xs text-gray-500">
+                💰 Inversión total requerida: <strong className="text-white">${props.costoTiendaUsd.toFixed(2)} USD</strong> ({props.costoMetaAb.toLocaleString()} AB en tienda)
+              </div>
+            )}
+          </GlowCard>
+        </section>
+      )}
 
       {/* ≡≡≡ SECCIÓN 7: 🗺️ MAPA DE MULTIPLICADORES (TABLA INTACTA) ≡≡≡ */}
-      <section className="space-y-2.5">
-        <div className="flex items-center gap-2 px-1">
-          <span className="text-[11px] font-black uppercase tracking-wider text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded-md border border-yellow-500/20">
-            SECCIÓN 7
-          </span>
-          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
-            Mapa de Multiplicadores — Tu Posición Actual & Tiers
-          </span>
-        </div>
-      <GlowCard>
+      {nivelVistaSim === "avanzado" && (
+        <section className="space-y-2.5">
+          <div className="flex items-center gap-2 px-1">
+            <span className="text-[11px] font-black uppercase tracking-wider text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded-md border border-yellow-500/20">
+              SECCIÓN 7
+            </span>
+            <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+              Mapa de Multiplicadores — Tu Posición Actual & Tiers
+            </span>
+          </div>
+        <GlowCard>
         <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">🗺️ Mapa de Multiplicadores — Tu Posición Actual</div>
         {(() => {
           const tabla = TIERS_COMPLETOS[props.pais] || TIERS_COMPLETOS["Estados Unidos"];
@@ -993,6 +1068,7 @@ export default function SimuladorTab(props: SimuladorTabProps) {
         })()}
       </GlowCard>
       </section>
+      )}
     </div>
   );
 }

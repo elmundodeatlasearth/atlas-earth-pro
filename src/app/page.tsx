@@ -151,6 +151,8 @@ export default function Home() {
           <TabTransition activeTab={S.activeTab}>
             {S.activeTab === "dashboard" && (
             <DashboardTab
+              abAhorrados={S.abAhorrados}
+              insignias={S.insignias}
               motor={S.motor} multTier={S.multTier} pais={S.pais}
               tasa={S.tasa} moneda={S.moneda}
               rentaDia={S.rentaDia} rentaSem={S.rentaSem} rentaMes={S.rentaMes} rentaAnio={S.rentaAnio}

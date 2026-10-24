@@ -5,15 +5,19 @@
 // ULTRA: dashboard completo + AB proyectados EC + multi-país
 
 "use client";
+import { useState } from "react";
 import { StatCard, MetricBox, GlowCard } from "./stat-card";
 import { fmt, proyectarFechaMeta, type MotorAtlasEarth, type DesgloseMensual } from "@/utils/atlasMath";
 import { sanitizeHTML } from "@/utils/sanitize";
 import TierComparativa from "./tier-comparativa";
 import LockedFeature from "./LockedFeature";
 import RarityDonutChart from "./donut-chart";
+import DualCalculator from "./dual-calculator";
 import type { Permissions } from "@/hooks/usePermissions";
 
 interface DashboardTabProps {
+  abAhorrados?: number;
+  insignias?: number;
   motor: MotorAtlasEarth;
   multTier: number;
   pais: string;
@@ -126,26 +130,107 @@ export default function DashboardTab(props: DashboardTabProps) {
     ? (props.faltantesTier * 100) / abPorDiaActivo
     : 0;
 
+  // Estado del Nivel de Vista para mantener la calculadora limpia y sin redundancias
+  type NivelVista = "basico" | "intermedio" | "avanzado";
+  const [nivelVista, setNivelVista] = useState<NivelVista>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ae_vista_dashboard");
+      if (saved === "basico" || saved === "intermedio" || saved === "avanzado") return saved;
+    }
+    return "basico";
+  });
+
+  const cambiarVista = (modo: NivelVista) => {
+    setNivelVista(modo);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("ae_vista_dashboard", modo);
+    }
+  };
+
+  const insigniasReales = props.insignias ?? (props.motor.pasaporte_nivel === 5 ? 101 : props.motor.pasaporte_nivel === 4 ? 61 : props.motor.pasaporte_nivel === 3 ? 31 : props.motor.pasaporte_nivel === 2 ? 11 : props.motor.pasaporte_nivel === 1 ? 1 : 0);
+
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
+      {/* ≡≡≡ SELECTOR DE VISTA: BÁSICO / INTERMEDIO / AVANZADO ≡≡≡ */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 bg-[#0c121d] rounded-2xl border border-white/10 shadow-lg shadow-black/40">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] uppercase tracking-wider text-gray-400 font-bold pl-1.5 flex items-center gap-1.5">
+            <span>⚙️</span> Modo de Visualización:
+          </span>
+          <div className="flex bg-[#070b12] p-1 rounded-xl border border-white/5 gap-1">
+            <button
+              type="button"
+              onClick={() => cambiarVista("basico")}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                nivelVista === "basico"
+                  ? "bg-emerald-500 text-black shadow-[0_0_14px_rgba(16,185,129,0.5)] scale-105"
+                  : "text-gray-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              🟢 Básico (Limpio)
+            </button>
+            <button
+              type="button"
+              onClick={() => cambiarVista("intermedio")}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                nivelVista === "intermedio"
+                  ? "bg-amber-500 text-black shadow-[0_0_14px_rgba(245,158,11,0.5)] scale-105"
+                  : "text-gray-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              🟡 Intermedio
+            </button>
+            <button
+              type="button"
+              onClick={() => cambiarVista("avanzado")}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                nivelVista === "avanzado"
+                  ? "bg-purple-600 text-white shadow-[0_0_14px_rgba(168,85,247,0.5)] scale-105"
+                  : "text-gray-400 hover:text-white hover:bg-white/5"
+              }`}
+            >
+              🟣 Avanzado (Detallado)
+            </button>
+          </div>
+        </div>
+
+        <div className="text-[11px] text-gray-400 pr-2 hidden md:block">
+          {nivelVista === "basico" && "Vista directa: Renta esencial + Calculadora Dual sin textos repetitivos"}
+          {nivelVista === "intermedio" && "Vista ampliada: Incluye Donut de Rarezas y proyección de Atlas Bucks"}
+          {nivelVista === "avanzado" && "Vista integral: Auditoría matemática, comparativa multi-país y estrategia IA"}
+        </div>
+      </div>
+
+      {/* ≡≡≡ CALCULADORA DUAL: LO QUE TENGO VS LO QUE NECESITO ≡≡≡ */}
+      <DualCalculator
+        totalParcelas={props.totalParcelas}
+        parcelasC={props.motor.parcelas.c}
+        parcelasR={props.motor.parcelas.r}
+        parcelasE={props.motor.parcelas.e}
+        parcelasL={props.motor.parcelas.l}
+        insigniasActuales={insigniasReales}
+        abAhorrados={props.abAhorrados ?? 0}
+        multTier={props.multTier}
+        motor={props.motor}
+        pais={props.pais}
+        abPorDia={props.desgloseF2p.promedio_diario}
+        abEcDiarios={props.desgloseEc.promedio_diario}
+        horasSrb={props.horasSrb}
+        siguienteTramo={props.siguiente_tramo}
+      />
+
       {/* ≡≡≡ SECCIÓN 1: 💎 RENDIMIENTO DIARIO EN 24 HORAS & PROYECCIONES ≡≡≡ */}
       <section className="space-y-3">
         <div className="flex items-center gap-2 px-1">
           <span className="text-[11px] font-black uppercase tracking-wider text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20">
-            SECCIÓN 1
+            MÉTRICAS
           </span>
           <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
-            Rendimiento Exacto en 24 Horas & Proyecciones Financieras
+            Rendimiento Diario & Proyecciones Financieras
           </span>
         </div>
 
         <div>
-          <div className="text-xs text-gray-500 uppercase tracking-widest mb-4 flex flex-wrap items-center justify-between gap-2">
-            <span>💎 Rendimiento Actual — {props.totalParcelas} Parcelas · {props.multTier}x Multiplicador</span>
-            <span className="text-[11px] text-gray-400 font-mono normal-case">
-              Boost actual: <strong className="text-cyan-400">{props.horasBoost}h/día</strong> {props.horasBoost === 24 ? "(⚡ 24/7)" : props.horasBoost === 22 ? "(🌙 22h/7d)" : ""}
-            </span>
-          </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard label="Por Día" usd={props.rentaDia} local={props.rentaDia * props.tasa} moneda={props.moneda} />
             <StatCard label="Por Semana" usd={props.rentaSem} local={props.rentaSem * props.tasa} moneda={props.moneda} />
@@ -172,49 +257,53 @@ export default function DashboardTab(props: DashboardTabProps) {
             </div>
           </div>
 
-          {/* Desglose Matemático Exacto de 24 Horas */}
-          <div className="mt-3 p-3 bg-gradient-to-r from-[#0d1624] to-[#090e18] border border-cyan-500/20 rounded-xl text-xs space-y-1.5 text-gray-300">
-            <div className="font-bold text-cyan-300 flex items-center gap-1.5">
-              <span>📐</span> Auditoría Matemática de tu Ganancia de 24 Horas:
+          {/* Desglose Matemático Exacto de 24 Horas (Solo visible en Avanzado para mantener limpio) */}
+          {nivelVista === "avanzado" && (
+            <div className="mt-3 p-3 bg-gradient-to-r from-[#0d1624] to-[#090e18] border border-cyan-500/20 rounded-xl text-xs space-y-1.5 text-gray-300">
+              <div className="font-bold text-cyan-300 flex items-center gap-1.5">
+                <span>📐</span> Auditoría Matemática de tu Ganancia de 24 Horas:
+              </div>
+              <div className="text-[11px] font-mono text-gray-400 leading-relaxed">
+                • Renta base segundo: <span className="text-white">${fmt(baseSec, 9)} USD/seg</span> ({props.motor.parcelas.c}C · {props.motor.parcelas.r}R · {props.motor.parcelas.e}E · {props.motor.parcelas.l}L)<br />
+                • Multiplicador de Tier ({props.pais}): <span className="text-yellow-400 font-bold">{mult}x</span> | Pasaporte: <span className="text-amber-400 font-bold">{passMult}x (+{((passMult - 1) * 100).toFixed(0)}%)</span><br />
+                • Fórmula 24/7 (EC): <span className="text-emerald-400 font-bold">${fmt(baseSec, 9)} × 86,400s × {mult} × {passMult} = ${fmt(rentaDia24, 6)} USD/24h</span><br />
+                • Fórmula Normal (22h): <span className="text-cyan-400 font-bold">[(${fmt(baseSec, 9)} × 79,200s × {mult}) + (${fmt(baseSec, 9)} × 7,200s × 1)] × {passMult} = ${fmt(rentaDia22, 6)} USD/24h</span>
+              </div>
             </div>
-            <div className="text-[11px] font-mono text-gray-400 leading-relaxed">
-              • Renta base segundo: <span className="text-white">${fmt(baseSec, 9)} USD/seg</span> ({props.motor.parcelas.c}C · {props.motor.parcelas.r}R · {props.motor.parcelas.e}E · {props.motor.parcelas.l}L)<br />
-              • Multiplicador de Tier ({props.pais}): <span className="text-yellow-400 font-bold">{mult}x</span> | Pasaporte: <span className="text-amber-400 font-bold">{passMult}x (+{((passMult - 1) * 100).toFixed(0)}%)</span><br />
-              • Fórmula 24/7 (EC): <span className="text-emerald-400 font-bold">${fmt(baseSec, 9)} × 86,400s × {mult} × {passMult} = ${fmt(rentaDia24, 6)} USD/24h</span><br />
-              • Fórmula Normal (22h): <span className="text-cyan-400 font-bold">[(${fmt(baseSec, 9)} × 79,200s × {mult}) + (${fmt(baseSec, 9)} × 7,200s × 1)] × {passMult} = ${fmt(rentaDia22, 6)} USD/24h</span>
-            </div>
-          </div>
+          )}
         </div>
       </section>
 
-      {/* ≡≡≡ SECCIÓN 2: 🍀 ÍNDICE DE SUERTE & ANÁLISIS DE PORTAFOLIO ≡≡≡ */}
-      <section className="space-y-3">
-        <div className="flex items-center gap-2 px-1">
-          <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-            SECCIÓN 2
-          </span>
-          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
-            Índice de Suerte de Rareza & Análisis de Portafolio
-          </span>
-        </div>
-        <RarityDonutChart
-          parcelasC={props.motor.parcelas.c}
-          parcelasR={props.motor.parcelas.r}
-          parcelasE={props.motor.parcelas.e}
-          parcelasL={props.motor.parcelas.l}
-          pasaporteMult={props.motor.pasaporte_mult}
-          horasBoost={props.horasBoost}
-          eficiencia={props.eficiencia}
-          tierMult={props.multTier}
-          horasSrb={props.horasSrb}
-        />
-      </section>
+      {/* ≡≡≡ SECCIÓN 2: 🍀 ÍNDICE DE SUERTE & ANÁLISIS DE PORTAFOLIO (Intermedio / Avanzado) ≡≡≡ */}
+      {nivelVista !== "basico" && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+              DETALLE
+            </span>
+            <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+              Índice de Suerte de Rareza & Análisis de Portafolio
+            </span>
+          </div>
+          <RarityDonutChart
+            parcelasC={props.motor.parcelas.c}
+            parcelasR={props.motor.parcelas.r}
+            parcelasE={props.motor.parcelas.e}
+            parcelasL={props.motor.parcelas.l}
+            pasaporteMult={props.motor.pasaporte_mult}
+            horasBoost={props.horasBoost}
+            eficiencia={props.eficiencia}
+            tierMult={props.multTier}
+            horasSrb={props.horasSrb}
+          />
+        </section>
+      )}
 
       {/* ≡≡≡ SECCIÓN 3: 🎯 OBJETIVOS DE INGRESOS & PROGRESO DE TIER ≡≡≡ */}
       <section className="space-y-3">
         <div className="flex items-center gap-2 px-1">
           <span className="text-[11px] font-black uppercase tracking-wider text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-md border border-orange-500/20">
-            SECCIÓN 3
+            METAS
           </span>
           <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
             Objetivos de Ingresos Diarios & Saltos de Tier
@@ -289,197 +378,203 @@ export default function DashboardTab(props: DashboardTabProps) {
       </div>
       </section>
 
-      {/* ≡≡≡ SECCIÓN 4: 🪙 PRODUCCIÓN & PROYECCIÓN DE ATLAS BUCKS ≡≡≡ */}
-      <section className="space-y-3">
-        <div className="flex items-center gap-2 px-1">
-          <span className="text-[11px] font-black uppercase tracking-wider text-green-400 bg-green-500/10 px-2 py-0.5 rounded-md border border-green-500/20">
-            SECCIÓN 4
-          </span>
-          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
-            Producción & Proyección de Atlas Bucks (F2P vs Explorer Club)
-          </span>
-        </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <GlowCard>
-          <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">🌱 AB Proyectados (F2P Gratuito)</div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 p-3 bg-emerald-500/[0.04] rounded-xl border border-emerald-500/10">
-            <div>
-              <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">📅 Por Mes (30 Días)</div>
-              <div className="text-2xl font-black bg-gradient-to-r from-green-400 to-emerald-300 bg-clip-text text-transparent">
-                +{props.desgloseF2p.total_mes.toLocaleString()} AB/mes
-              </div>
-              <div className="text-xs text-gray-400 mt-0.5">≈ {props.desgloseF2p.promedio_diario.toFixed(1)} AB/día</div>
-              <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-bold text-xs border border-emerald-500/20">
-                🏞️ +{Math.floor(props.desgloseF2p.total_mes / 100)} parcelas / mes
-              </div>
-            </div>
-            <div>
-              <div className="text-[10px] text-emerald-400 uppercase tracking-wider mb-0.5 font-bold">🏆 Ciclo 90 Días</div>
-              <div className="text-2xl font-black text-emerald-300">
-                +{props.desgloseF2p.total_90d.toLocaleString()} AB
-              </div>
-              <div className="text-xs text-gray-400 mt-0.5">≈ {props.desgloseF2p.promedio_diario_90d.toFixed(1)} AB/día</div>
-              <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-bold text-xs border border-emerald-500/20">
-                🏞️ +{Math.floor(props.desgloseF2p.total_90d / 100)} parcelas en total
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <MetricBox label="Ruleta (5/d)" value={`${props.desgloseF2p.ruleta_diaria.toFixed(1)}/d`} color="text-cyan-400" />
-            <MetricBox label="Anuncios" value={`${props.desgloseF2p.anuncios_diarios}/d`} color="text-blue-400" />
-            <MetricBox label="Asistencia" value={`${props.desgloseF2p.asistencia_mes}/mes`} color="text-purple-400" />
-            <MetricBox label="Asist. 90d" value={`${props.desgloseF2p.asistencia_90d} AB`} color="text-emerald-400" />
-          </div>
-
-          <div className="mt-3 p-2 rounded-lg bg-black/40 border border-white/5 text-[11px] text-gray-300 flex items-center justify-between">
-            <span className="text-cyan-400 font-semibold flex items-center gap-1">
-              <span>🌙</span> Renta a 22h/7d:
+      {/* ≡≡≡ SECCIÓN 4: 🪙 PRODUCCIÓN & PROYECCIÓN DE ATLAS BUCKS (Intermedio / Avanzado) ≡≡≡ */}
+      {nivelVista !== "basico" && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <span className="text-[11px] font-black uppercase tracking-wider text-green-400 bg-green-500/10 px-2 py-0.5 rounded-md border border-green-500/20">
+              PROYECCIÓN
             </span>
-            <span className="font-mono text-white font-bold">
-              ${fmt(rentaDia22, 4)} USD/día <span className="text-gray-500 font-normal">(${fmt(rentaMesDia22, 4)} con SRB)</span>
+            <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+              Producción & Proyección de Atlas Bucks (F2P vs Explorer Club)
             </span>
           </div>
-        </GlowCard>
-
-        {props.permissions.canUseECOptimizer ? (
-          <GlowCard className={`border-amber-500/20 ${props.tipoPase?.includes("Explorer Club") ? "ring-1 ring-amber-500/40 shadow-lg shadow-amber-900/10" : ""}`}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-xs text-amber-400 uppercase tracking-widest font-bold">
-                🔥 AB Proyectados (Explorer Club)
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <GlowCard>
+              <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">🌱 AB Proyectados (F2P Gratuito)</div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 p-3 bg-emerald-500/[0.04] rounded-xl border border-emerald-500/10">
+                <div>
+                  <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">📅 Por Mes (30 Días)</div>
+                  <div className="text-2xl font-black bg-gradient-to-r from-green-400 to-emerald-300 bg-clip-text text-transparent">
+                    +{props.desgloseF2p.total_mes.toLocaleString()} AB/mes
+                  </div>
+                  <div className="text-xs text-gray-400 mt-0.5">≈ {props.desgloseF2p.promedio_diario.toFixed(1)} AB/día</div>
+                  <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-bold text-xs border border-emerald-500/20">
+                    🏞️ +{Math.floor(props.desgloseF2p.total_mes / 100)} parcelas / mes
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] text-emerald-400 uppercase tracking-wider mb-0.5 font-bold">🏆 Ciclo 90 Días</div>
+                  <div className="text-2xl font-black text-emerald-300">
+                    +{props.desgloseF2p.total_90d.toLocaleString()} AB
+                  </div>
+                  <div className="text-xs text-gray-400 mt-0.5">≈ {props.desgloseF2p.promedio_diario_90d.toFixed(1)} AB/día</div>
+                  <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 font-bold text-xs border border-emerald-500/20">
+                    🏞️ +{Math.floor(props.desgloseF2p.total_90d / 100)} parcelas en total
+                  </div>
+                </div>
               </div>
-              {props.tipoPase?.includes("Explorer Club") && (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
-                  👑 TU PASE ACTIVO
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <MetricBox label="Ruleta (5/d)" value={`${props.desgloseF2p.ruleta_diaria.toFixed(1)}/d`} color="text-cyan-400" />
+                <MetricBox label="Anuncios" value={`${props.desgloseF2p.anuncios_diarios}/d`} color="text-blue-400" />
+                <MetricBox label="Asistencia" value={`${props.desgloseF2p.asistencia_mes}/mes`} color="text-purple-400" />
+                <MetricBox label="Asist. 90d" value={`${props.desgloseF2p.asistencia_90d} AB`} color="text-emerald-400" />
+              </div>
+
+              <div className="mt-3 p-2 rounded-lg bg-black/40 border border-white/5 text-[11px] text-gray-300 flex items-center justify-between">
+                <span className="text-cyan-400 font-semibold flex items-center gap-1">
+                  <span>🌙</span> Renta a 22h/7d:
                 </span>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 p-3 bg-amber-500/[0.05] rounded-xl border border-amber-500/20">
-              <div>
-                <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">📅 Por Mes (30 Días)</div>
-                <div className="text-2xl font-black bg-gradient-to-r from-amber-400 to-orange-300 bg-clip-text text-transparent">
-                  +{props.desgloseEc.total_mes.toLocaleString()} AB/mes
-                </div>
-                <div className="text-xs text-gray-400 mt-0.5">≈ {props.desgloseEc.promedio_diario.toFixed(1)} AB/día</div>
-                <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-xs border border-amber-500/30">
-                  🏞️ +{Math.floor(props.desgloseEc.total_mes / 100)} parcelas / mes
-                </div>
+                <span className="font-mono text-white font-bold">
+                  ${fmt(rentaDia22, 4)} USD/día <span className="text-gray-500 font-normal">(${fmt(rentaMesDia22, 4)} con SRB)</span>
+                </span>
               </div>
-              <div>
-                <div className="text-[10px] text-amber-400 uppercase tracking-wider mb-0.5 font-bold">🏆 Ciclo Completo (90 Días)</div>
-                <div className="text-2xl font-black text-amber-300">
-                  +{props.desgloseEc.total_90d.toLocaleString()} AB
-                </div>
-                <div className="text-xs text-gray-400 mt-0.5">≈ {props.desgloseEc.promedio_diario_90d.toFixed(1)} AB/día</div>
-                <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-xs border border-amber-500/30">
-                  🏞️ +{Math.floor(props.desgloseEc.total_90d / 100)} parcelas en total
-                </div>
-              </div>
-            </div>
+            </GlowCard>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <MetricBox label="Ruleta (7/d)" value={`${props.desgloseEc.ruleta_diaria.toFixed(1)}/d`} color="text-cyan-400" />
-              <MetricBox label="Anuncios" value={`${props.desgloseEc.anuncios_diarios}/d`} color="text-blue-400" />
-              <MetricBox label="Asistencia F2P" value={`${props.desgloseEc.asistencia_mes}/mes`} color="text-purple-400" />
-              <MetricBox label="👑 Bonus Club" value={`+${props.desgloseEc.pase_mes.toLocaleString()}/mes`} color="text-amber-400" />
-            </div>
-
-            <div className="mt-3 p-2 rounded-lg bg-black/40 border border-amber-500/20 text-[11px] text-gray-300 flex items-center justify-between">
-              <span className="text-amber-400 font-semibold flex items-center gap-1">
-                <span>⚡</span> Renta a 24/7 (EC):
-              </span>
-              <span className="font-mono text-white font-bold">
-                ${fmt(rentaDia24, 4)} USD/día <span className="text-amber-300/80 font-normal">(${fmt(rentaMesDia24, 4)} con SRB)</span>
-              </span>
-            </div>
-
-            <div className="mt-3 p-2.5 bg-black/40 rounded-lg border border-amber-500/15 text-[11px] text-gray-300 flex items-start gap-2">
-              <span className="text-amber-400 text-sm shrink-0">💡</span>
-              <div>
-                <strong className="text-amber-300">Duración del Ciclo de 90 Días:</strong> El calendario completo otorga <strong className="text-white">+10,550 AB</strong> de bonus de Explorer Club (+448 AB gratuitos), alcanzando hitos masivos en los días 7 (100 AB), 14 (300 AB), 30 (500 AB), 60 (800 AB) y 90 (1,200 AB).
-              </div>
-            </div>
-          </GlowCard>
-        ) : (
-          <LockedFeature
-            title="AB Proyectados (Explorer Club)"
-            description="Compara cuánto más ganarías con Explorer Club vs F2P. Datos exactos mes a mes y a 90 días."
-            compact
-            requiredPlan="ULTRA"
-          />
-        )}
-      </div>
-      </section>
-
-      {/* ≡≡≡ SECCIÓN 5: 🌍 COMPARATIVA INTERNACIONAL DE TIERS ≡≡≡ */}
-      <section className="space-y-3">
-        <div className="flex items-center gap-2 px-1">
-          <span className="text-[11px] font-black uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
-            SECCIÓN 5
-          </span>
-          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
-            Comparativa Internacional de Tiers de Renta
-          </span>
-        </div>
-      {props.permissions.canCompareTiers ? (
-        <TierComparativa
-          motor={props.motor}
-          paisActual={props.pais}
-          allowMultiCountry={props.permissions.canMultiCountryUltra}
-        />
-      ) : (
-        <LockedFeature
-          title="Comparativa Detallada de Tiers"
-          description="Comparamos tu renta nivel por nivel frente a todos los países disponibles en Atlas Earth."
-          preview={
-            <div className="p-4 space-y-2">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-2">
-                  <div className="h-8 bg-white/10 rounded animate-pulse" />
-                  <div className="h-6 bg-white/10 rounded animate-pulse w-3/4" />
-                  <div className="h-6 bg-white/10 rounded animate-pulse w-1/2" />
+            {props.permissions.canUseECOptimizer ? (
+              <GlowCard className={`border-amber-500/20 ${props.tipoPase?.includes("Explorer Club") ? "ring-1 ring-amber-500/40 shadow-lg shadow-amber-900/10" : ""}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="text-xs text-amber-400 uppercase tracking-widest font-bold">
+                    🔥 AB Proyectados (Explorer Club)
+                  </div>
+                  {props.tipoPase?.includes("Explorer Club") && (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse">
+                      👑 TU PASE ACTIVO
+                    </span>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <div className="h-8 bg-white/10 rounded animate-pulse" />
-                  <div className="h-6 bg-white/10 rounded animate-pulse w-3/4" />
-                  <div className="h-6 bg-white/10 rounded animate-pulse w-1/2" />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 p-3 bg-amber-500/[0.05] rounded-xl border border-amber-500/20">
+                  <div>
+                    <div className="text-[10px] text-gray-400 uppercase tracking-wider mb-0.5">📅 Por Mes (30 Días)</div>
+                    <div className="text-2xl font-black bg-gradient-to-r from-amber-400 to-orange-300 bg-clip-text text-transparent">
+                      +{props.desgloseEc.total_mes.toLocaleString()} AB/mes
+                    </div>
+                    <div className="text-xs text-gray-400 mt-0.5">≈ {props.desgloseEc.promedio_diario.toFixed(1)} AB/día</div>
+                    <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-xs border border-amber-500/30">
+                      🏞️ +{Math.floor(props.desgloseEc.total_mes / 100)} parcelas / mes
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-amber-400 uppercase tracking-wider mb-0.5 font-bold">🏆 Ciclo Completo (90 Días)</div>
+                    <div className="text-2xl font-black text-amber-300">
+                      +{props.desgloseEc.total_90d.toLocaleString()} AB
+                    </div>
+                    <div className="text-xs text-gray-400 mt-0.5">≈ {props.desgloseEc.promedio_diario_90d.toFixed(1)} AB/día</div>
+                    <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold text-xs border border-amber-500/30">
+                      🏞️ +{Math.floor(props.desgloseEc.total_90d / 100)} parcelas en total
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-          }
-        />
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <MetricBox label="Ruleta (7/d)" value={`${props.desgloseEc.ruleta_diaria.toFixed(1)}/d`} color="text-cyan-400" />
+                  <MetricBox label="Anuncios" value={`${props.desgloseEc.anuncios_diarios}/d`} color="text-blue-400" />
+                  <MetricBox label="Asistencia F2P" value={`${props.desgloseEc.asistencia_mes}/mes`} color="text-purple-400" />
+                  <MetricBox label="👑 Bonus Club" value={`+${props.desgloseEc.pase_mes.toLocaleString()}/mes`} color="text-amber-400" />
+                </div>
+
+                <div className="mt-3 p-2 rounded-lg bg-black/40 border border-amber-500/20 text-[11px] text-gray-300 flex items-center justify-between">
+                  <span className="text-amber-400 font-semibold flex items-center gap-1">
+                    <span>⚡</span> Renta a 24/7 (EC):
+                  </span>
+                  <span className="font-mono text-white font-bold">
+                    ${fmt(rentaDia24, 4)} USD/día <span className="text-amber-300/80 font-normal">(${fmt(rentaMesDia24, 4)} con SRB)</span>
+                  </span>
+                </div>
+
+                <div className="mt-3 p-2.5 bg-black/40 rounded-lg border border-amber-500/15 text-[11px] text-gray-300 flex items-start gap-2">
+                  <span className="text-amber-400 text-sm shrink-0">💡</span>
+                  <div>
+                    <strong className="text-amber-300">Duración del Ciclo de 90 Días:</strong> El calendario completo otorga <strong className="text-white">+10,550 AB</strong> de bonus de Explorer Club (+448 AB gratuitos), alcanzando hitos masivos en los días 7 (100 AB), 14 (300 AB), 30 (500 AB), 60 (800 AB) y 90 (1,200 AB).
+                  </div>
+                </div>
+              </GlowCard>
+            ) : (
+              <LockedFeature
+                title="AB Proyectados (Explorer Club)"
+                description="Compara cuánto más ganarías con Explorer Club vs F2P. Datos exactos mes a mes y a 90 días."
+                compact
+                requiredPlan="ULTRA"
+              />
+            )}
+          </div>
+        </section>
       )}
-      </section>
 
-      {/* ≡≡≡ SECCIÓN 6: 🧠 ESTRATEGIA INTELIGENTE RECOMENDADA ≡≡≡ */}
-      <section className="space-y-3">
-        <div className="flex items-center gap-2 px-1">
-          <span className="text-[11px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
-            SECCIÓN 6
-          </span>
-          <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
-            Estrategia Inteligente & Plan de Acción Personalizado
-          </span>
-        </div>
-      <GlowCard>
-        <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">🧠 Estrategia Inteligente</div>
-        <div className="text-sm text-gray-300 leading-relaxed prose prose-invert prose-sm
-          prose-headings:text-cyan-300 prose-headings:font-bold prose-headings:mt-4 prose-headings:mb-2
-          prose-strong:text-amber-300 prose-strong:font-bold
-          prose-li:text-gray-300 prose-p:text-gray-300 prose-p:leading-relaxed
-          [&_h1]:text-base [&_h1]:font-black [&_h1]:text-cyan-300
-          [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-cyan-300
-          [&_.highlight]:bg-cyan-900/20 [&_.highlight]:rounded [&_.highlight]:px-2 [&_.highlight]:py-0.5
-          [&_.stat]:font-mono [&_.stat]:text-cyan-300
-          [&_.badge]:inline-block [&_.badge]:text-[10px] [&_.badge]:font-bold [&_.badge]:uppercase [&_.badge]:px-2 [&_.badge]:py-0.5 [&_.badge]:rounded
-          [&_.badge-green]:bg-green-900/40 [&_.badge-green]:text-green-300
-          [&_.badge-red]:bg-red-900/40 [&_.badge-red]:text-red-300
-          [&_.badge-gold]:bg-amber-900/40 [&_.badge-gold]:text-amber-300"
-          dangerouslySetInnerHTML={{ __html: sanitizeHTML(props.veredictoEstrategia) }} />
-      </GlowCard>
-      </section>
+      {/* ≡≡≡ SECCIÓN 5: 🌍 COMPARATIVA INTERNACIONAL DE TIERS (Solo Avanzado) ≡≡≡ */}
+      {nivelVista === "avanzado" && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <span className="text-[11px] font-black uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">
+              INTERNACIONAL
+            </span>
+            <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+              Comparativa Internacional de Tiers de Renta
+            </span>
+          </div>
+          {props.permissions.canCompareTiers ? (
+            <TierComparativa
+              motor={props.motor}
+              paisActual={props.pais}
+              allowMultiCountry={props.permissions.canMultiCountryUltra}
+            />
+          ) : (
+            <LockedFeature
+              title="Comparativa Detallada de Tiers"
+              description="Comparamos tu renta nivel por nivel frente a todos los países disponibles en Atlas Earth."
+              preview={
+                <div className="p-4 space-y-2">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <div className="h-8 bg-white/10 rounded animate-pulse" />
+                      <div className="h-6 bg-white/10 rounded animate-pulse w-3/4" />
+                      <div className="h-6 bg-white/10 rounded animate-pulse w-1/2" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-8 bg-white/10 rounded animate-pulse" />
+                      <div className="h-6 bg-white/10 rounded animate-pulse w-3/4" />
+                      <div className="h-6 bg-white/10 rounded animate-pulse w-1/2" />
+                    </div>
+                  </div>
+                </div>
+              }
+            />
+          )}
+        </section>
+      )}
+
+      {/* ≡≡≡ SECCIÓN 6: 🧠 ESTRATEGIA INTELIGENTE RECOMENDADA (Solo Avanzado) ≡≡≡ */}
+      {nivelVista === "avanzado" && (
+        <section className="space-y-3">
+          <div className="flex items-center gap-2 px-1">
+            <span className="text-[11px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md border border-purple-500/20">
+              ESTRATEGIA
+            </span>
+            <span className="text-xs font-bold text-gray-300 uppercase tracking-wider">
+              Estrategia Inteligente & Plan de Acción Personalizado
+            </span>
+          </div>
+          <GlowCard>
+            <div className="text-xs text-gray-500 uppercase tracking-widest mb-3">🧠 Estrategia Inteligente</div>
+            <div className="text-sm text-gray-300 leading-relaxed prose prose-invert prose-sm
+              prose-headings:text-cyan-300 prose-headings:font-bold prose-headings:mt-4 prose-headings:mb-2
+              prose-strong:text-amber-300 prose-strong:font-bold
+              prose-li:text-gray-300 prose-p:text-gray-300 prose-p:leading-relaxed
+              [&_h1]:text-base [&_h1]:font-black [&_h1]:text-cyan-300
+              [&_h2]:text-sm [&_h2]:font-bold [&_h2]:text-cyan-300
+              [&_.highlight]:bg-cyan-900/20 [&_.highlight]:rounded [&_.highlight]:px-2 [&_.highlight]:py-0.5
+              [&_.stat]:font-mono [&_.stat]:text-cyan-300
+              [&_.badge]:inline-block [&_.badge]:text-[10px] [&_.badge]:font-bold [&_.badge]:uppercase [&_.badge]:px-2 [&_.badge]:py-0.5 [&_.badge]:rounded
+              [&_.badge-green]:bg-green-900/40 [&_.badge-green]:text-green-300
+              [&_.badge-red]:bg-red-900/40 [&_.badge-red]:text-red-300
+              [&_.badge-gold]:bg-amber-900/40 [&_.badge-gold]:text-amber-300"
+              dangerouslySetInnerHTML={{ __html: sanitizeHTML(props.veredictoEstrategia) }} />
+          </GlowCard>
+        </section>
+      )}
     </div>
   );
 }
