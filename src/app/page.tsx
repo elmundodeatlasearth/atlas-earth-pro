@@ -147,7 +147,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="p-4 lg:p-10 space-y-6 lg:space-y-8">
+        <div className="p-4 lg:p-10 space-y-6 lg:space-y-8 pb-24 lg:pb-10">
           <TabTransition activeTab={S.activeTab}>
             {S.activeTab === "dashboard" && (
             <DashboardTab
@@ -232,6 +232,42 @@ export default function Home() {
             </TabTransition>
         </div>
       </main>
+
+      {/* Barra de Navegación Inferior Flotante para Móviles */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0a0f18]/95 backdrop-blur-lg border-t border-cyan-900/40 px-2 py-1.5 flex items-center justify-around shadow-2xl shadow-cyan-950">
+        {getTabs(S.isPro, S.isUltra, S.isAdmin).map((t) => {
+          const isActive = S.activeTab === t.id;
+          const icon = t.id === "dashboard" ? "📊"
+            : t.id === "simulador" ? "🧮"
+            : t.id === "auditoria" ? "📋"
+            : t.id === "ia" ? "🤖"
+            : "📈";
+          const shortLabel = t.id === "dashboard" ? "Inicio"
+            : t.id === "simulador" ? "Simulador"
+            : t.id === "auditoria" ? "Auditoría"
+            : t.id === "ia" ? "IA"
+            : "Historial";
+          return (
+            <button
+              key={t.id}
+              onClick={() => {
+                S.setActiveTab(t.id);
+                if (typeof window !== "undefined") {
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              }}
+              className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all ${
+                isActive
+                  ? "text-cyan-400 font-bold scale-105 bg-cyan-500/10 border border-cyan-500/30"
+                  : "text-gray-400 hover:text-gray-200"
+              }`}
+            >
+              <span className="text-base">{icon}</span>
+              <span className="text-[10px] mt-0.5 tracking-tight">{shortLabel}</span>
+            </button>
+          );
+        })}
+      </nav>
     </div>
   );
 }

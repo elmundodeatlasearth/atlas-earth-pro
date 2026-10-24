@@ -156,6 +156,7 @@ export class MotorAtlasEarth {
   parcelas: { c: number; r: number; e: number; l: number };
   total_parcelas: number;
   pasaporte_mult: number;
+  pasaporte_nivel: number;
   horas_boost: number;
   eficiencia: number;
   renta_base: number;
@@ -166,6 +167,7 @@ export class MotorAtlasEarth {
     this.total_parcelas = c + r + e + l;
     if (this.total_parcelas === 0) this.total_parcelas = 1;
     this.pasaporte_mult = 1 + pasaporte * 0.05;
+    this.pasaporte_nivel = pasaporte;
     this.horas_boost = horas_boost;
     this.eficiencia = eficiencia / 100;
     this.renta_base = c * 0.0000000011 + r * 0.0000000016 + e * 0.0000000022 + l * 0.0000000044;
@@ -684,3 +686,219 @@ export function fmt(n: number, dec = 4): string {
 }
 
 export const NIVELES_INSIGNIAS = [0, 1, 11, 31, 61, 101];
+
+// ---------------------------------------------------------------------------
+// ÍNDICE DE SUERTE DE RAREZA
+// ---------------------------------------------------------------------------
+export interface IndiceSuerteResult {
+  total: number;
+  rentaRealSec: number;
+  rentaEsperadaSec: number;
+  factorSuerte: number;
+  desviacionPct: number;
+  pctComun: number;
+  pctRara: number;
+  pctEpica: number;
+  pctLegendaria: number;
+  veredicto: string;
+  gananciaExtraAnualUsd: number;
+}
+
+export function calcularIndiceSuerte(
+  parcelas: { c: number; r: number; e: number; l: number },
+  pasaporteMult = 1.0,
+  horasBoost = 22,
+  eficiencia = 100,
+  tierMult = 10,
+  horasSrb = 64
+): IndiceSuerteResult {
+  const { c, r, e, l } = parcelas;
+  const total = c + r + e + l;
+  if (total === 0) {
+    return {
+      total: 0,
+      rentaRealSec: 0,
+      rentaEsperadaSec: 0,
+      factorSuerte: 1,
+      desviacionPct: 0,
+      pctComun: 0,
+      pctRara: 0,
+      pctEpica: 0,
+      pctLegendaria: 0,
+      veredicto: "Sin parcelas",
+      gananciaExtraAnualUsd: 0,
+    };
+  }
+
+  const rentaRealSec = c * 0.0000000011 + r * 0.0000000016 + e * 0.0000000022 + l * 0.0000000044;
+  const rentaEsperadaSec = total * 0.00000000158;
+  const factorSuerte = rentaEsperadaSec > 0 ? rentaRealSec / rentaEsperadaSec : 1;
+  const desviacionPct = (factorSuerte - 1) * 100;
+
+  const pctComun = (c / total) * 100;
+  const pctRara = (r / total) * 100;
+  const pctEpica = (e / total) * 100;
+  const pctLegendaria = (l / total) * 100;
+
+  let veredicto = "Promedio estándar";
+  if (desviacionPct >= 8) veredicto = "🔥 ¡Suerte Legendaria!";
+  else if (desviacionPct >= 3) veredicto = "✨ Por encima del promedio";
+  else if (desviacionPct <= -5) veredicto = "📉 Por debajo del promedio";
+  else if (desviacionPct < -1) veredicto = "⚖️ Ligeramente por debajo";
+
+  const horasMes = 720;
+  const horasNormales = Math.max(0, horasMes - horasSrb);
+  const horasConBoost = horasNormales * (horasBoost / 24) * (eficiencia / 100);
+  const horasSinBoost = Math.max(0, horasNormales - horasConBoost);
+  const multTotalMes = (horasSrb * 50 + horasConBoost * tierMult + horasSinBoost * 1) * 3600 * pasaporteMult;
+  const gananciaExtraAnualUsd = (rentaRealSec - rentaEsperadaSec) * multTotalMes * 12;
+
+  return {
+    total,
+    rentaRealSec,
+    rentaEsperadaSec,
+    factorSuerte,
+    desviacionPct,
+    pctComun,
+    pctRara,
+    pctEpica,
+    pctLegendaria,
+    veredicto,
+    gananciaExtraAnualUsd,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// PROYECCIÓN DE FECHA CALENDARIO
+// ---------------------------------------------------------------------------
+export function proyectarFechaMeta(dias: number, fechaBase: Date = new Date()): string {
+  if (!isFinite(dias) || isNaN(dias) || dias <= 0) return "¡Meta alcanzada!";
+  const target = new Date(fechaBase.getFullYear(), fechaBase.getMonth(), fechaBase.getDate() + Math.round(dias));
+  const meses = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+  ];
+  const dia = target.getDate();
+  const mes = meses[target.getMonth()];
+  const anio = target.getFullYear();
+  return `${dia} de ${mes} de ${anio}`;
+}
+
+// ---------------------------------------------------------------------------
+// REINVERSIÓN COMPUESTA (Efecto Bola de Nieve)
+// ---------------------------------------------------------------------------
+export interface MesReinversion {
+  mes: number;
+  rentaMesUsd: number;
+  abGeneradosPorRenta: number;
+  abAhorroAdicional: number;
+  abTotalesMes: number;
+  parcelasCompradasMes: number;
+  totalParcelasFinMes: number;
+  rentaDiariaProyectada: number;
+  multiplicadorFinMes: number;
+}
+
+export function simularReinversionCompuesta(
+  motorInicial: MotorAtlasEarth,
+  pais: string,
+  tiers: TiersDict,
+  meses: number,
+  tasaConversionAb: number,
+  abAhorroAdicionalPorMes: number,
+  horasSrb = 64
+): MesReinversion[] {
+  const resultado: MesReinversion[] = [];
+  let c = motorInicial.parcelas.c;
+  let r = motorInicial.parcelas.r;
+  let e = motorInicial.parcelas.e;
+  let l = motorInicial.parcelas.l;
+  const pasaporte = motorInicial.pasaporte_nivel ?? 0;
+  const horasBoost = motorInicial.horas_boost;
+  const eficiencia = Math.round(motorInicial.eficiencia * 100);
+
+  let abRemanente = 0;
+
+  for (let m = 1; m <= meses; m++) {
+    const totalActual = c + r + e + l;
+    const motorActual = new MotorAtlasEarth(c, r, e, l, pasaporte, horasBoost, eficiencia);
+    const multActual = motorActual._get_tier_mult(totalActual, pais, tiers);
+
+    const rentaMesUsd = motorActual.calcular_renta_mensual(multActual, horasSrb);
+    const abPorRenta = Math.floor(rentaMesUsd * tasaConversionAb);
+    const abTotalesMes = abPorRenta + abAhorroAdicionalPorMes + abRemanente;
+
+    const parcelasCompradasMes = Math.floor(abTotalesMes / 100);
+    abRemanente = abTotalesMes % 100;
+
+    const cExtra = Math.floor(parcelasCompradasMes * 0.5);
+    const rExtra = Math.floor(parcelasCompradasMes * 0.3);
+    const eExtra = Math.floor(parcelasCompradasMes * 0.15);
+    const lExtra = parcelasCompradasMes - cExtra - rExtra - eExtra;
+
+    c += cExtra;
+    r += rExtra;
+    e += eExtra;
+    l += lExtra;
+
+    const totalFinMes = c + r + e + l;
+    const motorFin = new MotorAtlasEarth(c, r, e, l, pasaporte, horasBoost, eficiencia);
+    const multFin = motorFin._get_tier_mult(totalFinMes, pais, tiers);
+    const rentaDiariaProyectada = motorFin.calcular_renta_diaria_normal(multFin);
+
+    resultado.push({
+      mes: m,
+      rentaMesUsd,
+      abGeneradosPorRenta: abPorRenta,
+      abAhorroAdicional: abAhorroAdicionalPorMes,
+      abTotalesMes,
+      parcelasCompradasMes,
+      totalParcelasFinMes: totalFinMes,
+      rentaDiariaProyectada,
+      multiplicadorFinMes: multFin,
+    });
+  }
+
+  return resultado;
+}
+
+// ---------------------------------------------------------------------------
+// MINIJUEGOS ROI
+// ---------------------------------------------------------------------------
+export interface MinijuegoResult {
+  partidas: number;
+  costoAb: number;
+  premioAb: number;
+  gananciaNetaAb: number;
+  esRentable: boolean;
+  parcelasEquivalentes: number;
+  roiPct: number;
+  veredicto: string;
+}
+
+export function calcularMinijuegoROI(
+  partidas: number,
+  bracketPremioAb: number
+): MinijuegoResult {
+  const costoAb = partidas * 2;
+  const gananciaNetaAb = bracketPremioAb - costoAb;
+  const esRentable = gananciaNetaAb > 0;
+  const roiPct = costoAb > 0 ? (gananciaNetaAb / costoAb) * 100 : 0;
+  const parcelasEquivalentes = Math.floor(gananciaNetaAb / 100);
+
+  let veredicto = "Pérdida neta de AB";
+  if (gananciaNetaAb >= 300) veredicto = "🏆 Altamente Rentable (Ganancia masiva de AB)";
+  else if (gananciaNetaAb > 0) veredicto = "✅ Rentable (Ganancia positiva de AB)";
+  else if (gananciaNetaAb === 0) veredicto = "⚖️ Punto de equilibrio (Sin ganancia ni pérdida)";
+
+  return {
+    partidas,
+    costoAb,
+    premioAb: bracketPremioAb,
+    gananciaNetaAb,
+    esRentable,
+    parcelasEquivalentes,
+    roiPct,
+    veredicto,
+  };
+}

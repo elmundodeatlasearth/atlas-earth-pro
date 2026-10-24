@@ -6,6 +6,10 @@ import {
   TIERS_COMPLETOS,
   SimuladorDiario,
   AB_POR_PARCELA,
+  calcularIndiceSuerte,
+  proyectarFechaMeta,
+  simularReinversionCompuesta,
+  calcularMinijuegoROI,
 } from "@/utils/atlasMath";
 
 describe("Auditoría Detallada del Simulador — Perfil Real 435 Parcelas", () => {
@@ -151,5 +155,37 @@ describe("Auditoría Detallada del Simulador — Perfil Real 435 Parcelas", () =
     expect(desgloseF2p.promedio_diario).toBeGreaterThan(0);
     expect(desgloseEc.promedio_diario).toBeGreaterThan(desgloseF2p.promedio_diario);
     expect(desgloseEc.total_90d).toBeGreaterThan(desgloseF2p.total_90d);
+  });
+
+  it("debe calcular el indice de suerte de rareza para el inventario del usuario", () => {
+    const suerte = calcularIndiceSuerte({ c: C, r: R, e: E, l: L }, 1.25, 24, 100, 10, 64);
+    expect(suerte.total).toBe(435);
+    expect(suerte.desviacionPct).toBeGreaterThan(0); // El usuario tiene alta proporcion de raras y legendarias
+    expect(suerte.veredicto).toContain("Suerte");
+    expect(suerte.gananciaExtraAnualUsd).toBeGreaterThan(0);
+  });
+
+  it("debe proyectar fechas de calendario correctamente", () => {
+    const fecha = proyectarFechaMeta(30, new Date(2026, 0, 1));
+    expect(fecha).toContain("31 de Enero de 2026");
+    expect(proyectarFechaMeta(0)).toBe("¡Meta alcanzada!");
+  });
+
+  it("debe simular reinversion compuesta mes a mes", () => {
+    const reinv = simularReinversionCompuesta(motorEC, "Estados Unidos", TIERS_COMPLETOS, 6, 25, 1500, 64);
+    expect(reinv.length).toBe(6);
+    expect(reinv[5].totalParcelasFinMes).toBeGreaterThan(435);
+    expect(reinv[0].rentaMesUsd).toBeGreaterThan(0);
+  });
+
+  it("debe calcular ROI de minijuegos correctamente", () => {
+    const roiPositivo = calcularMinijuegoROI(50, 300); // 50 partidas = 100 AB costo, gana 300 AB
+    expect(roiPositivo.esRentable).toBe(true);
+    expect(roiPositivo.gananciaNetaAb).toBe(200);
+    expect(roiPositivo.parcelasEquivalentes).toBe(2);
+
+    const roiNegativo = calcularMinijuegoROI(60, 50); // 60 partidas = 120 AB costo, gana 50 AB
+    expect(roiNegativo.esRentable).toBe(false);
+    expect(roiNegativo.gananciaNetaAb).toBe(-70);
   });
 });

@@ -6,10 +6,11 @@
 
 "use client";
 import { StatCard, MetricBox, GlowCard } from "./stat-card";
-import { fmt, type MotorAtlasEarth, type DesgloseMensual } from "@/utils/atlasMath";
+import { fmt, proyectarFechaMeta, type MotorAtlasEarth, type DesgloseMensual } from "@/utils/atlasMath";
 import { sanitizeHTML } from "@/utils/sanitize";
 import TierComparativa from "./tier-comparativa";
 import LockedFeature from "./LockedFeature";
+import RarityDonutChart from "./donut-chart";
 import type { Permissions } from "@/hooks/usePermissions";
 
 interface DashboardTabProps {
@@ -112,6 +113,19 @@ export default function DashboardTab(props: DashboardTabProps) {
   const rentaMes22 = (baseSec * 3600 * srbH * 50 + baseSec * 3600 * hBoost22 * mult + baseSec * 3600 * hSin22 * 1) * passMult;
   const rentaMesDia22 = rentaMes22 / 30;
 
+  // Proyecciones de calendario
+  const abPorDiaActivo = props.tipoPase?.includes("Explorer Club")
+    ? props.desgloseEc.promedio_diario
+    : props.desgloseF2p.promedio_diario;
+
+  const diasFaltantesMeta = props.faltantesMeta > 0 && abPorDiaActivo > 0
+    ? (props.faltantesMeta * 100) / abPorDiaActivo
+    : 0;
+
+  const diasFaltantesTier = props.faltantesTier > 0 && abPorDiaActivo > 0
+    ? (props.faltantesTier * 100) / abPorDiaActivo
+    : 0;
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* ≡≡≡ MÉTRICAS PRINCIPALES ≡≡≡ */}
@@ -149,6 +163,19 @@ export default function DashboardTab(props: DashboardTabProps) {
         </div>
       </div>
 
+      {/* ≡≡≡ ÍNDICE DE SUERTE & DISTRIBUCIÓN DE RAREZAS ≡≡≡ */}
+      <RarityDonutChart
+        parcelasC={props.motor.parcelas.c}
+        parcelasR={props.motor.parcelas.r}
+        parcelasE={props.motor.parcelas.e}
+        parcelasL={props.motor.parcelas.l}
+        pasaporteMult={props.motor.pasaporte_mult}
+        horasBoost={props.horasBoost}
+        eficiencia={props.eficiencia}
+        tierMult={props.multTier}
+        horasSrb={props.horasSrb}
+      />
+
       {/* ≡≡≡ PROGRESO META + TIER ≡≡≡ */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <GlowCard>
@@ -174,7 +201,12 @@ export default function DashboardTab(props: DashboardTabProps) {
                   <div className="bg-gradient-to-r from-orange-500 via-amber-400 to-green-500 h-2 rounded-full transition-all duration-1000"
                     style={{ width: `${pctMeta}%` }} />
                 </div>
-                <div className="text-[11px] text-gray-500 text-right">{pctMeta.toFixed(1)}% de la meta</div>
+                <div className="flex flex-wrap items-center justify-between gap-1 text-[11px]">
+                  <span className="text-cyan-400 font-medium">
+                    📅 Fecha estimada: <strong className="text-white">{proyectarFechaMeta(diasFaltantesMeta)}</strong>
+                  </span>
+                  <span className="text-gray-500">{pctMeta.toFixed(1)}% de la meta</span>
+                </div>
               </>
             )}
           </div>
@@ -199,8 +231,15 @@ export default function DashboardTab(props: DashboardTabProps) {
               <div className="bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 h-2 rounded-full transition-all duration-1000"
                 style={{ width: `${props.siguiente_tramo > 0 ? Math.min(100, (props.totalParcelas / props.siguiente_tramo) * 100) : 100}%` }} />
             </div>
-            <div className="text-[11px] text-gray-500 text-right">
-              {props.siguiente_tramo > 0 ? Math.min(100, (props.totalParcelas / props.siguiente_tramo) * 100).toFixed(1) : 100}% del camino
+            <div className="flex flex-wrap items-center justify-between gap-1 text-[11px]">
+              {props.faltantesTier > 0 && (
+                <span className="text-cyan-400 font-medium">
+                  📅 Fecha de salto: <strong className="text-white">{proyectarFechaMeta(diasFaltantesTier)}</strong>
+                </span>
+              )}
+              <span className="text-gray-500 ml-auto">
+                {props.siguiente_tramo > 0 ? Math.min(100, (props.totalParcelas / props.siguiente_tramo) * 100).toFixed(1) : 100}% del camino
+              </span>
             </div>
           </div>
         </GlowCard>

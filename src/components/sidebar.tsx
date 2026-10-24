@@ -5,6 +5,8 @@
 import type { User } from "@supabase/supabase-js";
 import type { Permissions } from "@/hooks/usePermissions";
 import AuthSection from "./auth-section";
+import JsonBackup from "./json-backup";
+import BoostAndAdTimer from "./timer-boost";
 import { PAISES_DISPONIBLES, MONEDAS_DISPONIBLES, MAP_MONEDAS } from "@/utils/atlasMath";
 
 interface SidebarProps {
@@ -150,6 +152,9 @@ export default function Sidebar(props: SidebarProps) {
             )}
           </div>
           {props.showSaveMsg && <div className="text-[10px] text-green-400 mt-1">✅ Guardado</div>}
+          <div className="mt-3">
+            <JsonBackup />
+          </div>
         </Section>
 
         {/* Moneda + País */}
@@ -301,6 +306,11 @@ export default function Sidebar(props: SidebarProps) {
             <InputRow label="Eficiencia %" value={props.eficienciaAnuncios} set={props.setEficienciaAnuncios} max={100} />
           </div>
         </Section>
+
+        {/* Temporizadores de Boost & Anuncios */}
+        <BoostAndAdTimer />
+
+        <Divider />
 
         {/* Día asistencia */}
         <Section title="📅 Día Asistencia">

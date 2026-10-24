@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "jest --passWithNoTests",
-    "deploy": "gh-pages -d out -t true"
+    "deploy": "gh-pages -d out -t"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.68.0",

@@ -6,8 +6,10 @@
 "use client";
 import { useState, useMemo } from "react";
 import { MetricBox, GlowCard } from "./stat-card";
-import { fmt, TIERS_COMPLETOS, MotorAtlasEarth, type VentanaEC } from "@/utils/atlasMath";
+import { fmt, TIERS_COMPLETOS, MotorAtlasEarth, proyectarFechaMeta, type VentanaEC } from "@/utils/atlasMath";
 import LockedFeature from "./LockedFeature";
+import ReinvestmentCalculator from "./reinvestment-calc";
+import MinigamesCalculator from "./minigames-calc";
 import type { Permissions } from "@/hooks/usePermissions";
 
 interface SimuladorTabProps {
@@ -354,13 +356,19 @@ export default function SimuladorTab(props: SimuladorTabProps) {
               <div className="text-gray-300 leading-relaxed">
                 Tus AB actuales cubren el <strong className="text-cyan-400">{pctAlcanza.toFixed(1)}%</strong> de esta compra (puedes comprar <strong className="text-emerald-400">{parcelasComprablesYa.toLocaleString()}</strong> de las <strong className="text-white">{simExtra.toLocaleString()}</strong> parcelas deseadas).
               </div>
-              <div className="p-2.5 bg-black/30 rounded-lg border border-white/5 flex flex-wrap items-center justify-between gap-2 text-gray-400">
-                <div>
-                  Faltan: <strong className="text-orange-400">{parcelasFaltantesSim.toLocaleString()} parcelas</strong> (<strong className="text-white">{abFaltantesSim.toLocaleString()} AB</strong>)
+              <div className="p-2.5 bg-black/30 rounded-lg border border-white/5 space-y-2 text-gray-400">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    Faltan: <strong className="text-orange-400">{parcelasFaltantesSim.toLocaleString()} parcelas</strong> (<strong className="text-white">{abFaltantesSim.toLocaleString()} AB</strong>)
+                  </div>
+                  <div className="flex items-center gap-3 text-[11px]">
+                    <span>⚡ EC: <strong className="text-cyan-300">{props.motor.formato_tiempo_exacto(diasEcSim)}</strong></span>
+                    <span>🛡️ F2P: <strong className="text-gray-300">{props.motor.formato_tiempo_exacto(diasF2pSim)}</strong></span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3 text-[11px]">
-                  <span>⚡ EC: <strong className="text-cyan-300">{props.motor.formato_tiempo_exacto(diasEcSim)}</strong></span>
-                  <span>🛡️ F2P: <strong className="text-gray-300">{props.motor.formato_tiempo_exacto(diasF2pSim)}</strong></span>
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] text-gray-500 pt-1.5 border-t border-white/5">
+                  <span>📅 Fecha meta Explorer Club: <strong className="text-cyan-400">{proyectarFechaMeta(diasEcSim)}</strong></span>
+                  <span>📅 Fecha meta Free to Play: <strong className="text-gray-300">{proyectarFechaMeta(diasF2pSim)}</strong></span>
                 </div>
               </div>
             </div>
@@ -651,13 +659,19 @@ export default function SimuladorTab(props: SimuladorTabProps) {
           )}
 
           {faltanMetaSim > 0 ? (
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs text-gray-400">
-              <span className="text-gray-300">
-                Tiempo estimado para reunir los <strong className="text-white">{abNetosMetaSim.toLocaleString()} AB</strong> restantes:
-              </span>
-              <div className="flex items-center gap-4 text-xs">
-                <span>⚡ Explorer Club (24/7): <strong className="text-cyan-300">{props.motor.formato_tiempo_exacto(diasEcMeta)}</strong></span>
-                <span>🛡️ Free to Play: <strong className="text-gray-300">{props.motor.formato_tiempo_exacto(diasF2pMeta)}</strong></span>
+            <div className="space-y-2 pt-1 text-xs text-gray-400">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="text-gray-300">
+                  Tiempo estimado para reunir los <strong className="text-white">{abNetosMetaSim.toLocaleString()} AB</strong> restantes:
+                </span>
+                <div className="flex items-center gap-4 text-xs">
+                  <span>⚡ Explorer Club (24/7): <strong className="text-cyan-300">{props.motor.formato_tiempo_exacto(diasEcMeta)}</strong></span>
+                  <span>🛡️ Free to Play: <strong className="text-gray-300">{props.motor.formato_tiempo_exacto(diasF2pMeta)}</strong></span>
+                </div>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-3 text-[11px] text-gray-400 pt-1.5 border-t border-purple-900/30">
+                <span>📅 Fecha estimada (Explorer Club): <strong className="text-cyan-400">{proyectarFechaMeta(diasEcMeta)}</strong></span>
+                <span>📅 Fecha estimada (Free to Play): <strong className="text-gray-300">{proyectarFechaMeta(diasF2pMeta)}</strong></span>
               </div>
             </div>
           ) : (
@@ -738,6 +752,22 @@ export default function SimuladorTab(props: SimuladorTabProps) {
           </div>
         )}
       </GlowCard>
+
+      {/* 🔄 Calculadora de Reinversión Compuesta ("Efecto Bola de Nieve") */}
+      <ReinvestmentCalculator
+        motor={props.motor}
+        pais={props.pais}
+        abPorDia={
+          props.tipoPase?.includes("Explorer Club")
+            ? (props.abEcDiarios ?? 122.6)
+            : (props.abPorDia ?? 22)
+        }
+        horasSrb={props.horasSrb}
+      />
+
+      {/* 🎮 Calculadora de Rendimiento y ROI de Minijuegos */}
+      <MinigamesCalculator />
+
       {/* Mapa de Multiplicadores */}
       <GlowCard>
         <div className="text-xs text-gray-500 uppercase tracking-widest mb-4">🗺️ Mapa de Multiplicadores — Tu Posición Actual</div>
