@@ -1,7 +1,7 @@
 // src/components/dual-calculator.tsx
-// Calculadora Dual: "Lo que Tengo (y lo que genero)" vs "Lo que Necesito (Parcelas + Insignias + Tiempos)"
+// Calculadora Dual: "Lo que Tengo (y lo que genero)" vs "Lo que Necesito (Meta en USD/día + Parcelas + Insignias + Tiempos)"
 "use client";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { GlowCard } from "./stat-card";
 import {
   fmt,
@@ -26,6 +26,7 @@ interface DualCalculatorProps {
   abEcDiarios?: number;
   horasSrb?: number;
   siguienteTramo?: number;
+  metaUsdDiaInicial?: number;
 }
 
 export default function DualCalculator({
@@ -43,11 +44,8 @@ export default function DualCalculator({
   abEcDiarios = 122.6,
   horasSrb = 64,
   siguienteTramo = 545,
+  metaUsdDiaInicial = 1.0,
 }: DualCalculatorProps) {
-  // Inputs de la Calculadora 2 (Objetivo)
-  const [metaParcelas, setMetaParcelas] = useState<number>(() => siguienteTramo > totalParcelas ? siguienteTramo : totalParcelas + 10);
-  const [metaInsignias, setMetaInsignias] = useState<number>(() => Math.max(101, insigniasActuales));
-
   // --- CALCULADORA 1: LO QUE TENGO ---
   const pasaporteNivelActual = calcularNivelPasaporte(insigniasActuales);
   const pasaporteMultActual = 1 + (pasaporteNivelActual * 0.05);
@@ -59,7 +57,127 @@ export default function DualCalculator({
   const rentaMesActual = (baseSecActual * 3600 * horasSrb * 50 + baseSecActual * 3600 * (720 - horasSrb) * multTier) * pasaporteMultActual;
   const rentaPromDiaActual = rentaMesActual / 30;
 
-  // --- CALCULADORA 2: LO QUE NECESITO ---
+  // --- CALCULADORA 2: OBJETIVO CONFIGURABLE EN USD/DÍA ---
+  // Objetivo en dólares (por defecto $1.00 USD/día cada 24 horas, o el personalizado del usuario)
+  const [objetivoUsd, setObjetivoUsd] = useState<number>(() => {
+    return metaUsdDiaInicial > 0 ? metaUsdDiaInicial : 1.0;
+  });
+
+  // Modo de medición para el objetivo (24/7 vs 22h, cada 24h normal vs promedio SRB)
+  const [modoBoostMeta, setModoBoostMeta] = useState<"24_7" | "22h">("24_7");
+  const [tipoMedicionMeta, setTipoMedicionMeta] = useState<"normal_24h" | "promedio_srb">("normal_24h");
+
+  // Meta de insignias (por defecto 101 insignias / Nivel 5 máximo)
+  const [metaInsignias, setMetaInsignias] = useState<number>(() => Math.max(101, insigniasActuales));
+
+  // Solver matemático: Calcula cuántas parcelas se necesitan REALMENTE para generar 'targetUsd' en 24 horas
+  const calcularParcelasRequeridas = (
+    targetUsd: number,
+    targetInsignias: number,
+    modoBoost: "24_7" | "22h",
+    tipoMedicion: "normal_24h" | "promedio_srb"
+  ) => {
+    if (targetUsd <= 0) {
+      return { parcelas: totalParcelas, renta: renta24hActual, mult: multTier };
+    }
+
+    const targetNivel = calcularNivelPasaporte(targetInsignias);
+    const targetPassMult = 1 + targetNivel * 0.05;
+    const horasBoost = modoBoost === "24_7" ? 24 : 22;
+
+    const evalRenta = (p: number) => {
+      const mult = motor._get_tier_mult(p, pais, TIERS_COMPLETOS);
+      let base = motor.renta_base;
+      if (p > totalParcelas) {
+        base += (p - totalParcelas) * 1.58e-9;
+      } else if (p < totalParcelas) {
+        base = p * motor.renta_promedio_sec;
+      }
+
+      if (tipoMedicion === "normal_24h") {
+        if (modoBoost === "24_7") {
+          return base * 86400 * mult * targetPassMult;
+        } else {
+          return (base * 79200 * mult + base * 7200 * 1) * targetPassMult;
+        }
+      } else {
+        // Promedio mensual con SRB
+        const horasMes = 720;
+        const horasNormales = Math.max(0, horasMes - horasSrb);
+        const pctBoost = (horasBoost / 24);
+        const horasConBoost = horasNormales * pctBoost;
+        const horasSinBoost = Math.max(0, horasNormales - horasConBoost);
+        const rentaMes = (base * 3600 * horasSrb * 50 +
+                          base * 3600 * horasConBoost * mult +
+                          base * 3600 * horasSinBoost * 1) * targetPassMult;
+        return rentaMes / 30;
+      }
+    };
+
+    // Si con las parcelas actuales ya se alcanza la meta
+    if (evalRenta(totalParcelas) >= targetUsd) {
+      return { parcelas: totalParcelas, renta: evalRenta(totalParcelas), mult: multTier };
+    }
+
+    const tabla = TIERS_COMPLETOS[pais] || TIERS_COMPLETOS["Estados Unidos"];
+    const limites = tabla.limites;
+    const segments: Array<[number, number]> = [];
+    let segStart = totalParcelas;
+    for (const lim of limites) {
+      if (lim >= segStart) {
+        segments.push([segStart, lim]);
+        segStart = lim + 1;
+      }
+    }
+    segments.push([segStart, 100000]);
+
+    let bestP = 100000;
+    for (const [segLo, segHi] of segments) {
+      if (evalRenta(segHi) < targetUsd) continue;
+
+      let lo = segLo, hi = segHi, ans = segHi;
+      while (lo <= hi) {
+        const mid = Math.floor((lo + hi) / 2);
+        if (evalRenta(mid) >= targetUsd) {
+          ans = mid;
+          hi = mid - 1;
+        } else {
+          lo = mid + 1;
+        }
+      }
+      bestP = ans;
+      break;
+    }
+
+    return {
+      parcelas: bestP,
+      renta: evalRenta(bestP),
+      mult: motor._get_tier_mult(bestP, pais, TIERS_COMPLETOS),
+    };
+  };
+
+  // Cálculo automático de las parcelas para el objetivo en dólares actual
+  const metaAutomatica = useMemo(() => {
+    return calcularParcelasRequeridas(objetivoUsd, metaInsignias, modoBoostMeta, tipoMedicionMeta);
+  }, [objetivoUsd, metaInsignias, modoBoostMeta, tipoMedicionMeta, totalParcelas, pais, horasSrb]);
+
+  // Parcelas que el usuario tiene en el control interactivo (inicializado al cálculo automático)
+  const [metaParcelas, setMetaParcelas] = useState<number>(() => metaAutomatica.parcelas);
+
+  // Sincronizar automáticamente cuando el usuario cambia el objetivo en dólares o el modo
+  useEffect(() => {
+    setMetaParcelas(metaAutomatica.parcelas);
+  }, [metaAutomatica.parcelas]);
+
+  // Manejador para cambiar el objetivo en dólares y sincronizar de inmediato
+  const cambiarObjetivoUsd = (nuevoValor: number) => {
+    const val = Math.max(0.01, nuevoValor);
+    setObjetivoUsd(val);
+    const nuevoCalculo = calcularParcelasRequeridas(val, metaInsignias, modoBoostMeta, tipoMedicionMeta);
+    setMetaParcelas(nuevoCalculo.parcelas);
+  };
+
+  // Diferencia de parcelas e insignias respecto a lo que tiene
   const faltanParcelas = Math.max(0, metaParcelas - totalParcelas);
   const faltanInsignias = Math.max(0, metaInsignias - insigniasActuales);
 
@@ -76,21 +194,32 @@ export default function DualCalculator({
   const nuevoPasaporteNivel = calcularNivelPasaporte(nuevoTotalInsignias);
   const nuevoPasaporteMult = 1 + (nuevoPasaporteNivel * 0.05);
 
-  // Nueva renta simulada
+  // Nueva renta simulada según modo de boost seleccionado
   const nuevaBaseSec = baseSecActual + (faltanParcelas * 1.58e-9);
   const renta24hNueva = nuevaBaseSec * 86400 * nuevoMultTier * nuevoPasaporteMult;
   const renta22hNueva = (nuevaBaseSec * 79200 * nuevoMultTier + nuevaBaseSec * 7200 * 1) * nuevoPasaporteMult;
   const rentaMesNueva = (nuevaBaseSec * 3600 * horasSrb * 50 + nuevaBaseSec * 3600 * (720 - horasSrb) * nuevoMultTier) * nuevoPasaporteMult;
   const rentaPromDiaNueva = rentaMesNueva / 30;
 
+  // Renta activa según el modo que está visualizando
+  const rentaActivaNueva = tipoMedicionMeta === "normal_24h"
+    ? (modoBoostMeta === "24_7" ? renta24hNueva : renta22hNueva)
+    : rentaPromDiaNueva;
+
+  const rentaActivaActual = tipoMedicionMeta === "normal_24h"
+    ? (modoBoostMeta === "24_7" ? renta24hActual : renta22hActual)
+    : rentaPromDiaActual;
+
   // Diferencias netas
-  const extraDia24 = renta24hNueva - renta24hActual;
-  const extraDiaPromSrb = rentaPromDiaNueva - rentaPromDiaActual;
+  const extraDiaActivo = rentaActivaNueva - rentaActivaActual;
   const extraAnio = (rentaMesNueva * 12) - (rentaMesActual * 12);
+  const pctMetaAlcanzada = objetivoUsd > 0 ? (rentaActivaNueva / objetivoUsd) * 100 : 100;
 
   // Tiempos estimados
   const diasEC = abEcDiarios > 0 ? abNetosFaltantes / abEcDiarios : 0;
   const diasF2P = abPorDia > 0 ? abNetosFaltantes / abPorDia : 0;
+
+  const esCalculoAutomatico = metaParcelas === metaAutomatica.parcelas;
 
   return (
     <div className="space-y-4">
@@ -99,10 +228,10 @@ export default function DualCalculator({
         <div>
           <div className="text-xs uppercase tracking-widest font-black text-cyan-400 flex items-center gap-2">
             <span className="text-sm">⚖️</span>
-            <span>Calculadora Dual: Lo que Tengo vs Lo que Necesito</span>
+            <span>Calculadora Dual: Lo que Tengo vs Lo que Realmente Necesito</span>
           </div>
           <p className="text-[11px] text-gray-400 mt-0.5">
-            Compara en tiempo real lo que generas hoy frente a cualquier combinación de parcelas e insignias que desees alcanzar
+            Compara tu estado actual frente a tu objetivo en dólares. Modifica tu meta y el sistema calculará en automático las parcelas exactas necesarias.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -204,14 +333,79 @@ export default function DualCalculator({
               </span>
             </div>
 
-            {/* Controles interactivos de entrada */}
+            {/* SECCIÓN DEL OBJETIVO EN DÓLARES (CONTROLADOR PRINCIPAL) */}
+            <div className="p-3 bg-gradient-to-r from-purple-950/30 to-[#0c0818] border border-purple-500/30 rounded-xl space-y-2 mb-3">
+              <div className="flex flex-wrap items-center justify-between gap-1 text-[11px]">
+                <label className="text-purple-300 font-bold uppercase tracking-wider flex items-center gap-1">
+                  <span>🎯</span> Tu Objetivo Diario en Dólares (cada 24h):
+                </label>
+                <div className="flex items-center gap-1 text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => setModoBoostMeta("24_7")}
+                    className={`px-1.5 py-0.5 rounded ${
+                      modoBoostMeta === "24_7"
+                        ? "bg-purple-600 text-white font-bold"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    ⚡ 24/7 (EC)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setModoBoostMeta("22h")}
+                    className={`px-1.5 py-0.5 rounded ${
+                      modoBoostMeta === "22h"
+                        ? "bg-purple-600 text-white font-bold"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    🌙 22h (Normal)
+                  </button>
+                </div>
+              </div>
+
+              {/* Input libre de Objetivo en USD */}
+              <div className="flex items-center gap-2 bg-[#1b122c] border border-purple-500/50 rounded-lg px-3 py-1.5">
+                <span className="text-purple-400 font-bold text-base">$</span>
+                <input
+                  type="number"
+                  step="0.05"
+                  min="0.01"
+                  value={objetivoUsd}
+                  onChange={(e) => cambiarObjetivoUsd(Number(e.target.value) || 0.01)}
+                  className="flex-1 bg-transparent text-lg font-bold font-mono text-white focus:outline-none"
+                />
+                <span className="text-xs text-gray-300 font-medium">USD al día</span>
+              </div>
+
+              {/* Botones de Presets rápidos de dólares */}
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
+                {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((val) => (
+                  <button
+                    key={val}
+                    type="button"
+                    onClick={() => cambiarObjetivoUsd(val)}
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-all ${
+                      Math.abs(objetivoUsd - val) < 0.001
+                        ? "bg-purple-600 text-white shadow-[0_0_8px_rgba(168,85,247,0.4)]"
+                        : "bg-white/5 text-gray-400 hover:bg-white/10 hover:text-white"
+                    }`}
+                  >
+                    ${val.toFixed(2)}/d {val === 1.0 ? "⭐" : ""}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Controles interactivos de entrada (Parcelas e Insignias) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               {/* Control Parcelas Objetivo */}
               <div className="bg-black/40 p-2.5 rounded-xl border border-white/5 space-y-1.5">
                 <div className="flex items-center justify-between text-[10px] text-gray-400 uppercase">
                   <span>🏞️ Meta Parcelas</span>
                   <span className="text-cyan-400 font-mono font-bold">
-                    {faltanParcelas > 0 ? `+${faltanParcelas}` : "0"} faltan
+                    {faltanParcelas > 0 ? `+${faltanParcelas.toLocaleString()} FALTAN` : "¡COMPLETO!"}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
@@ -223,8 +417,9 @@ export default function DualCalculator({
                     className="w-full bg-[#181424] border border-cyan-500/40 rounded-lg px-2.5 py-1.5 text-base font-bold font-mono text-white focus:outline-none"
                   />
                 </div>
-                <div className="flex gap-1">
-                  {[10, 50, siguienteTramo - totalParcelas].filter(n => n > 0).slice(0, 3).map((n) => (
+                {/* Botones para jugar con las parcelas */}
+                <div className="flex flex-wrap gap-1">
+                  {[10, 50, 100].map((n) => (
                     <button
                       key={n}
                       type="button"
@@ -234,6 +429,15 @@ export default function DualCalculator({
                       +{n}
                     </button>
                   ))}
+                  {!esCalculoAutomatico && (
+                    <button
+                      type="button"
+                      onClick={() => setMetaParcelas(metaAutomatica.parcelas)}
+                      className="w-full py-0.5 text-[9px] font-bold rounded bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40"
+                    >
+                      🎯 Ajustar a ${objetivoUsd.toFixed(2)}/d ({metaAutomatica.parcelas.toLocaleString()})
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -242,7 +446,7 @@ export default function DualCalculator({
                 <div className="flex items-center justify-between text-[10px] text-gray-400 uppercase">
                   <span>🏅 Meta Insignias</span>
                   <span className="text-amber-400 font-mono font-bold">
-                    {faltanInsignias > 0 ? `+${faltanInsignias}` : "0"} faltan
+                    {faltanInsignias > 0 ? `+${faltanInsignias.toLocaleString()} FALTAN` : "¡COMPLETO!"}
                   </span>
                 </div>
                 <div className="flex items-center gap-1">
@@ -292,13 +496,28 @@ export default function DualCalculator({
             {/* Renta Resultante y Ganancia Neta */}
             <div className="p-3 bg-gradient-to-r from-[#1c1232] to-[#110c22] border border-purple-500/30 rounded-xl space-y-2 mb-3">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-300">📈 Nueva Renta 24h (24/7):</span>
-                <span className="font-mono font-bold text-white text-sm">${fmt(renta24hNueva, 4)} USD/día</span>
+                <span className="text-gray-300">
+                  📈 Nueva Renta 24h ({modoBoostMeta === "24_7" ? "24/7" : "22h"}):
+                </span>
+                <span className="font-mono font-bold text-white text-sm">
+                  ${fmt(rentaActivaNueva, 4)} USD/día
+                </span>
               </div>
+
               <div className="flex items-center justify-between text-xs border-t border-white/5 pt-1.5">
                 <span className="text-emerald-400 font-semibold">⚡ Ganancia Neta Adicional:</span>
-                <span className={`font-mono font-bold ${extraDia24 >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                  {extraDia24 >= 0 ? "+" : ""}${fmt(extraDia24, 4)} USD/24h (+${fmt(extraAnio, 2)}/año)
+                <span className={`font-mono font-bold ${extraDiaActivo >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                  {extraDiaActivo >= 0 ? "+" : ""}${fmt(extraDiaActivo, 4)} USD/24h (+${fmt(extraAnio, 2)}/año)
+                </span>
+              </div>
+
+              {/* Indicador de cumplimiento de la Meta en USD */}
+              <div className="flex items-center justify-between text-[11px] pt-1 text-gray-400 border-t border-purple-900/30">
+                <span>
+                  Objetivo: <strong className="text-white">${objetivoUsd.toFixed(2)} USD/día</strong>
+                </span>
+                <span className={`font-bold font-mono ${pctMetaAlcanzada >= 100 ? "text-emerald-400" : "text-amber-400"}`}>
+                  {pctMetaAlcanzada >= 100 ? "🎉 ¡Meta alcanzada!" : `${pctMetaAlcanzada.toFixed(1)}%`}
                 </span>
               </div>
             </div>
@@ -335,7 +554,7 @@ export default function DualCalculator({
 
           <div className="pt-2 border-t border-white/5 text-[10px] text-purple-300/80 text-center">
             {faltanParcelas === 0 && faltanInsignias === 0
-              ? "Objetivo idéntico al actual"
+              ? `Objetivo actual: Generando $${fmt(rentaActivaActual, 4)} USD/día`
               : `Requiere ${abNetosFaltantes.toLocaleString()} AB netos adicionales tras usar tu saldo`}
           </div>
         </GlowCard>

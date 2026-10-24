@@ -217,6 +217,7 @@ export default function DashboardTab(props: DashboardTabProps) {
         abEcDiarios={props.desgloseEc.promedio_diario}
         horasSrb={props.horasSrb}
         siguienteTramo={props.siguiente_tramo}
+        metaUsdDiaInicial={props.metaUsdDia}
       />
 
       {/* ≡≡≡ SECCIÓN 1: 💎 RENDIMIENTO DIARIO EN 24 HORAS & PROYECCIONES ≡≡≡ */}
