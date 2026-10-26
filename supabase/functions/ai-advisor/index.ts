@@ -681,7 +681,7 @@ INSTRUCCIONES ESTRICTAS (SIGUE AL PIE DE LA LETRA):
                 'Content-Type': 'application/json'
               },
               body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
+                model: "openai/gpt-oss-120b",
                 messages: [
                   {
                     role: "system",
@@ -748,7 +748,7 @@ INSTRUCCIONES ESTRICTAS (SIGUE AL PIE DE LA LETRA):
       htmlFinal = `
         <div class="mb-6 p-5 bg-gradient-to-r from-purple-900/30 via-indigo-900/20 to-cyan-900/10 rounded-2xl border border-purple-500/20 shadow-lg shadow-purple-900/20">
           <div class="text-[10px] text-gray-500 uppercase tracking-widest mb-3 font-bold flex items-center gap-2">
-            <span>🤖 Asesor Experto Atlas Earth ${providerName === "groq" ? "(Groq Llama 3.3)" : ""}</span>
+            <span>🤖 Asesor Experto Atlas Earth ${providerName === "groq" ? "(Groq AI 120B)" : ""}</span>
             <span class="text-purple-400">● LIVE</span>
           </div>
           <div class="text-sm leading-relaxed text-gray-100 space-y-2">
