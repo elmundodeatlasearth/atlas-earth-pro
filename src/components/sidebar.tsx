@@ -310,15 +310,36 @@ export default function Sidebar(props: SidebarProps) {
         </Section>
 
         {/* Anuncios */}
-        <Section title="📺 Anuncios">
+        <Section title="📺 Horario de Anuncios">
           <div className="space-y-1.5">
+            <div className="flex gap-1 mb-1">
+              <button
+                type="button"
+                onClick={() => { props.setHoraInicio("08:00"); props.setHoraFin("00:00"); props.setEficienciaAnuncios(100); }}
+                className="flex-1 py-1 px-1 rounded text-[10px] font-bold bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition-all text-center"
+                title="Jornada de 8:00 AM a 24:00 (16 horas completas)"
+              >
+                ⚡ 08:00 - 24:00 (16h)
+              </button>
+              <button
+                type="button"
+                onClick={() => { props.setHoraInicio("08:00"); props.setHoraFin("22:00"); }}
+                className="flex-1 py-1 px-1 rounded text-[10px] font-bold bg-white/5 hover:bg-white/10 text-gray-400 border border-white/5 transition-all text-center"
+                title="Jornada normal de 8:00 AM a 10:00 PM (14 horas)"
+              >
+                🌙 08:00 - 22:00 (14h)
+              </button>
+            </div>
             <div className="flex items-center justify-between">
               <label className="text-xs text-gray-400">Inicio</label>
               <input type="time" value={props.horaInicio} onChange={e => props.setHoraInicio(e.target.value)}
                 className="bg-[#1a1a1a] border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-cyan-500 transition-all" />
             </div>
             <div className="flex items-center justify-between">
-              <label className="text-xs text-gray-400">Fin</label>
+              <label className="text-xs text-gray-400 flex items-center gap-1">
+                <span>Fin</span>
+                <span className="text-[9px] text-gray-500">(00:00 = 24:00)</span>
+              </label>
               <input type="time" value={props.horaFin} onChange={e => props.setHoraFin(e.target.value)}
                 className="bg-[#1a1a1a] border border-white/10 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-cyan-500 transition-all" />
             </div>

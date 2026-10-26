@@ -45,8 +45,8 @@ export function useAtlasInputs(): AtlasInputs {
   const [tipoPase, setTipoPase] = useState<string>("Ninguno (F2P)");
   const [diaAsistencia, setDiaAsistencia] = useState(1);
   const [horaInicio, setHoraInicio] = useState("08:00");
-  const [horaFin, setHoraFin] = useState("22:00");
-  const [eficienciaAnuncios, setEficienciaAnuncios] = useState(90);
+  const [horaFin, setHoraFin] = useState("00:00");
+  const [eficienciaAnuncios, setEficienciaAnuncios] = useState(100);
   const [metaParcelas, setMetaParcelas] = useState(150);
   const [activeTab, setActiveTab] = useState("dashboard");
 

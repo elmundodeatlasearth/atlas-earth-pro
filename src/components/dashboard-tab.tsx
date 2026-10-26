@@ -42,6 +42,19 @@ interface DashboardTabProps {
   horasBoost: number;
   tipoPase?: string;
   permissions: Permissions;
+
+  // Parámetros de Horario y Cálculo Exacto de AB
+  horaInicio?: string;
+  horaFin?: string;
+  eficienciaAnuncios?: number;
+  diaAsistencia?: number;
+  horasActivas?: number;
+  anunciosDiariosReales?: number;
+  abPorAnuncio?: number;
+  abAnunciosDiarios?: number;
+  abAsistenciaHoy?: number;
+  abGarantizadoDia?: number;
+  diasParaParcelaGarantizado?: number;
 }
 
 type NivelVista = "basico" | "intermedio" | "avanzado";

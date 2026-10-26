@@ -169,6 +169,17 @@ export default function Home() {
               horasSrb={S.horasSrb} eficiencia={S.eficiencia} horasBoost={S.horasBoost}
               tipoPase={S.tipoPase}
               permissions={S.permissions}
+              horaInicio={S.horaInicio}
+              horaFin={S.horaFin}
+              eficienciaAnuncios={S.eficienciaAnuncios}
+              diaAsistencia={S.diaAsistencia}
+              horasActivas={S.horasActivas}
+              anunciosDiariosReales={S.anunciosDiariosReales}
+              abPorAnuncio={S.abPorAnuncio}
+              abAnunciosDiarios={S.abAnunciosDiarios}
+              abAsistenciaHoy={S.abAsistenciaHoy}
+              abGarantizadoDia={S.abGarantizadoDia}
+              diasParaParcelaGarantizado={S.diasParaParcelaGarantizado}
             />
           )}
           {S.activeTab === "simulador" && (

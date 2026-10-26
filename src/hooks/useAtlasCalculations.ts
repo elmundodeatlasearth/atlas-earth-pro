@@ -6,6 +6,7 @@ import {
   MotorAtlasEarth,
   obtenerTasaCambio,
   SimuladorDiario,
+  generarCalendarioAE,
   optimizadorExplorerClub,
   calcularNivelPasaporte,
   TIERS_COMPLETOS,
@@ -44,6 +45,15 @@ export interface AtlasCalculations {
   /** Desglose completo EC */
   desgloseEc: DesgloseMensual;
 
+  // === CÁLCULO EXACTO Y CONCRETO DE AB DIARIOS (SIN AZAR) ===
+  horasActivas: number;
+  anunciosDiariosReales: number;
+  abPorAnuncio: number;
+  abAnunciosDiarios: number;
+  abAsistenciaHoy: number;
+  abGarantizadoDia: number;
+  diasParaParcelaGarantizado: number;
+
   simTotal: number; simMult: number; simDia: number; simSem: number; simMes: number; simAnio: number;
   optData: OptimizadorECResult;
   diasFree: number; diasEc2: number; tiempoFree: string; tiempoEc: string;
@@ -56,11 +66,6 @@ export interface AtlasCalculations {
   veredictoEstrategia: string;
   /** Tabla de todos los saltos de Tier hasta la meta (costo real escalonado) */
   saltosTier: SaltoTier[];
-}
-
-function parseTime(hora: string): number {
-  const [h, m] = hora.split(":").map(Number);
-  return h * 60 + m;
 }
 
 export function useAtlasCalculations(
@@ -122,15 +127,36 @@ export function useAtlasCalculations(
   const costoMetaAb = costoMetaAbReal(motor.total_parcelas, parcelasMeta, abAhorrados);
   const costoTiendaUsd = (costoMetaAb / 2400) * 99.99;
 
-  // === CÁLCULO DE MAX ANUNCIOS (ventana de horas activas) ===
-  const inicioMin = parseTime(horaInicio);
-  let finMin = parseTime(horaFin);
-  if (finMin < inicioMin) finMin += 1440;
-  const minutosTotales = finMin - inicioMin;
+  // === CÁLCULO DE MAX ANUNCIOS Y AB GARANTIZADOS AL DÍA (100% DETERMINISTA) ===
+  const parseHour = (hStr: string) => {
+    if (!hStr) return 0;
+    if (hStr === "24:00") return 1440;
+    const [h, m] = hStr.split(":").map(Number);
+    return (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m);
+  };
+  const inicioMin = parseHour(horaInicio);
+  let finMin = parseHour(horaFin);
+  if (horaFin === "24:00") {
+    finMin = 1440;
+  } else if (finMin <= inicioMin && !(inicioMin === 0 && finMin === 0)) {
+    finMin += 1440;
+  }
+  const minutosTotales = Math.max(0, finMin - inicioMin);
+  const horasActivas = Number((minutosTotales / 60).toFixed(1));
   const maxAnuncios = Math.max(0, Math.floor(minutosTotales / 20));
 
   // AB por anuncio según país (USA=2, Resto=1)
   const abPorAnuncio = AB_POR_ANUNCIO[pais] ?? AB_POR_ANUNCIO_DEFAULT;
+  const anunciosDiariosReales = Number((maxAnuncios * (eficienciaAnuncios / 100)).toFixed(1));
+  const abAnunciosDiarios = Number((anunciosDiariosReales * abPorAnuncio).toFixed(1));
+
+  // Asistencia garantizada de hoy según calendario de 90 días
+  const cal = useMemo(() => generarCalendarioAE(), []);
+  const calIdx = Math.max(0, Math.min(89, (diaAsistencia || 1) - 1));
+  const esEC = tipoPase.includes("Explorer Club");
+  const abAsistenciaHoy = esEC ? cal.ec[calIdx] : cal.f2p[calIdx];
+  const abGarantizadoDia = Number((abAnunciosDiarios + abAsistenciaHoy).toFixed(1));
+  const diasParaParcelaGarantizado = abGarantizadoDia > 0 ? Number((100 / abGarantizadoDia).toFixed(1)) : 0;
 
   // AB extra del pase escalera (anticipada/tardía) — AB directos que otorga el pase
   // Explorer Club: el bonus va en ec_calendario, más la escalera incluida
@@ -155,7 +181,6 @@ export function useAtlasCalculations(
   );
 
   // === AB POR DÍA — UNIFICADO del desglose ===
-  const esEC = tipoPase.includes("Explorer Club");
   const abPorDia = esEC ? desgloseEc.promedio_diario : desgloseF2p.promedio_diario;
   const abEcDiarios = desgloseEc.promedio_diario;
 
@@ -261,6 +286,8 @@ export function useAtlasCalculations(
     faltantesMeta, costoMetaAb, costoTiendaUsd,
     maxAnuncios, abPorDia, abEcDiarios,
     desgloseF2p, desgloseEc, optData,
+    horasActivas, anunciosDiariosReales, abPorAnuncio, abAnunciosDiarios,
+    abAsistenciaHoy, abGarantizadoDia, diasParaParcelaGarantizado,
     simTotal, simMult, simDia, simSem, simMes, simAnio,
     diasFree, diasEc2, tiempoFree, tiempoEc,
     balanceAlcanza, faltanNetosAb, porcentajeEsc,
