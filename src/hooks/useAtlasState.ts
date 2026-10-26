@@ -10,7 +10,7 @@ import { useAtlasInputs, type AtlasInputs } from "./useAtlasInputs";
 import { useAtlasAuth } from "./useAtlasAuth";
 import { useAtlasCalculations } from "./useAtlasCalculations";
 import { usePermissions, type Permissions } from "./usePermissions";
-import { parsePerfilGuardado, leerListaPerfiles, leerPerfilActivo, campoPerfil } from "@/utils/persistencia";
+import { parsePerfilGuardado, leerListaPerfiles, leerPerfilActivo, campoPerfil, eliminarPerfilLocal } from "@/utils/persistencia";
 
 export interface AtlasState extends AtlasInputs, AtlasCalculations {
   // Auth (overrides para compatibilidad)
@@ -43,6 +43,7 @@ export interface AtlasState extends AtlasInputs, AtlasCalculations {
   showSaveMsg: boolean;
   guardarPerfil: () => void;
   cargarPerfil: (nombre: string) => void;
+  eliminarPerfil: (nombre: string) => void;
   guardarPerfilNube: () => Promise<void>;
 
   // History
@@ -54,6 +55,8 @@ export interface AtlasState extends AtlasInputs, AtlasCalculations {
   histMsg: string;
   guardarHistorial: () => Promise<void>;
   borrarHistorial: (id: number) => Promise<void>;
+  limpiarTodoHistorial: () => Promise<void>;
+  iniciarHistorialDesdeHoy: (ab?: number, usd?: number, diam?: number) => Promise<void>;
 }
 
 export function useAtlasState(): AtlasState {
@@ -248,6 +251,14 @@ export function useAtlasState(): AtlasState {
     setProfileName(nombre);
     localStorage.setItem("ae_active_profile", nombre);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const eliminarPerfil = useCallback((nombre: string) => {
+    const { remainingList, nextActive } = eliminarPerfilLocal(nombre);
+    setProfileList(remainingList);
+    cargarPerfil(nextActive);
+    setShowSaveMsg(true);
+    setTimeout(() => setShowSaveMsg(false), 2000);
+  }, [cargarPerfil]);
 
   const guardarPerfilNube = useCallback(async () => {
     if (!A.user) return;
@@ -525,6 +536,60 @@ export function useAtlasState(): AtlasState {
     setTimeout(() => setHistMsg(""), 4000);
   }, [A.user]);
 
+  const limpiarTodoHistorial = useCallback(async () => {
+    setHistorialData([]);
+    try {
+      localStorage.removeItem("ae_historial_local");
+    } catch (e) {
+      console.warn("Error limpiando localStorage:", e);
+    }
+    if (A.user) {
+      try {
+        await supabase
+          .from("historial_atlas")
+          .delete()
+          .eq("user_id", A.user.id);
+      } catch (err) {
+        console.warn("Error borrando historial en Supabase:", err);
+      }
+    }
+    setHistMsg("✨ Registros limpiados con éxito. Listo para empezar desde cero.");
+    setTimeout(() => setHistMsg(""), 4000);
+  }, [A.user]);
+
+  const iniciarHistorialDesdeHoy = useCallback(async (ab?: number, usd?: number, diam?: number) => {
+    const hoy = new Date().toISOString().split("T")[0];
+    const entryHoy: HistorialEntry = {
+      id: Date.now(),
+      fecha: hoy,
+      ab_generado: Number(ab !== undefined ? ab : (I.abAhorrados || 0)),
+      usd_generado: Number(usd !== undefined ? usd : (C.rentaDia || 0)),
+      diamantes_obtenidos: Number(diam !== undefined ? diam : 0),
+    };
+    setHistorialData([entryHoy]);
+    try {
+      localStorage.setItem("ae_historial_local", JSON.stringify([entryHoy]));
+    } catch (e) {
+      console.warn("Error guardando localStorage:", e);
+    }
+    if (A.user) {
+      try {
+        await supabase.from("historial_atlas").delete().eq("user_id", A.user.id);
+        await supabase.from("historial_atlas").upsert({
+          user_id: A.user.id,
+          fecha: hoy,
+          ab_generado: entryHoy.ab_generado,
+          usd_generado: entryHoy.usd_generado,
+          diamantes_obtenidos: entryHoy.diamantes_obtenidos,
+        }, { onConflict: "user_id,fecha" });
+      } catch (err) {
+        console.warn("Error sincronizando en Supabase:", err);
+      }
+    }
+    setHistMsg("🚀 Historial reiniciado. Registro de partida creado para hoy con éxito.");
+    setTimeout(() => setHistMsg(""), 4000);
+  }, [A.user, I.abAhorrados, C.rentaDia]);
+
   const cargarHistorial = useCallback(async () => {
     // 1. Cargar primero de localStorage para disponibilidad inmediata y soporte offline/local
     try {
@@ -583,10 +648,11 @@ export function useAtlasState(): AtlasState {
     aiLoading, aiAdvice, aiError, handleGenerateAI, aiCreditsResetDate,
     // Profiles
     profileName, setProfileName, profileList, setProfileList, showSaveMsg,
-    guardarPerfil, cargarPerfil, guardarPerfilNube,
+    guardarPerfil, cargarPerfil, eliminarPerfil, guardarPerfilNube,
     // History
     historialData, histFecha, setHistFecha, histAb, setHistAb,
     histUsd, setHistUsd, histDiam, setHistDiam, histMsg, guardarHistorial, borrarHistorial,
+    limpiarTodoHistorial, iniciarHistorialDesdeHoy,
     // Calculations
     ...C,
   };

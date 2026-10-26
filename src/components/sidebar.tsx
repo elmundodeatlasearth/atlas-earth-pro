@@ -48,6 +48,7 @@ interface SidebarProps {
   showSaveMsg: boolean;
   guardarPerfil: () => void;
   cargarPerfil: (nombre: string) => void;
+  eliminarPerfil?: (nombre: string) => void;
   guardarPerfilNube: () => Promise<void>;
 
   // Summary
@@ -150,6 +151,24 @@ export default function Sidebar(props: SidebarProps) {
             ) : (
               <MiniButton onClick={() => {}} className="bg-gray-700 text-gray-500 cursor-not-allowed opacity-60" title="Inicia sesión para guardar en la nube">🔒</MiniButton>
             )}
+            <MiniButton
+              onClick={() => {
+                if (props.profileList.length <= 1 && props.profileName === "Principal") {
+                  alert("No se puede eliminar el único perfil 'Principal'.");
+                  return;
+                }
+                const seguro = window.confirm(
+                  `¿Estás seguro de que deseas eliminar permanentemente el perfil "${props.profileName}"?\nSe borrarán todos sus datos locales guardados.`
+                );
+                if (seguro && props.eliminarPerfil) {
+                  props.eliminarPerfil(props.profileName);
+                }
+              }}
+              className="bg-red-950/60 hover:bg-red-600/80 text-red-300 border border-red-500/30 hover:scale-105 active:scale-95 transition-all"
+              title={`Eliminar perfil "${props.profileName}"`}
+            >
+              🗑️
+            </MiniButton>
           </div>
           {props.showSaveMsg && <div className="text-[10px] text-green-400 mt-1">✅ Guardado</div>}
           <div className="mt-3">
@@ -396,14 +415,27 @@ function MiniButton({ onClick, className, title, children }: { onClick: () => vo
 function StepperRow({ label, value, set }: { label: string; value: number; set: (v: number) => void }) {
   return (
     <div className="flex items-center gap-3">
-      <label className="text-xs text-gray-400 w-20 shrink-0">{label}</label>
-      <div className="flex items-center bg-[#1a1a1a] border border-white/10 rounded-lg overflow-hidden flex-1">
-        <button onClick={() => set(Math.max(0, value - 1))}
-          className="px-2 py-1 text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-xs font-bold">−</button>
-        <input type="number" value={value} min={0} onChange={e => set(Math.max(0, Number(e.target.value)))}
-          className="flex-1 bg-transparent text-center text-xs text-white focus:outline-none py-1 w-0" />
-        <button onClick={() => set(value + 1)}
-          className="px-2 py-1 text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-xs font-bold">+</button>
+      <label className="text-xs font-medium text-gray-300 w-20 shrink-0">{label}</label>
+      <div className="flex items-center bg-[#151515] border border-white/15 rounded-lg overflow-hidden flex-1 focus-within:border-cyan-500/60 focus-within:ring-1 focus-within:ring-cyan-500/30 transition-all">
+        <button
+          type="button"
+          onClick={() => set(Math.max(0, value - 1))}
+          className="px-2.5 py-1.5 text-gray-400 hover:text-white hover:bg-white/10 active:bg-white/20 transition-all text-xs font-bold select-none"
+          aria-label={`Disminuir ${label}`}
+        >−</button>
+        <input
+          type="number"
+          value={value}
+          min={0}
+          onChange={e => set(Math.max(0, Number(e.target.value)))}
+          className="flex-1 bg-transparent text-center text-xs font-semibold text-white focus:outline-none py-1.5 w-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+        <button
+          type="button"
+          onClick={() => set(value + 1)}
+          className="px-2.5 py-1.5 text-gray-400 hover:text-white hover:bg-white/10 active:bg-white/20 transition-all text-xs font-bold select-none"
+          aria-label={`Aumentar ${label}`}
+        >+</button>
       </div>
     </div>
   );
@@ -413,31 +445,46 @@ function SummaryCard({ totalParcelas, multTier, pasaporte, siguiente_tramo, falt
   totalParcelas: number; multTier: number; pasaporte: number;
   siguiente_tramo: number; faltantesTier: number; faltantesMeta: number;
 }) {
+  const pctTier = siguiente_tramo > 0 ? Math.min(100, Math.round((totalParcelas / siguiente_tramo) * 100)) : 100;
   return (
-    <div className="bg-gradient-to-br from-[#141414] to-[#0d0d0d] rounded-xl p-3 border border-white/5 space-y-1.5">
-      <div className="flex justify-between text-xs">
-        <span className="text-gray-400">Total Parcelas</span>
-        <span className="font-bold text-cyan-400">{totalParcelas.toLocaleString()}</span>
+    <div className="bg-gradient-to-br from-[#121622] via-[#0d1017] to-[#0a0c10] rounded-xl p-3.5 border border-cyan-500/20 shadow-lg shadow-cyan-950/20 space-y-2">
+      <div className="flex justify-between items-center text-xs">
+        <span className="text-gray-400 font-medium flex items-center gap-1.5">🗺️ Total Parcelas</span>
+        <span className="font-black text-cyan-300 text-sm tracking-wide">{totalParcelas.toLocaleString()}</span>
       </div>
-      <div className="flex justify-between text-xs">
-        <span className="text-gray-400">Multiplicador</span>
-        <span className="font-bold text-yellow-400">{multTier}x</span>
+      <div className="flex justify-between items-center text-xs">
+        <span className="text-gray-400 font-medium flex items-center gap-1.5">⚡ Multiplicador Base</span>
+        <span className="font-bold text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/30">{multTier}x Boost</span>
       </div>
-      <div className="flex justify-between text-xs">
-        <span className="text-gray-400">Pasaporte</span>
-        <span className="font-bold text-amber-400">Nivel {pasaporte} (+{pasaporte * 5}%)</span>
+      <div className="flex justify-between items-center text-xs">
+        <span className="text-gray-400 font-medium flex items-center gap-1.5">🛂 Pasaporte</span>
+        <span className="font-bold text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">Nivel {pasaporte} (+{pasaporte * 5}%)</span>
       </div>
-      <div className="flex justify-between text-xs">
-        <span className="text-gray-400">Próximo Salto ({siguiente_tramo})</span>
-        <span className="font-bold text-pink-400">Faltan {faltantesTier}</span>
+
+      <div className="border-t border-white/5 pt-2 mt-2 space-y-1.5">
+        <div className="flex justify-between text-xs">
+          <span className="text-gray-400 text-[11px]">Salto de Tier ({siguiente_tramo} parcelas)</span>
+          <span className="font-bold text-pink-400 text-[11px]">
+            {faltantesTier > 0 ? `Faltan ${faltantesTier} (${faltantesTier * 100} AB)` : "🏆 Techo Máximo"}
+          </span>
+        </div>
+        <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden border border-white/5">
+          <div
+            className="bg-gradient-to-r from-cyan-500 via-blue-500 to-pink-500 h-full rounded-full transition-all duration-700 shadow-[0_0_8px_rgba(6,182,212,0.5)]"
+            style={{ width: `${pctTier}%` }}
+          />
+        </div>
+        <div className="flex justify-between text-[10px] text-gray-500">
+          <span>{totalParcelas} actuales</span>
+          <span>{pctTier}% ({siguiente_tramo} meta tier)</span>
+        </div>
       </div>
-      <div className="flex justify-between text-xs">
-        <span className="text-gray-400">Faltan para Meta USD</span>
-        <span className="font-bold text-orange-400">{faltantesMeta > 0 ? faltantesMeta : '✅ Alcanzada'}</span>
-      </div>
-      <div className="w-full bg-[#222] rounded-full h-1.5 mt-1">
-        <div className="bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-500 h-1.5 rounded-full transition-all duration-700"
-          style={{ width: `${siguiente_tramo > 0 ? Math.min(100, (totalParcelas / siguiente_tramo) * 100) : 100}%` }} />
+
+      <div className="flex justify-between items-center text-xs pt-1 border-t border-white/5">
+        <span className="text-gray-400 text-[11px]">Meta Diaria / Periódica</span>
+        <span className={`text-[11px] font-bold px-2 py-0.5 rounded ${faltantesMeta <= 0 ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30" : "text-orange-400 bg-orange-500/10 border border-orange-500/20"}`}>
+          {faltantesMeta > 0 ? `Faltan ${faltantesMeta} parcelas` : "✅ Meta Alcanzada"}
+        </span>
       </div>
     </div>
   );

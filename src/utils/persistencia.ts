@@ -91,3 +91,23 @@ export function leerPerfilActivo(lista: string[]): string {
   } catch { /* ignore */ }
   return lista[0] || "Principal";
 }
+
+/**
+ * Elimina un perfil específico del almacenamiento local.
+ * Devuelve la nueva lista de perfiles y el próximo perfil que debe quedar activo.
+ */
+export function eliminarPerfilLocal(nombre: string): { remainingList: string[]; nextActive: string } {
+  try {
+    localStorage.removeItem(`ae_profile_${nombre}`);
+    const currentList = leerListaPerfiles();
+    const remaining = currentList.filter(p => p !== nombre);
+    const finalRemaining = remaining.length > 0 ? remaining : ["Principal"];
+    localStorage.setItem("ae_profiles", JSON.stringify(finalRemaining));
+    const nextActive = finalRemaining[0];
+    localStorage.setItem("ae_active_profile", nextActive);
+    return { remainingList: finalRemaining, nextActive };
+  } catch {
+    return { remainingList: ["Principal"], nextActive: "Principal" };
+  }
+}
+

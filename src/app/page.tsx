@@ -89,6 +89,7 @@ export default function Home() {
           profileName={S.profileName} setProfileName={S.setProfileName}
           profileList={S.profileList} setProfileList={S.setProfileList} showSaveMsg={S.showSaveMsg}
           guardarPerfil={S.guardarPerfil} cargarPerfil={S.cargarPerfil}
+          eliminarPerfil={S.eliminarPerfil}
           guardarPerfilNube={S.guardarPerfilNube}
           totalParcelas={S.motor.total_parcelas}
           multTier={S.multTier} pasaporte={S.pasaporte}
@@ -241,6 +242,11 @@ export default function Home() {
               histUsd={S.histUsd} setHistUsd={S.setHistUsd}
               histDiam={S.histDiam} setHistDiam={S.setHistDiam}
               histMsg={S.histMsg} guardarHistorial={S.guardarHistorial} borrarHistorial={S.borrarHistorial}
+              limpiarTodoHistorial={S.limpiarTodoHistorial}
+              iniciarHistorialDesdeHoy={S.iniciarHistorialDesdeHoy}
+              abAhorrados={S.abAhorrados}
+              rentaDia={S.rentaDia}
+              moneda={S.moneda}
               permissions={S.permissions}
             />
           )}

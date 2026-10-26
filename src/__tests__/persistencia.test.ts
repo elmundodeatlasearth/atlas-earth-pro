@@ -8,6 +8,7 @@ import {
   normalizarHorasSrb,
   campoPerfil,
   MIN_KEYS_PERFIL,
+  eliminarPerfilLocal,
 } from "@/utils/persistencia";
 
 describe("parsePerfilGuardado", () => {
@@ -136,5 +137,34 @@ describe("campoPerfil", () => {
     expect(campoPerfil({ pais: "España" }, "pais", "USA")).toBe("España");
     expect(campoPerfil({ c_comun: 250 }, "c_comun", 0)).toBe(250);
     expect(campoPerfil({ horas_boost: 18.5 }, "horas_boost", 18)).toBe(18.5);
+  });
+});
+
+describe("eliminarPerfilLocal", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("elimina el perfil de localStorage y lo remueve de la lista de perfiles", () => {
+    localStorage.setItem("ae_profiles", JSON.stringify(["Principal", "Evelyn", "Usuarios"]));
+    localStorage.setItem("ae_profile_Evelyn", JSON.stringify({ a: 1, b: 2, c: 3, d: 4, e: 5 }));
+    localStorage.setItem("ae_active_profile", "Evelyn");
+
+    const result = eliminarPerfilLocal("Evelyn");
+
+    expect(result.remainingList).toEqual(["Principal", "Usuarios"]);
+    expect(result.nextActive).toBe("Principal");
+    expect(localStorage.getItem("ae_profile_Evelyn")).toBeNull();
+    expect(JSON.parse(localStorage.getItem("ae_profiles")!)).toEqual(["Principal", "Usuarios"]);
+    expect(localStorage.getItem("ae_active_profile")).toBe("Principal");
+  });
+
+  it("garantiza al menos el perfil Principal si se eliminan todos", () => {
+    localStorage.setItem("ae_profiles", JSON.stringify(["Evelyn"]));
+    localStorage.setItem("ae_profile_Evelyn", JSON.stringify({ a: 1, b: 2, c: 3, d: 4, e: 5 }));
+
+    const result = eliminarPerfilLocal("Evelyn");
+
+    expect(result.remainingList).toEqual(["Principal"]);
+    expect(result.nextActive).toBe("Principal");
+    expect(localStorage.getItem("ae_active_profile")).toBe("Principal");
   });
 });
