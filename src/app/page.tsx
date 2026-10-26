@@ -223,6 +223,14 @@ export default function Home() {
               totalParcelas={S.motor.total_parcelas} pasaporte={S.pasaporte}
               abPorDia={S.abPorDia} metaUsdDia={S.metaUsdDia}
               handleGenerateAI={S.handleGenerateAI}
+              motor={S.motor}
+              multTier={S.multTier}
+              abAhorrados={S.abAhorrados}
+              insignias={S.insignias}
+              pais={S.pais}
+              moneda={S.moneda}
+              abEcDiarios={S.desgloseEc.promedio_diario}
+              horasSrb={S.horasSrb}
             />
           )}
           {S.activeTab === "historial" && (

@@ -657,19 +657,17 @@ ${payload.saltos_tier.map(s => `- ${s.tramo} parcelas: mult ${s.mult_antes}x→$
 ` : ""}
 
 INSTRUCCIONES ESTRICTAS (SIGUE AL PIE DE LA LETRA):
-1. Eres el mayor experto mundial en Atlas Earth — conoces Tiers, composición, pasaportes, EC, ROI
-2. Responde SOLO en español, lenguaje DIRECTO y ACCIONABLE
-3. NO saludes NI te presentes — ve directo al análisis
-4. Usa <strong> para cifras clave
-5. Estructura tu respuesta EXACTAMENTE así:
-   Párrafo 1: VEREDICTO PRINCIPAL en 1-2 oraciones contundentes
-   Párrafo 2: QUÉ HACER AHORA (máximo 3 balas con <br/>)
-   Párrafo 3: PRONÓSTICO — qué pasará si sigue esta estrategia en 30/90/365 días
-   Párrafo 4: FRASE MOTIVACIONAL ULTRA agresiva y corta (máximo 10 palabras)
-6. Si está en colapso de Tier, el tono debe ser DRAMÁTICO con mayúsculas
-7. NO repitas los datos que ya te pasé
-8. Máximo 4 párrafos cortos
-9. SIEMPRE menciona el costo REAL en AB del siguiente salto (de la tabla) y cuántos días le tomará con su AB/día actual`;
+1. Eres el mayor estratega financiero de Atlas Earth — dominas Tiers de ${payload.pais}, pasaporte, multiplicadores, Explorer Club y tiempos exactos.
+2. Responde SOLO en español, lenguaje DIRECTO, PRECISO y ACCIONABLE.
+3. NO saludes NI te presentes — ve directo al análisis táctico.
+4. Usa <strong> para todas las cifras clave (AB, parcelas, insignias, tiempos, montos en ${payload.moneda} o USD).
+5. COMPARA OBLIGATORIAMENTE LAS 3 RUTAS PARA SU META DE ${metaDiaria.toFixed(2)} USD/día:
+   - RUTA 1: SOLO PARCELAS (cuántas parcelas faltan, AB netos necesarios y tiempo exacto F2P vs EC).
+   - RUTA 2: SOLO INSIGNIAS (si alcanza con el pasaporte al máximo o si es insuficiente y por qué).
+   - RUTA 3: AMBAS / COMBINADA (por qué es la más eficiente para minimizar tiempo y gasto).
+6. VEREDICTO DE TIEMPO: Indica cuál de las opciones le tomará MENOS TIEMPO y exactamente cuántos días/meses se ahorra.
+7. Si está en o cerca del límite de Tier (${payload.total_parcelas} parcelas), dale la advertencia táctica para que no compre parcelas individuales que le bajen el multiplicador.
+8. Estructura en 4 párrafos cortos: Veredicto y Comparativa de 3 Rutas, Qué Comprar Primero, Tiempos Exactos en Calendario, y Regla Táctica de Oro.`;
 
         // 1. Prioridad: Groq (Llama 3.3 70B Versatile)
         if (groqApiKey) {

@@ -35,7 +35,7 @@ export interface AtlasState extends AtlasInputs, AtlasCalculations {
   aiAdvice: string;
   aiError: string;
   aiCreditsResetDate: string | null;
-  handleGenerateAI: () => Promise<void>;
+  handleGenerateAI: (metaDolarOverride?: number, metaPeriodoOverride?: string) => Promise<void>;
 
   // Profiles
   profileName: string; setProfileName: (v: string) => void;
@@ -340,7 +340,7 @@ export function useAtlasState(): AtlasState {
     };
   }, []);
 
-  const handleGenerateAI = useCallback(async () => {
+  const handleGenerateAI = useCallback(async (metaDolarOverride?: number, metaPeriodoOverride?: string) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) {
       setAiLoading(false);
@@ -371,7 +371,8 @@ export function useAtlasState(): AtlasState {
             horas_boost: I.horasBoost, eficiencia: I.eficiencia, horas_srb: I.horasSrb,
             tipo_pase: I.tipoPase, hora_inicio: I.horaInicio, hora_fin: I.horaFin,
             eficiencia_anuncios: I.eficienciaAnuncios, dia_asistencia: I.diaAsistencia,
-            meta_dolar: I.meta, meta_periodo: I.metaPeriodo,
+            meta_dolar: typeof metaDolarOverride === "number" && metaDolarOverride > 0 ? metaDolarOverride : I.meta,
+            meta_periodo: metaPeriodoOverride || I.metaPeriodo,
             total_parcelas: C.motor.total_parcelas,
             mult_tier: C.multTier, pasaporte_nivel: C.pasaporte, renta_diaria: C.rentaDia,
             // ≡≡≡ DATOS COMPUTADOS ADICIONALES para análisis experto ≡≡≡
