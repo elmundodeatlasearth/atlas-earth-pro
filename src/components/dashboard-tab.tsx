@@ -44,7 +44,25 @@ interface DashboardTabProps {
   permissions: Permissions;
 }
 
+type NivelVista = "basico" | "intermedio" | "avanzado";
+
 export default function DashboardTab(props: DashboardTabProps) {
+  // Estado del Nivel de Vista para mantener la calculadora limpia y sin redundancias
+  const [nivelVista, setNivelVista] = useState<NivelVista>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("ae_vista_dashboard");
+      if (saved === "basico" || saved === "intermedio" || saved === "avanzado") return saved;
+    }
+    return "basico";
+  });
+
+  const cambiarVista = (modo: NivelVista) => {
+    setNivelVista(modo);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("ae_vista_dashboard", modo);
+    }
+  };
+
   const pctMeta = Math.min(100, (props.motor.total_parcelas / props.parcelasMeta) * 100);
 
   // ===== FREE: solo ve la renta diaria + total parcelas =====
@@ -129,23 +147,6 @@ export default function DashboardTab(props: DashboardTabProps) {
   const diasFaltantesTier = props.faltantesTier > 0 && abPorDiaActivo > 0
     ? (props.faltantesTier * 100) / abPorDiaActivo
     : 0;
-
-  // Estado del Nivel de Vista para mantener la calculadora limpia y sin redundancias
-  type NivelVista = "basico" | "intermedio" | "avanzado";
-  const [nivelVista, setNivelVista] = useState<NivelVista>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("ae_vista_dashboard");
-      if (saved === "basico" || saved === "intermedio" || saved === "avanzado") return saved;
-    }
-    return "basico";
-  });
-
-  const cambiarVista = (modo: NivelVista) => {
-    setNivelVista(modo);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("ae_vista_dashboard", modo);
-    }
-  };
 
   const insigniasReales = props.insignias ?? (props.motor.pasaporte_nivel === 5 ? 101 : props.motor.pasaporte_nivel === 4 ? 61 : props.motor.pasaporte_nivel === 3 ? 31 : props.motor.pasaporte_nivel === 2 ? 11 : props.motor.pasaporte_nivel === 1 ? 1 : 0);
 

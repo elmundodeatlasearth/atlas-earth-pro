@@ -292,7 +292,7 @@ export class MotorAtlasEarth {
 
     // Build segments: [currentParcelas..limites[0]], [limites[0]+1..limites[1]], etc.
     let bestP = 500000;
-    let segments: Array<[number, number]> = [];
+    const segments: Array<[number, number]> = [];
 
     let segStart = this.total_parcelas;
     for (const lim of limites) {

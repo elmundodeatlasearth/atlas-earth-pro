@@ -661,7 +661,7 @@ export default function DualCalculator({
                         onClick={resetManual}
                         className="w-full py-1 text-[10px] font-bold rounded-lg bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40"
                       >
-                        🎯 Volver al cálculo automático de "${objetivoUsd.toFixed(2)}/día"
+                        🎯 Volver al cálculo automático de &quot;${objetivoUsd.toFixed(2)}/día&quot;
                       </button>
                     </div>
                   )}

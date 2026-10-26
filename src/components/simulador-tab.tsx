@@ -45,37 +45,9 @@ interface SimuladorTabProps {
   permissions: Permissions;
 }
 
-export default function SimuladorTab(props: SimuladorTabProps) {
-  // FREE: bloque completo con preview
-  if (!props.permissions.canUseSimulator) {
-    return (
-      <div className="space-y-6 animate-fade-in">
-        <LockedFeature
-          title="🔬 Simulador de Inversión"
-          description="Descubre exactamente cuánto generarías al comprar parcelas adicionales, optimizar tu Explorer Club y calcular el ROI de tus inversiones. Todo con datos precisos y en tu moneda local."
-          preview={
-            <div className="p-6 space-y-4">
-              <div className="h-8 bg-white/10 rounded w-1/2 animate-pulse" />
-              <div className="grid grid-cols-4 gap-4">
-                {[1,2,3,4].map(i => (
-                  <div key={i} className="space-y-2">
-                    <div className="h-4 bg-white/10 rounded animate-pulse" />
-                    <div className="h-8 bg-white/10 rounded animate-pulse" />
-                  </div>
-                ))}
-              </div>
-              <div className="h-20 bg-white/5 rounded-xl animate-pulse" />
-              <div className="grid grid-cols-2 gap-4">
-                <div className="h-24 bg-white/5 rounded-xl animate-pulse" />
-                <div className="h-24 bg-white/5 rounded-xl animate-pulse" />
-              </div>
-            </div>
-          }
-        />
-      </div>
-    );
-  }
+type NivelVistaSim = "basico" | "intermedio" | "avanzado";
 
+export default function SimuladorTab(props: SimuladorTabProps) {
   // --- Estado para el simulador de meta en USD al día ---
   const [metaDolarSim, setMetaDolarSim] = useState<number>(() => {
     return props.metaUsdDia && props.metaUsdDia > 0 ? Number(props.metaUsdDia.toFixed(2)) : 1.0;
@@ -155,7 +127,6 @@ export default function SimuladorTab(props: SimuladorTabProps) {
 
   const insigniasActuales = props.insignias ?? (props.nivelActualPasaporte === 5 ? 101 : props.nivelActualPasaporte === 4 ? 61 : props.nivelActualPasaporte === 3 ? 31 : props.nivelActualPasaporte === 2 ? 11 : props.nivelActualPasaporte === 1 ? 1 : 0);
 
-  type NivelVistaSim = "basico" | "intermedio" | "avanzado";
   const [nivelVistaSim, setNivelVistaSim] = useState<NivelVistaSim>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("ae_vista_simulador");
@@ -170,6 +141,36 @@ export default function SimuladorTab(props: SimuladorTabProps) {
       localStorage.setItem("ae_vista_simulador", modo);
     }
   };
+
+  // FREE: bloque completo con preview
+  if (!props.permissions.canUseSimulator) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <LockedFeature
+          title="🔬 Simulador de Inversión"
+          description="Descubre exactamente cuánto generarías al comprar parcelas adicionales, optimizar tu Explorer Club y calcular el ROI de tus inversiones. Todo con datos precisos y en tu moneda local."
+          preview={
+            <div className="p-6 space-y-4">
+              <div className="h-8 bg-white/10 rounded w-1/2 animate-pulse" />
+              <div className="grid grid-cols-4 gap-4">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="space-y-2">
+                    <div className="h-4 bg-white/10 rounded animate-pulse" />
+                    <div className="h-8 bg-white/10 rounded animate-pulse" />
+                  </div>
+                ))}
+              </div>
+              <div className="h-20 bg-white/5 rounded-xl animate-pulse" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="h-24 bg-white/5 rounded-xl animate-pulse" />
+                <div className="h-24 bg-white/5 rounded-xl animate-pulse" />
+              </div>
+            </div>
+          }
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">

@@ -51,7 +51,8 @@ export default function BoostAndAdTimer() {
       interval = setInterval(() => setAdSeconds((prev) => prev - 1), 1000);
     } else if (adSeconds === 0 && adRunning) {
       playAlertSound();
-      setAdRunning(false);
+      const t = setTimeout(() => setAdRunning(false), 0);
+      return () => clearTimeout(t);
     }
     return () => clearInterval(interval);
   }, [adRunning, adSeconds]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -63,7 +64,8 @@ export default function BoostAndAdTimer() {
       interval = setInterval(() => setBoostSeconds((prev) => prev - 1), 1000);
     } else if (boostSeconds === 0 && boostRunning) {
       playAlertSound();
-      setBoostRunning(false);
+      const t = setTimeout(() => setBoostRunning(false), 0);
+      return () => clearTimeout(t);
     }
     return () => clearInterval(interval);
   }, [boostRunning, boostSeconds]); // eslint-disable-line react-hooks/exhaustive-deps
