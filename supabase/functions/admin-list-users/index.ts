@@ -2,7 +2,7 @@
 // Edge Function para CRUD del CRM — usa service_role para bypass RLS
 // GET  /admin-list-users?page=&limit=  → lista usuarios (solo admin)
 // POST /admin-list-users              → mutaciones {action, user_id, amount?}
-//   action: "add_credits" | "toggle_vip" | "set_ultra" | "remove_ultra"
+//   action: "add_credits" | "toggle_vip" | "set_ultra" | "remove_ultra" | "delete_user"
 // Solo accesible por usuarios con rol "admin" en auth.user_metadata
 //
 // v2: JOIN con auth.users para traer el email real + parseo de perfil_data
@@ -140,6 +140,17 @@ serve(async (req) => {
           await supabase.from('usuarios_atlas')
             .update({ is_ultra: false, is_vip: false })
             .eq('user_id', targetUserId);
+        } else if (action === "delete_user") {
+          // 1) Borrar perfil de la tabla custom (puede fallar silenciosamente si ya no existe)
+          await supabase.from('usuarios_atlas').delete().eq('user_id', targetUserId);
+          // 2) Borrar historial del usuario si existe
+          await supabase.from('historial_atlas').delete().eq('user_id', targetUserId);
+          // 3) Borrar el usuario de Auth (service_role necesario)
+          const { error: delAuthErr } = await supabase.auth.admin.deleteUser(targetUserId);
+          if (delAuthErr) {
+            console.warn("No se pudo borrar de auth.users:", delAuthErr.message);
+            // No lanzamos error — el perfil ya fue borrado
+          }
         } else {
           return new Response(JSON.stringify({ error: `Acción desconocida: ${action}` }), {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400,

@@ -174,6 +174,35 @@ export default function AdminCRM() {
     setOperating(null);
   };
 
+  const deleteUser = async (userId: string, email: string) => {
+    // Confirmación doble — acción irreversible
+    if (!window.confirm(`⚠️ ¿Eliminar permanentemente al usuario?\n\n📧 ${email || userId}\n\nEsta acción NO se puede deshacer. Se borrará su perfil, historial y cuenta de autenticación.`)) return;
+    if (!window.confirm(`🔴 CONFIRMACIÓN FINAL\n\n¿Estás SEGURO de eliminar a ${email || userId}?\n\nEscribe OK en tu mente y presiona Aceptar para continuar.`)) return;
+
+    setOperating(userId);
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/admin-list-users`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
+          Authorization: `Bearer ${session?.access_token || ""}`,
+        },
+        body: JSON.stringify({ action: "delete_user", user_id: userId }),
+      }
+    );
+    const data = await res.json();
+    if (res.ok && data.ok) {
+      // Quitar de la lista local sin recargar
+      setUsers(prev => prev.filter(u => u.user_id !== userId));
+    } else {
+      alert("❌ Error al eliminar: " + (data.error || "Error del servidor"));
+    }
+    setOperating(null);
+  };
+
   if (authChecking) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
@@ -398,6 +427,17 @@ export default function AdminCRM() {
                               }`}
                               title={user.is_ultra ? "ULTRA incluye PRO" : user.is_vip ? "Quitar PRO" : "Activar PRO"}>
                               {user.is_ultra ? "👑" : user.is_vip ? "🔻 PRO" : "💎 PRO"}
+                            </button>
+                            {/* ── ELIMINAR USUARIO ─────────────────────────── */}
+                            <button
+                              onClick={() => deleteUser(user.user_id, user.email || "")}
+                              disabled={operating === user.user_id}
+                              className="disabled:opacity-50 disabled:cursor-not-allowed bg-red-900/60 hover:bg-red-600 border border-red-500/40 hover:border-red-400 text-red-300 hover:text-white text-xs px-2 py-1.5 rounded-lg transition-all"
+                              title="Eliminar usuario permanentemente (borra perfil + auth)"
+                            >
+                              {operating === user.user_id ? (
+                                <span className="inline-block w-3 h-3 border-2 border-red-300 border-t-transparent rounded-full animate-spin" />
+                              ) : "🗑️"}
                             </button>
                           </div>
                         </td>
