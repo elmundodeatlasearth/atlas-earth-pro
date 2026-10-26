@@ -114,6 +114,10 @@ export default function Home() {
             <h1 className="text-base lg:text-lg font-black text-white truncate flex items-center gap-2">
               {S.isAdmin ? "🛡️ Atlas Earth ADMIN" : S.isUltra ? "👑 Atlas Earth ULTRA" : S.isPro ? "📊 Atlas Earth PRO" : "📊 Atlas Earth"}
             </h1>
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 font-semibold shadow-[0_0_8px_rgba(16,185,129,0.15)]">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              v2.5 Live
+            </span>
             {S.isAdmin && (
               <a
                 href="./admin"
