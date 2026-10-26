@@ -616,12 +616,14 @@ serve(async (req) => {
     // Siempre generar el análisis local primero
     const analisisLocal = generarAnalisisExperto(payload);
 
-    // Intentar Morph LLM para enriquecer
+    // Intentar Groq LLM (ultra rápido con Llama 3.3 70B) o Morph LLM
+    const groqApiKey = Deno.env.get("GROQ_API_KEY");
     const morphApiKey = Deno.env.get("MORPH_API_KEY");
     let aiAdvice = "";
     let usedFallback = true;
+    let providerName = "local";
 
-    if (morphApiKey) {
+    if (groqApiKey || morphApiKey) {
       try {
         const metaDiaria = payload.meta_periodo === "month" ? payload.meta_dolar / 30
           : payload.meta_periodo === "year" ? payload.meta_dolar / 365
@@ -669,25 +671,68 @@ INSTRUCCIONES ESTRICTAS (SIGUE AL PIE DE LA LETRA):
 8. Máximo 4 párrafos cortos
 9. SIEMPRE menciona el costo REAL en AB del siguiente salto (de la tabla) y cuántos días le tomará con su AB/día actual`;
 
-        const morphResponse = await fetch("https://api.morphllm.com/v1/chat/completions", {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${morphApiKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            model: "morph-v3-fast",
-            messages: [
-              { role: "system", content: "Eres un experto mundial en Atlas Earth, con conocimiento profundo de mecánicas de Tiers, multiplicadores, composición de parcelas, pasaportes, Explorer Club, SRB y optimización de renta. Das consejos precisos, directos y accionables. Responde SOLO en español. No saludas ni te presentas." },
-              { role: "user", content: promptUsuario }
-            ],
-            temperature: 0.4,
-            max_tokens: 500,
-          })
-        });
-        if (morphResponse.ok) {
-          const morphData = await morphResponse.json();
-          if (morphData.choices?.[0]?.message?.content) {
-            aiAdvice = morphData.choices[0].message.content;
-            usedFallback = false;
+        // 1. Prioridad: Groq (Llama 3.3 70B Versatile)
+        if (groqApiKey) {
+          try {
+            const groqResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${groqApiKey}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                model: "llama-3.3-70b-versatile",
+                messages: [
+                  {
+                    role: "system",
+                    content: "Eres un experto mundial en Atlas Earth, con conocimiento profundo de mecánicas de Tiers, multiplicadores, composición de parcelas, pasaportes, Explorer Club, SRB y optimización de renta. Das consejos precisos, directos y accionables. Responde SOLO en español. No saludas ni te presentas."
+                  },
+                  { role: "user", content: promptUsuario }
+                ],
+                temperature: 0.4,
+                max_tokens: 650,
+              })
+            });
+            if (groqResponse.ok) {
+              const groqData = await groqResponse.json();
+              if (groqData.choices?.[0]?.message?.content) {
+                aiAdvice = groqData.choices[0].message.content;
+                usedFallback = false;
+                providerName = "groq";
+              }
+            } else {
+              console.warn("Groq LLM respondió status:", groqResponse.status);
+            }
+          } catch (errGroq) {
+            console.warn("Groq LLM falló:", String(errGroq));
           }
+        }
+
+        // 2. Fallback: Morph LLM
+        if (usedFallback && morphApiKey) {
+          try {
+            const morphResponse = await fetch("https://api.morphllm.com/v1/chat/completions", {
+              method: 'POST',
+              headers: { 'Authorization': `Bearer ${morphApiKey}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                model: "morph-v3-fast",
+                messages: [
+                  { role: "system", content: "Eres un experto mundial en Atlas Earth, con conocimiento profundo de mecánicas de Tiers, multiplicadores, composición de parcelas, pasaportes, Explorer Club, SRB y optimización de renta. Das consejos precisos, directos y accionables. Responde SOLO en español. No saludas ni te presentas." },
+                  { role: "user", content: promptUsuario }
+                ],
+                temperature: 0.4,
+                max_tokens: 500,
+              })
+            });
+            if (morphResponse.ok) {
+              const morphData = await morphResponse.json();
+              if (morphData.choices?.[0]?.message?.content) {
+                aiAdvice = morphData.choices[0].message.content;
+                usedFallback = false;
+                providerName = "morph";
+              }
+            }
+          } catch { console.warn("Morph LLM falló"); }
         }
       } catch { console.warn("Morph LLM falló"); }
     }
@@ -703,7 +748,7 @@ INSTRUCCIONES ESTRICTAS (SIGUE AL PIE DE LA LETRA):
       htmlFinal = `
         <div class="mb-6 p-5 bg-gradient-to-r from-purple-900/30 via-indigo-900/20 to-cyan-900/10 rounded-2xl border border-purple-500/20 shadow-lg shadow-purple-900/20">
           <div class="text-[10px] text-gray-500 uppercase tracking-widest mb-3 font-bold flex items-center gap-2">
-            <span>🤖 Asesor Experto Atlas Earth</span>
+            <span>🤖 Asesor Experto Atlas Earth ${providerName === "groq" ? "(Groq Llama 3.3)" : ""}</span>
             <span class="text-purple-400">● LIVE</span>
           </div>
           <div class="text-sm leading-relaxed text-gray-100 space-y-2">
@@ -729,7 +774,7 @@ INSTRUCCIONES ESTRICTAS (SIGUE AL PIE DE LA LETRA):
       remaining_credits: is_ultra ? 999 : (usedFallback ? ai_credits : Math.max(0, ai_credits - 1)),
       // Información para que la UI muestre la fecha de renovación mensual
       credits_reset_date: (userData?.credits_updated_at as string) || null,
-      source: usedFallback ? "local" : "morph+local",
+      source: usedFallback ? "local" : `${providerName}+local`,
       _rate_limit_remaining: rl.remaining,
       _local_analysis: htmlFinal.substring(0, 200), // preview para debug
     }), { headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-RateLimit-Remaining': String(rl.remaining) }, status: 200 })
